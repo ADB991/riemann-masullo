@@ -48,6 +48,9 @@ formula.
 | I19 | Remark C.2.3.3, p. 677 | Refers to an open mapping theorem of Pták without stating its hypotheses. | Only the topology is named. | #330 | reported |
 | I20 | After (C.2.4.9), pp. 690–691 | The asserted joint continuity is reported to fail. With ω = ℂ^ℕ (product topology), φ = ℂ^(ℕ) (finest locally convex topology) and E = ω × φ, the map T(y,b)(x,a) = Σ aₙyₙ is continuous from E to its strong dual, but the bilinear form is unbounded on every product of zero-neighbourhoods. | Theorem C.2.4.18 keeps joint continuity as a hypothesis. | #400 | reported |
 | I21 | Proof of Proposition C.2.5.1(6), p. 692 | The proof applies the Fréchet duality criterion to a space that need not be metrizable: ℂ^(ℕ) with its finest locally convex topology is a countable union of closed finite-dimensional subspaces, so it is not Fréchet. The conclusion is reported to follow another way, by identifying the strong dual with a countable product of lines. | The statement is as in the paper. | #400 | reported |
+| I22 | Lemma D.1.1.2(5), p. 747 | Continuity and pointwise Fourier inversion are asserted for an arbitrary integrable function with integrable transform. On ℝ the indicator of {0} is a counterexample: its transform and double transform vanish, yet it equals 1 at 0. Inversion holds almost everywhere, or everywhere for the continuous representative. | Left as a marked gap. | #432 | reported |
+| I23 | Theorem D.1.2.1, p. 747 | The clause for arbitrary measurable functions asserts that the fibre integral exists almost everywhere. For G = H = ℝ and f = 1 the quotient is a point of positive measure and the fibre integral diverges. | The clauses for compactly supported continuous and for integrable functions are stated. | #432 | reported |
+| I24 | Proof of Lemma D.1.3.7(2), (D.1.3.33), p. 756 | The left side is a global seminorm, a fixed positive number for a nonzero Schwartz function, while the right side tends to zero as \|x\| grows. The pointwise form (D.1.3.34) is what is meant. | The tensor isomorphism is stated with its original conclusion. | #432 | reported |
 | I13 | After (3.1.2.1), p. 120 | Compactness of the norm-one part of J_{F,S} is cited from Theorem A.1.5.2(1), which is about C_{F,S}; one has to project away the unit factors outside S first. | `SIdeleQuotient` is the quotient of (3.1.2.1); the compactness statement is for it. | #148 | reported |
 | I14 | (3.1.2.2), p. 120 | At a finite place the norm has image q^ℤ, so the "section" of the norm exists only over that subgroup and depends on a uniformizer. | The Lean formula keeps both choices and the period 2πi/log q. | #148 | reported |
 
@@ -60,6 +63,7 @@ formula.
 | M3 | Footnotes 2–4, p. 667 | The explicit Köthe space, the two strong topologies and the justification of the subspace example are left unspecified. | #41 | reported |
 | M4 | §B.4, p. 625, footnote 27 | The footnote asks for an explanation of how an identity follows from B.4.2.2. | scout #3 | reported |
 | M5 | Remark C.2.4.5, p. 687, footnote 15 | The argument for the particular strong dual cited in the remark is left unfinished. A direct example of a weak dual that is not quasi-complete is given in the report on #7 (finitely supported sequences with the ℓ¹ norm). | #400 | reported |
+| M6 | Footnote 1, p. 753, and footnote 2, p. 757 | The first asks for an expansion covering powers of the one-dimensional factors; the second asks for the Fourier compatibility calculation used in the density argument. | #432 | reported |
 
 ## How this file is kept
 
