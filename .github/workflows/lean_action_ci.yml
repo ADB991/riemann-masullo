@@ -13,3 +13,5 @@ jobs:
       - name: Lint
         run: scripts/lint.sh
       - uses: leanprover/lean-action@v1
+      - name: No sorry inside definitions
+        run: scripts/signatures.sh --sorry-in-defs

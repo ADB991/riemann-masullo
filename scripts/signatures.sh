@@ -7,6 +7,11 @@
 # The comparison ignores declarations that exist in only one file: adding a lemma or finishing
 # a proof is fine, changing or removing what others build on is not. Exit status 1 if anything
 # changed.
+#
+#   scripts/signatures.sh --sorry-in-defs [file]        # lists definitions whose body has a sorry
+#
+# A definition must not contain `sorry`, even in a proof field: its body would change when the
+# proof is filled in, and everything stated with it would shift. Exit status 1 if there are any.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 if [ "${1:-}" = --compare ]; then
@@ -16,6 +21,13 @@ if [ "${1:-}" = --compare ]; then
   [ -z "$changed" ] || { echo "statement or definition changed:"; echo "$changed" | sed 's/^/  /'; }
   [ -z "$removed" ] || { echo "removed:"; echo "$removed" | sed 's/^/  /'; }
   [ -z "$changed$removed" ]
+  exit
+fi
+if [ "${1:-}" = --sorry-in-defs ]; then
+  if [ -n "${2:-}" ]; then bad=$(awk '$NF == "SORRY" { print $2 }' "$2")
+  else bad=$("$0" | awk '$NF == "SORRY" { print $2 }'); fi
+  [ -z "$bad" ] || { echo "definitions containing sorry:"; echo "$bad" | sed 's/^/  /'; }
+  [ -z "$bad" ]
   exit
 fi
 lake build RiemannMasullo >/dev/null

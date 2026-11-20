@@ -15,7 +15,9 @@ one, because provers will build on it.
    formalize; the text extraction loses subscripts and accents.
 2. Write `RiemannMasullo/<Chapter>/Sec<N>.lean` (the issue gives the path). Follow the paper's
    order. Each numbered Definition, Lemma, Proposition, Theorem and Corollary becomes one
-   declaration. Definitions are written out in full; every proof is `by sorry`.
+   declaration. Definitions are written out in full; every proof is `by sorry`. A definition
+   itself contains no `sorry`: when it needs a proof (that a set is a submodule, that a function
+   is a seminorm), state that as its own theorem just above and use the theorem.
 3. Give each declaration a docstring: `Paper: <item>, p. <page>.`, then one or two plain
    sentences saying what the Lean states. If the Lean differs from the paper in any way, say how
    on a line starting `Deviation:`.

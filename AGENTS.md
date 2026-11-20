@@ -45,8 +45,12 @@ These exist because many agents work in parallel and nobody rereads everything.
 
 - **A proof pull request never changes a statement.** Other work is already building on it. If a
   statement is wrong or unprovable, say so on the issue and stop; the integrator decides.
-- **`sorry` only in proofs.** A definition whose data is `sorry` makes everything downstream
-  meaningless while still compiling.
+- **`sorry` only in the proofs of theorems, never inside a definition**, not even in a proof
+  field such as the closure axioms of a submodule or the triangle inequality of a seminorm.
+  State such a fact as a separate theorem with `sorry` and use that theorem in the definition.
+  A definition whose data is `sorry` makes everything downstream meaningless while still
+  compiling, and one with `sorry` in a proof field changes when the proof is filled in.
+  `scripts/signatures.sh --sorry-in-defs` lists offenders.
 - **No `axiom`, `native_decide`, `implemented_by`, `extern`, `unsafe`, `opaque` or `debug.*`
   options.** A finished proof must show only `propext`, `Classical.choice` and `Quot.sound` under
   `#print axioms`. `scripts/lint.sh` checks the text; CI runs it.

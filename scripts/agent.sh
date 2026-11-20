@@ -245,6 +245,12 @@ $(tail -n 25 "$wt/.agent/build.txt")
 \`\`\`
 $diffout
 \`\`\`"
+    baddefs=$("$main/scripts/signatures.sh" --sorry-in-defs "$wt/.agent/signatures.txt") ||
+      fail "A $role agent ($who) left \`sorry\` inside a definition. State the fact as a separate theorem with \`sorry\` and use that theorem in the definition. Nothing was pushed.
+
+\`\`\`
+$baddefs
+\`\`\`"
     check="Statement check: none of the $(wc -l <"$main/.agent/base/$role-$n.txt") existing declarations changed; $(( $(wc -l <"$wt/.agent/signatures.txt") - $(wc -l <"$main/.agent/base/$role-$n.txt") )) added."
   fi
   title="$role: #$n"; body=""
