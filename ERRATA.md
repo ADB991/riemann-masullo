@@ -46,6 +46,8 @@ formula.
 | I17 | Proposition C.2.3.13(2), (C.2.3.27), p. 683 | The map from the limit of the completed stages is reported not to be injective in general, when the limit is the algebraic direct limit of §C.1.5: with stages c₀₀/span(e₁,…,eₙ) under the ℓ² norm and second factor ℂ, the class of (2⁻ᵏ) is nonzero at every completed stage but dies in the completion of the limit, which is zero. | Stated for the span of the stage images with its subspace topology, and density of that span. | #330 | reported |
 | I18 | Proposition C.2.3.13(3), p. 683 | Bornologicity of the completed inductive tensor product is reported to fail: with second factor ℂ the claim is that the completion of a bornological space is bornological, and a counterexample is built from continuous functions on a stationary, costationary subset of ω₁. | Not stated. | #330 | reported |
 | I19 | Remark C.2.3.3, p. 677 | Refers to an open mapping theorem of Pták without stating its hypotheses. | Only the topology is named. | #330 | reported |
+| I20 | After (C.2.4.9), pp. 690–691 | The asserted joint continuity is reported to fail. With ω = ℂ^ℕ (product topology), φ = ℂ^(ℕ) (finest locally convex topology) and E = ω × φ, the map T(y,b)(x,a) = Σ aₙyₙ is continuous from E to its strong dual, but the bilinear form is unbounded on every product of zero-neighbourhoods. | Theorem C.2.4.18 keeps joint continuity as a hypothesis. | #400 | reported |
+| I21 | Proof of Proposition C.2.5.1(6), p. 692 | The proof applies the Fréchet duality criterion to a space that need not be metrizable: ℂ^(ℕ) with its finest locally convex topology is a countable union of closed finite-dimensional subspaces, so it is not Fréchet. The conclusion is reported to follow another way, by identifying the strong dual with a countable product of lines. | The statement is as in the paper. | #400 | reported |
 | I13 | After (3.1.2.1), p. 120 | Compactness of the norm-one part of J_{F,S} is cited from Theorem A.1.5.2(1), which is about C_{F,S}; one has to project away the unit factors outside S first. | `SIdeleQuotient` is the quotient of (3.1.2.1); the compactness statement is for it. | #148 | reported |
 | I14 | (3.1.2.2), p. 120 | At a finite place the norm has image q^ℤ, so the "section" of the norm exists only over that subgroup and depends on a uniformizer. | The Lean formula keeps both choices and the period 2πi/log q. | #148 | reported |
 
@@ -57,6 +59,7 @@ formula.
 | M2 | Definition C.1.3.1, p. 659 | The reference for constructing the completion by Cauchy nets is "[?]". | #41 | reported |
 | M3 | Footnotes 2–4, p. 667 | The explicit Köthe space, the two strong topologies and the justification of the subspace example are left unspecified. | #41 | reported |
 | M4 | §B.4, p. 625, footnote 27 | The footnote asks for an explanation of how an identity follows from B.4.2.2. | scout #3 | reported |
+| M5 | Remark C.2.4.5, p. 687, footnote 15 | The argument for the particular strong dual cited in the remark is left unfinished. A direct example of a weak dual that is not quasi-complete is given in the report on #7 (finitely supported sequences with the ℓ¹ norm). | #400 | reported |
 
 ## How this file is kept
 
