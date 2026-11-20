@@ -220,21 +220,36 @@ def parse_roadmap(toc_chapters, toc_sections):
         chapters = []
         for key, secs in parts.items():
             c = toc_chapters.get(key)
-            if not c:
-                continue
-            if secs is None:
-                pages, count, label = [[c["start"], c["end"]]], len(c["sections"]), chapter_label(key)
-            else:
-                known = [toc_sections[s] for s in secs if s in toc_sections]
-                pages = [[s["start"], s["end"]] for s in known]
-                count, label = len(known), chapter_label(key) + " §" + compress_nums(secs)
-            chapters.append(dict(key=key, label=label, title=c["title"], pages=pages, sections=count))
+            if c:
+                chapters.append(dict(key=key, title=c["title"], whole=secs is None,
+                                     nums=list(c["sections"]) if secs is None else
+                                     [s for s in secs if s in toc_sections]))
         waves.append(dict(name=name if name.lower().startswith(("wave", "later")) or not name.isdigit()
                           else f"Wave {name}", text=paper, status=state, chapters=chapters))
     for w in waves:
         if w["name"].lower() == "later":
             w["name"] = "Later"
     return waves, status
+
+
+def wave_part(part, seeded, toc_chapters, toc_sections):
+    """What is left of one chapter of a wave once the sections with an issue are taken out."""
+    left = [n for n in part["nums"] if n not in seeded]
+    if not left:
+        return None
+    c = toc_chapters[part["key"]]
+    if part["whole"] and len(left) == len(part["nums"]):
+        label, pages = chapter_label(part["key"]), [[c["start"], c["end"]]]
+    else:
+        label = chapter_label(part["key"]) + " §" + compress_nums(left)
+        pages = []
+        for n in left:
+            a, b = toc_sections[n]["start"], toc_sections[n]["end"]
+            if pages and a <= pages[-1][1] + 1:
+                pages[-1][1] = max(pages[-1][1], b)
+            else:
+                pages.append([a, b])
+    return dict(key=part["key"], label=label, title=c["title"], pages=pages, sections=len(left))
 
 
 def compress_nums(nums):
@@ -694,6 +709,11 @@ def build_model(repo, section_issues, proof_issues, rows, files, warnings, head)
         decls.append(d)
         groups[g]["decls"].append(n)
 
+    unfiled = [d["show"] for d in decls if d["state"] == "unfiled"]
+    if unfiled:
+        note(notes, f"{len(unfiled)} theorem(s) have a sorry but no open proof issue yet "
+                    "(`scripts/issues.py --apply` opens them): "
+                    + ", ".join(f"`{n}`" for n in unfiled[:12]) + (" …" if len(unfiled) > 12 else "") + ".")
     for key, lst in issues.items():
         if key not in matched:
             for i in lst:
@@ -793,7 +813,7 @@ def build_model(repo, section_issues, proof_issues, rows, files, warnings, head)
         out_items = []
         for k in item_keys:
             it = items[k]
-            out_items.append(dict(label=it["label"], page=it["page"], band=band_of_item[k],
+            out_items.append(dict(key=k, label=it["label"], page=it["page"], band=band_of_item[k],
                                   decls=[index[n] for n in it["decls"]]))
         uses = collections.Counter()
         for n in names:
@@ -877,14 +897,18 @@ def build_model(repo, section_issues, proof_issues, rows, files, warnings, head)
         del og["_decls"]
 
     # Waves: only the chapters that have no section issue yet.
-    seeded = {s["chapter"] for s in sections}
+    seeded = set()
+    for i in section_issues:
+        for a, b in re.findall(r"§\s*([A-E]|\d+)\.(\d+)", i["title"]):
+            seeded.add(f"{a}.{b}")
     out_waves = []
     for w in waves:
-        todo = [c for c in w["chapters"] if c["key"] not in seeded]
+        todo = [p for p in (wave_part(c, seeded, toc_chapters, toc_sections) for c in w["chapters"]) if p]
         if w["chapters"] and not todo:
             continue
+        whole = sum(len(c["nums"]) for c in w["chapters"])
         out_waves.append(dict(name=w["name"], text=w["text"], status=w["status"], chapters=todo,
-                              partial=len(todo) != len(w["chapters"])))
+                              partial=sum(c["sections"] for c in todo) != whole))
 
     thms = [d for d in decls if d["kind"] == "theorem"]
     st = collections.Counter(d["state"] for d in thms)
@@ -1002,6 +1026,7 @@ def main():
     fd, tmp = tempfile.mkstemp(dir=out.parent, suffix=".tmp")
     with os.fdopen(fd, "w", encoding="utf-8") as fh:
         fh.write(html)
+    os.chmod(tmp, 0o644)
     os.replace(tmp, out)
 
     t, m = model["totals"], model["meta"]
