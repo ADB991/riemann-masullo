@@ -35,8 +35,8 @@ while read -r pr branch assoc; do
     echo "merge   #$pr  $branch  $title"
     if [ $apply = 1 ]; then gh pr merge "$pr" --squash --delete-branch >/dev/null && merged=$((merged+1)); fi
   fi
-done < <(gh pr list --state open --limit 200 --json number,headRefName,authorAssociation \
-           --jq 'sort_by(.number) | .[] | "\(.number) \(.headRefName) \(.authorAssociation)"')
+done < <(gh api --paginate "repos/{owner}/{repo}/pulls?state=open&per_page=100" \
+           --jq 'sort_by(.number) | .[] | "\(.number) \(.head.ref) \(.author_association)"')
 if [ $apply = 1 ] && [ $merged -gt 0 ]; then
   git pull -q origin main
   lake build 2>&1 | tail -n 1
