@@ -78,8 +78,15 @@ member='IN("OWNER","MEMBER","COLLABORATOR")'   # whose text may reach an agent's
 
 if [ "$target" = next ]; then
   [ -n "$label" ] || { echo "'next' needs the prover or digester role" >&2; exit 2; }
-  target=$(gh issue list --label "$label" --state open --limit 1000 --json number,labels --jq \
-    '[.[] | select([.labels[].name] | (index("claimed") or index("blocked")) | not)] | sort_by(.number) | .[0].number // empty')
+  # The oldest free issue; for proofs, from the file with the fewest proofs already in flight,
+  # so that agents running side by side do not collide in one file.
+  target=$(gh issue list --label "$label" --state open --limit 3000 --json number,labels,body --jq '
+    map({n: .number, labels: [.labels[].name],
+         file: ((.body // "") | (try (capture("<!-- sorry: (?<f>[^:]+)::").f) catch "-"))})
+    | (map(select(.labels | index("claimed"))) | group_by(.file)
+       | map({key: .[0].file, value: length}) | from_entries) as $busy
+    | map(select(.labels | (index("claimed") or index("blocked")) | not))
+    | sort_by([($busy[.file] // 0), .n]) | .[0].n // empty')
   [ -n "$target" ] || { echo "no unclaimed $label issue" >&2; exit 1; }
 fi
 n=$target

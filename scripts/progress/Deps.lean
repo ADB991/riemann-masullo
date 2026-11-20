@@ -14,7 +14,8 @@ page; run that, not this file.
 library uses the module system. Dependencies are therefore read from the elaborated terms,
 not guessed from the source text.
 
-Fields: `n` name, `k` kind, `m` module, `t` project constants in the type, `v` project
+Fields: `n` name, `k` kind, `m` module, `mi` position of the module in import order (a module
+comes after everything it imports), `t` project constants in the type, `v` project
 constants in the body (definitions and theorems), `s` whether the body mentions `sorryAx`
 directly, `r` declaration range `[line, col, endLine, endCol]` (lines from 1, columns from 0,
 in codepoints), `sel` start of the name `[line, col]`, `doc` docstring, `of` the inductive type
@@ -36,15 +37,15 @@ def main (args : List String) : IO UInt32 := do
   let modules := args.toArray.map (·.toName)
   let env ← importModules (modules.map ({ module := · })) {} (trustLevel := 1024)
   let wanted : Std.HashSet Name := Std.HashSet.ofArray modules
-  let moduleOf (name : Name) : Option Name := do
+  let moduleOf (name : Name) : Option (Name × Nat) := do
     let idx ← env.getModuleIdxFor? name
     let m := env.header.moduleNames[idx.toNat]!
-    if wanted.contains m then some m else none
+    if wanted.contains m then some (m, idx.toNat) else none
   let project (e : Expr) : Array String :=
     (e.getUsedConstants.filter (moduleOf · |>.isSome)).map toString |>.qsort (· < ·)
   let out ← IO.getStdout
   for (name, info) in env.constants.toList do
-    let some m := moduleOf name | continue
+    let some (m, mi) := moduleOf name | continue
     let value? : Option Expr := match info with
       | .defnInfo d => some d.value
       | .thmInfo t => some t.value
@@ -52,6 +53,7 @@ def main (args : List String) : IO UInt32 := do
       | _ => none
     let mut fields : List (String × Json) := [
       ("n", toJson (toString name)), ("k", toJson (kindOf info)), ("m", toJson (toString m)),
+      ("mi", toJson mi),
       ("t", toJson (project info.type))]
     if let some v := value? then
       fields := fields ++ [("v", toJson (project v)),
