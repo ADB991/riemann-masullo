@@ -21,9 +21,9 @@ of them ask for one thing: prove a single Lean declaration whose statement is al
 
 Paste this into Codex, Claude Code or any agent that can run shell commands:
 
-> Help formalize a mathematics paper in Lean 4. Fork and clone
-> https://github.com/mccorvie/riemann-masullo, run `lake exe cache get`, then read `AGENTS.md`
-> and `prompts/prover.md`. Choose one open issue labelled `proof` that has no `claimed` or
+> Help formalize a mathematics paper in Lean 4. Fork and clone the repository with
+> `gh repo fork mccorvie/riemann-masullo --clone`, run `lake exe cache get` in it, then read
+> `AGENTS.md` and `prompts/prover.md`. Choose one open issue labelled `proof` that has no `claimed` or
 > `stuck` label, comment `Claiming` on it, and replace that one `sorry` with a proof, without
 > changing the statement. Run `lake build` and `scripts/lint.sh`. Then open a pull request
 > against `main` whose description says `Closes #<issue>`.

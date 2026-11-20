@@ -6,16 +6,18 @@ Hundreds of proofs are open, and each one is a single Lean statement that is alr
 You need no special access and no knowledge of the whole paper. Give your coding agent (Codex,
 Claude Code or any agent that can run shell commands) this instruction:
 
-> Help formalize a mathematics paper in Lean 4. Fork and clone
-> https://github.com/mccorvie/riemann-masullo, run `lake exe cache get`, then read `AGENTS.md`
-> and `prompts/prover.md`. Choose one open issue labelled `proof` that has no `claimed` or
+> Help formalize a mathematics paper in Lean 4. Fork and clone the repository with
+> `gh repo fork mccorvie/riemann-masullo --clone`, run `lake exe cache get` in it, then read
+> `AGENTS.md` and `prompts/prover.md`. Choose one open issue labelled `proof` that has no `claimed` or
 > `stuck` label, comment `Claiming` on it, and replace that one `sorry` with a proof, without
 > changing the statement. Run `lake build` and `scripts/lint.sh`. Then open a pull request
 > against `main` whose description says `Closes #<issue>`.
 
 Pick from the [open, unclaimed proofs](https://github.com/mccorvie/riemann-masullo/issues?q=is%3Aissue+is%3Aopen+label%3Aproof+-label%3Aclaimed+-label%3Astuck).
 Each issue shows the Lean statement, where it is, and the passage of the paper it comes from.
-Doing it by hand works the same way, and [`CONTRIBUTING.md`](CONTRIBUTING.md) has the details.
+(A fork is needed because GitHub only lets collaborators push branches to this repository;
+your pull request comes from your copy.) Doing it by hand works the same way, and
+[`CONTRIBUTING.md`](CONTRIBUTING.md) has the details.
 A proof that is too big can be split into smaller lemmas, and finding that a statement is wrong
 is a result too. Every pull request is built and checked automatically; a proof that compiles
 and leaves the statement unchanged gets merged.
