@@ -71,8 +71,11 @@ section issues whose prerequisites are closed. Run it from an up-to-date `main`.
 When an agent reports a blocker:
 - **A wrong statement** (label `statement-bug`): fix the statement yourself or relaunch a
   digester, then check what was built on it.
-- **A gap or error in the paper** (label `paper-gap`): record exactly what the paper says and
-  what is missing, with page numbers. Do not paper over it with an extra hypothesis unless the
+- **A gap or error in the paper**: read the passage yourself, then add an entry to
+  [`ERRATA.md`](../ERRATA.md) saying exactly what the paper says, why it fails or what is
+  missing, the page, and how the Lean handles it. Do this at every merge, from the report and
+  from the `TODO(paper-gap)` comments in the diff. Open a `paper-gap` issue as well only when
+  the problem blocks work. Do not paper over a gap with an extra hypothesis unless the
   hypothesis is carried visibly up to the theorems that use it.
 - A stale claim with no pull request: comment `Released: no activity` so the issue can be taken
   again. Claims and releases are comments (`Claiming`, `Releasing`); the Claims workflow turns

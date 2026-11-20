@@ -16,6 +16,9 @@ one of the errors reduces the theorem to a classical formula. The details have n
 and others in the thread consider a formalization premature. The draft is also incomplete:
 Chapter 13, which should deduce GRH, has no statement of its main theorem.
 
+Smaller problems found while formalizing (false statements, gaps, placeholders) are logged in
+[`ERRATA.md`](ERRATA.md).
+
 Until people who know the area have settled this, the section issues stay open but nobody
 should spend much effort on them. The infrastructure here (the Comparator setup, the issue
 workflow, the agent launcher) is reusable for another target.

@@ -48,8 +48,13 @@ one, because provers will build on it.
 
 The draft has placeholders ("Insert statement"), footnotes such as "Correct statement", and
 references to results that are not there. Do not fill these in from your own judgment. Leave a
-comment `-- TODO(paper-gap): <what is missing>` at that point in the file and list it in the
-report.
+comment `-- TODO(paper-gap): <what is wrong or missing>` at that point in the file and list it
+in the report; these go into the project's errata log. If you find a statement that is false,
+give the counterexample.
+
+A statement that only has to wait for a later section (it uses a notion defined there) is not a
+gap in the paper. Mark it `-- TODO(later): needs §<section>` and list it in the report, so it
+can be stated with that section.
 
 ## Size
 
