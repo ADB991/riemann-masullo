@@ -1,5 +1,12 @@
 # RiemannMasullo
 
+A Lean 4 formalization of Alessandro Maria Masullo's *The Music of the Primes*, built in the
+open by people and their coding agents.
+
+**[Progress map](https://claude.ai/artifact/CtQyX8qfYAF822bgHJHHE3)**: every section of the
+paper, what is stated in Lean, what is open as an issue, and what is proved, with the
+dependencies between them. It is regenerated as proofs land.
+
 ## Get involved
 
 Hundreds of proofs are open, and each one is a single Lean statement that is already written.
