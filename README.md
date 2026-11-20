@@ -6,6 +6,20 @@ An attempt to autoformalize, in Lean 4 + Mathlib, the manuscript
 
 The paper is in [`paper/`](paper/) (PDF plus a `pdftotext -layout` extraction for search/grep).
 
+## Status
+
+**On hold (20 November 2026).** The paper's main theorem, the trace formula of Theorem 12.5.1.1,
+is in dispute. In the Lean Zulip thread
+[Formalising Masullo's proof of GRH](https://leanprover.zulipchat.com/#narrow/channel/113488-general/topic/Formalising.20Masullo.27s.20proof.20of.20GRH/with/642314625)
+it was reported that an LLM-assisted reading found a counterexample to it, and that correcting
+one of the errors reduces the theorem to a classical formula. The details have not been posted,
+and others in the thread consider a formalization premature. The draft is also incomplete:
+Chapter 13, which should deduce GRH, has no statement of its main theorem.
+
+Until people who know the area have settled this, the section issues stay open but nobody
+should spend much effort on them. The infrastructure here (the Comparator setup, the issue
+workflow, the agent launcher) is reusable for another target.
+
 ## Layout
 
 The library mirrors the paper's table of contents. Each chapter or appendix has an index file,
@@ -39,7 +53,7 @@ Third-party formalizations we build on are vendored under
 
 ## Roadmap
 
-The order follows the paper's own cross-references. Two streams run in parallel and meet at the
+On hold; see Status above. The order follows the paper's own cross-references. Two streams run in parallel and meet at the
 trace formula:
 
 | Wave | Paper | Status |
