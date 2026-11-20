@@ -291,7 +291,13 @@ theorem isPolarBornology_precompact :
     exact ⟨c • T, TotallyBounded.image hT hc, Subset.rfl⟩
 
 /-- Paper: §C.2.2.1, p. 673. The von Neumann bounded subsets form a bornology. -/
-theorem isPolarBornology_bounded : IsPolarBornology {T : Set E | IsVonNBounded ℂ T} := by sorry
+theorem isPolarBornology_bounded : IsPolarBornology {T : Set E | IsVonNBounded ℂ T} := by
+  refine ⟨⟨∅, isVonNBounded_empty ℂ E⟩,
+    directedOn_of_sup_mem (fun _ _ ↦ IsVonNBounded.union), ?_, ?_⟩
+  · intro T hT
+    exact hT.image (toWeakSpaceCLM ℂ E)
+  · intro T hT c _
+    exact ⟨c • T, hT.image (c • ContinuousLinearMap.id ℂ E), Subset.rfl⟩
 
 /-- Paper: (C.2.2.4), p. 673. A linear functional is continuous precisely when it belongs
 to the absolute polar of some member of a given zero-neighborhood basis. -/
