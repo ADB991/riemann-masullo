@@ -340,10 +340,11 @@ class Library:
             if not kws:
                 continue
             tok = re.match(r"[^\s:({\[]+", L[sl - 1][sc:])
-            tok = tok.group(0) if tok else ""
-            if not tok or not private_stripped(name).endswith(tok.replace("«", "").replace("»", "")) \
-                    and not private_stripped(name).endswith(tok):
-                raise Retry(f"{r['m']}:{sl} does not show `{display_name(name)}`; build out of date?")
+            tok = tok.group(0) if tok else ""        # as scripts/issues.py reads the name
+            plain = tok.rstrip(".").replace("«", "").replace("»", "")   # `foo.{u}` leaves `foo.`
+            if not plain or not private_stripped(name).replace("«", "").replace("»", "").endswith(plain):
+                note(self.notes, f"{self.files[r['m']]}:{sl} should name `{display_name(name)}` but "
+                                 f"reads `{tok}`; its source link may be off.")
             kw = kws[-1]
             if r["k"] == "theorem":
                 kind = "theorem"
