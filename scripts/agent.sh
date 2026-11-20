@@ -1,30 +1,53 @@
 #!/usr/bin/env bash
-# Launch one agent on one issue in its own worktree, then hand in its work.
+# Run one agent on one issue in its own worktree, and hand in its work.
 #
 #   scripts/agent.sh <prover|digester|scout> <issue number|next> [options]
 #
+# With no mode option it does three steps: set up, run the agent, hand in. To drive the agent
+# yourself (for example an interactive Codex or Claude session), do the outer two separately:
+#
+#   --setup    create the worktree, claim the issue, write the prompt to .agent/PROMPT.md, and
+#              stop. Start any agent in that directory and tell it:
+#                  Read .agent/PROMPT.md and follow it.
+#   --handin   build, commit, push and open the pull request from that worktree, and post
+#              .agent/REPORT.md as a comment on the issue.
+#
+# Other options:
 #   --cli codex|claude   which agent to run (default: codex; claude for scouts)
 #   --model NAME         model to pass to the CLI
-#   --dry-run            set up the worktree and print the prompt, but run nothing
-#   --force              take an issue even if it is labelled `claimed`
+#   --dry-run            print the prompt and change nothing
+#   --force              take an issue that is labelled `claimed`, or discard an existing worktree
 #
-# The agent edits files in the worktree and writes .agent/PR.md and/or .agent/REPORT.md. It needs
-# no network and no git access: this script builds, commits, pushes, opens the pull request and
-# posts the report. Relaunching on an issue whose branch already exists resumes that branch and
-# shows the agent the review comments on its pull request.
+# The agent needs no git access, and only scouts need the network: this script does the building,
+# committing, pushing and commenting. Relaunching on an issue that has an open pull request
+# resumes that branch and shows the agent the review comments.
+#
+# The repository is public, so issue text is not all trustworthy, and an agent's output is not
+# either. Three guards:
+#   - only text written by the owner, members or collaborators reaches an agent's prompt;
+#   - a prover or digester may change only Lean files under RiemannMasullo/ (not External/);
+#   - the hand-in build runs under bwrap with no network and no home directory, because building
+#     Lean can execute code.
+#
+# It works from a fork too: issues and pull requests are those of the `upstream` remote if there
+# is one (otherwise `origin`), and your branch is pushed to `origin`.
+# Needs: gh (logged in), jq, bwrap, and the Codex or Claude Code CLI.
 set -euo pipefail
 
-role=${1:?usage: agent.sh <prover|digester|scout> <issue|next> [--cli codex|claude] [--model M] [--dry-run] [--force]}
-target=${2:?issue number or 'next'}
+usage="usage: agent.sh <prover|digester|scout> <issue|next> [--setup|--handin] [--cli codex|claude] [--model M] [--dry-run] [--force]"
+role=${1:?$usage}
+target=${2:?$usage}
 shift 2
-cli=""; model=""; dry=0; force=0
+cli=""; model=""; mode=all; dry=0; force=0
 while [ $# -gt 0 ]; do
   case $1 in
+    --setup) mode=setup; shift ;;
+    --handin) mode=handin; shift ;;
     --cli) cli=$2; shift 2 ;;
     --model) model=$2; shift 2 ;;
     --dry-run) dry=1; shift ;;
     --force) force=1; shift ;;
-    *) echo "unknown option $1" >&2; exit 2 ;;
+    *) echo "unknown option $1" >&2; echo "$usage" >&2; exit 2 ;;
   esac
 done
 case $role in
@@ -33,122 +56,187 @@ case $role in
   scout) label="" ;;
   *) echo "unknown role $role" >&2; exit 2 ;;
 esac
-[ -n "$cli" ] || { [ "$role" = scout ] && cli=claude || cli=codex; }
+if [ $mode = all ] && [ -z "$cli" ]; then [ "$role" = scout ] && cli=claude || cli=codex; fi
+who="${cli:-interactive session}${model:+, $model}"
 
 main=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 cd "$main"
+up=origin; git remote get-url upstream >/dev/null 2>&1 && up=upstream
+slug() { git remote get-url "$1" | sed -E 's#^(git@github\.com:|https://github\.com/|ssh://git@github\.com/)##; s#\.git$##'; }
+export GH_REPO=$(slug "$up")           # every gh command below addresses the upstream repository
+api="repos/$GH_REPO"
+member='IN("OWNER","MEMBER","COLLABORATOR")'   # whose text may reach an agent's prompt
 
 if [ "$target" = next ]; then
-  [ -n "$label" ] || { echo "'next' needs a prover or digester role" >&2; exit 2; }
+  [ -n "$label" ] || { echo "'next' needs the prover or digester role" >&2; exit 2; }
   target=$(gh issue list --label "$label" --state open --limit 1000 --json number,labels --jq \
     '[.[] | select([.labels[].name] | (index("claimed") or index("blocked")) | not)] | sort_by(.number) | .[0].number // empty')
   [ -n "$target" ] || { echo "no unclaimed $label issue" >&2; exit 1; }
 fi
 n=$target
-issue=$(gh issue view "$n" --json number,title,body,labels,comments)
-labels=$(jq -r '[.labels[].name] | join(" ")' <<<"$issue")
-if [ "$role" != scout ] && [[ " $labels " == *" claimed "* ]] && [ $force = 0 ]; then
-  echo "issue #$n is already claimed (use --force to take it anyway)" >&2; exit 1
-fi
-
 branch="$role/$n"
-wt="$main/../$(basename "$main")-wt/$role-$n"
-git fetch -q origin
-base=origin/main; resumed=0
-if git rev-parse -q --verify "origin/$branch" >/dev/null; then base="origin/$branch"; resumed=1; fi
-[ -d "$wt" ] && git worktree remove --force "$wt"
-git worktree add -q -B "$branch" "$wt" "$base"
-mkdir -p "$wt/.lake" "$wt/.agent"
-ln -sfn "$main/.lake/packages" "$wt/.lake/packages"   # share the built Mathlib
+wt="$(dirname "$main")/$(basename "$main")-wt/$role-$n"
+head=$branch; [ "$(slug origin)" = "$GH_REPO" ] || head="$(slug origin | cut -d/ -f1):$branch"
+pr_number() { gh pr list --head "$branch" --author @me --state open --json number --jq '.[0].number // empty'; }
+note() { gh issue comment "$n" --body "$1" >/dev/null; }
+label() { gh issue edit "$n" "$@" >/dev/null 2>&1 || true; }   # needs triage rights; the Claims workflow covers everyone else
+released() {   # "Released. " when no pull request holds the claim; the Claims workflow reads that word
+  [ "$role" = scout ] || [ -n "$(pr_number)" ] || { label --remove-label claimed; printf 'Released. '; }
+}
+fail() {   # refuse the hand-in: tell the issue why, release the claim, keep the worktree
+  note "$(released)$1"
+  echo "hand-in refused (see issue #$n); worktree kept at $wt" >&2; exit 1
+}
+sandboxed() {   # run a command in the worktree: no network, no home directory, nothing else writable
+  command -v bwrap >/dev/null || { echo "bwrap (bubblewrap) is required for the hand-in build" >&2; exit 2; }
+  bwrap --ro-bind / / --dev /dev --proc /proc --tmpfs /tmp --tmpfs /run --tmpfs "$HOME" \
+    --ro-bind "$HOME/.elan" "$HOME/.elan" --ro-bind "$main/.lake/packages" "$main/.lake/packages" \
+    --bind "$wt" "$wt" --chdir "$wt" --unshare-net --die-with-parent "$@"
+}
 
-prompt="$(cat "prompts/$role.md")
+# ---- set up ----
+if [ $mode != handin ]; then
+  issue=$(gh api "$api/issues/$n")
+  if [ "$(jq -r ".author_association | $member" <<<"$issue")" != true ] && [ $force = 0 ]; then
+    echo "issue #$n was opened by someone outside the project, and its text would become the agent's" >&2
+    echo "instructions. Read it first; then re-file it yourself, or pass --force." >&2; exit 1
+  fi
+  labels=$(jq -r '[.labels[].name] | join(" ")' <<<"$issue")
+  git fetch -q "$up"; [ "$up" = origin ] || git fetch -q origin
+  base="$up/main"; pr=""
+  [ "$role" = scout ] || pr=$(pr_number)
+  [ -z "$pr" ] || base="origin/$branch"
+  if [ "$role" != scout ] && [ -z "$pr" ] && [ $force = 0 ] && [[ " $labels " == *" claimed "* ]]; then
+    echo "issue #$n is already claimed (use --force to take it anyway)" >&2; exit 1
+  fi
+  comments=$(gh api --paginate "$api/issues/$n/comments" --jq \
+    ".[] | select(.author_association | $member) | \"\n### Comment by \(.user.login)\n\n\(.body)\n\"")
+  skipped=$(gh api --paginate "$api/issues/$n/comments" --jq \
+    "[.[] | select(.author_association | $member | not)] | length" | awk '{s+=$1} END {print s+0}')
+  [ "$skipped" = 0 ] || echo "note: left out $skipped comment(s) by people outside the project" >&2
+
+  prompt="$(cat "prompts/$role.md")
 
 ---
 
 ## Your issue: #$n
 
-$(jq -r '"**\(.title)**\n\n\(.body)\n" + ([.comments[] | "\n### Comment by \(.author.login)\n\n\(.body)\n"] | join(""))' <<<"$issue")"
-if [ $resumed = 1 ]; then
-  review=$(gh pr view "$branch" --json comments,reviews --jq \
-    '[.reviews[].body, .comments[].body] | map(select(. != "")) | join("\n\n")' 2>/dev/null || true)
-  prompt="$prompt
+$(jq -r '"**\(.title)**\n\n\(.body // "")"' <<<"$issue")
+$comments"
+  if [ -n "$pr" ]; then
+    review=$(
+      gh api --paginate "$api/issues/$pr/comments" --jq ".[] | select(.author_association | $member) | .body + \"\n\""
+      gh api --paginate "$api/pulls/$pr/reviews" --jq ".[] | select((.author_association | $member) and .body != \"\") | .body + \"\n\""
+      gh api --paginate "$api/pulls/$pr/comments" --jq ".[] | select(.author_association | $member) | \"\(.path):\(.line // .original_line): \(.body)\n\""
+    )
+    prompt="$prompt
 
 ---
 
 ## You are resuming earlier work
 
-This worktree already contains a previous attempt at this issue. Review comments on its pull
-request:
+This worktree already holds a previous attempt at this issue, which is an open pull request.
+Review comments on it:
 
 ${review:-(none)}"
+  fi
+  if [ $dry = 1 ]; then echo "$prompt"; exit 0; fi
+
+  if [ -d "$wt" ]; then
+    if [ $force = 0 ] && [ -n "$(git -C "$wt" status --porcelain)" ]; then
+      echo "worktree $wt has work that was not handed in; run --handin, or --force to discard it" >&2; exit 1
+    fi
+    git worktree remove --force "$wt"
+  fi
+  git worktree add -q -B "$branch" "$wt" "$base"
+  mkdir -p "$wt/.lake" "$wt/.agent"
+  ln -sfn "$main/.lake/packages" "$wt/.lake/packages"   # share the built Mathlib
+  printf '%s\n' "$prompt" >"$wt/.agent/PROMPT.md"
+
+  if [ "$role" != scout ] && [ -z "$pr" ]; then
+    label --add-label claimed
+    note "Claimed by a $role agent ($who) on branch \`$branch\`."
+  fi
+  if [ $mode = setup ]; then
+    cat <<EOF
+Worktree ready: $wt
+
+  cd $wt
+  codex$([ "$role" = scout ] && echo ' -c sandbox_workspace_write.network_access=true')        # or: claude
+  > Read .agent/PROMPT.md and follow it.
+
+When the agent has finished:
+
+  scripts/agent.sh $role $n --handin
+EOF
+    exit 0
+  fi
 fi
 
-if [ $dry = 1 ]; then echo "worktree: $wt"; echo; echo "$prompt"; exit 0; fi
-
-if [ "$role" != scout ] && [ $resumed = 0 ]; then
-  gh issue edit "$n" --add-label claimed >/dev/null
-  gh issue comment "$n" --body "Claimed by a $role agent ($cli${model:+, $model}) on branch \`$branch\`." >/dev/null
+# ---- run ----
+if [ $mode = all ]; then
+  echo "running $cli as $role on #$n in $wt"
+  cd "$wt"
+  set +e
+  case $cli in
+    codex)
+      args=(exec --sandbox workspace-write -C "$wt" -o "$wt/.agent/last-message.md")
+      [ -n "$model" ] && args+=(-m "$model")
+      [ "$role" = scout ] && args+=(-c sandbox_workspace_write.network_access=true)
+      codex "${args[@]}" "$prompt" >"$wt/.agent/log.txt" 2>&1 ;;
+    claude)
+      args=(-p "$prompt" --permission-mode auto)
+      [ -n "$model" ] && args+=(--model "$model")
+      claude "${args[@]}" --allowedTools Bash Read Edit Write Grep Glob WebSearch WebFetch >"$wt/.agent/log.txt" 2>&1 ;;
+    *) echo "unknown cli $cli" >&2; exit 2 ;;
+  esac
+  echo "agent exited with status $?"
+  set -e
 fi
-
-echo "running $cli as $role on #$n in $wt"
-cd "$wt"
-set +e
-case $cli in
-  codex)
-    args=(exec --sandbox workspace-write -C "$wt" -o "$wt/.agent/last-message.md")
-    [ -n "$model" ] && args+=(-m "$model")
-    [ "$role" = scout ] && args+=(-c sandbox_workspace_write.network_access=true)
-    codex "${args[@]}" "$prompt" >"$wt/.agent/log.txt" 2>&1 ;;
-  claude)
-    args=(-p "$prompt" --permission-mode auto)
-    [ -n "$model" ] && args+=(--model "$model")
-    claude "${args[@]}" --allowedTools Bash Read Edit Write Grep Glob WebSearch WebFetch >"$wt/.agent/log.txt" 2>&1 ;;
-  *) echo "unknown cli $cli" >&2; exit 2 ;;
-esac
-echo "agent exited with status $?"
-set -e
 
 # ---- hand in ----
+[ -d "$wt" ] || { echo "no worktree at $wt; run --setup first" >&2; exit 1; }
+cd "$wt"
 git add -A
 changed=0; git diff --cached --quiet || changed=1
 [ "$role" = scout ] && changed=0
-note() { gh issue comment "$n" --body "$1" >/dev/null; }
 
 if [ $changed = 1 ]; then
-  if ! { scripts/lint.sh && lake build; } >"$wt/.agent/build.txt" 2>&1; then
-    note "A $role agent ($cli) stopped with changes that do not pass \`scripts/lint.sh\` and \`lake build\`. Nothing was pushed.
+  stray=$(git diff --cached --name-only | awk '!/^RiemannMasullo\/.*\.lean$/ || /^RiemannMasullo\/External\//')
+  [ -z "$stray" ] || fail "A $role agent ($who) changed files its role may not touch. Nothing was pushed.
+
+\`\`\`
+$stray
+\`\`\`"
+  sandboxed bash -c 'scripts/lint.sh && lake build' >"$wt/.agent/build.txt" 2>&1 ||
+    fail "A $role agent ($who) stopped with changes that do not pass \`scripts/lint.sh\` and \`lake build\`. Nothing was pushed.
 
 \`\`\`
 $(tail -n 25 "$wt/.agent/build.txt")
 \`\`\`"
-    [ $resumed = 1 ] || gh issue edit "$n" --remove-label claimed >/dev/null
-    echo "build failed; worktree kept at $wt" >&2; exit 1
-  fi
   title="$role: #$n"; body=""
   if [ -s .agent/PR.md ]; then title=$(head -n 1 .agent/PR.md | sed 's/^#* *//'); body=$(tail -n +2 .agent/PR.md); fi
   [ "$role" = prover ] && link="Closes #$n" || link="Part of #$n"
-  body="$body
+  git commit -q -m "$title" -m "$link"
+  git push -q --force -u origin "$branch"
+  if [ -n "$(pr_number)" ]; then
+    echo "updated $(gh pr view "$(pr_number)" --json url --jq .url)"
+  else
+    gh pr create --base main --head "$head" --title "$title" --body "$body
 
 $link
 
-Written by a $role agent ($cli${model:+, $model}); pushed after \`lake build\` and \`scripts/lint.sh\` passed locally."
-  git commit -q -m "$title" -m "$link"
-  git push -q --force -u origin "$branch"
-  if [ $resumed = 1 ] && gh pr view "$branch" >/dev/null 2>&1; then
-    echo "updated $(gh pr view "$branch" --json url --jq .url)"
-  else
-    gh pr create --base main --head "$branch" --title "$title" --body "$body"
+Written by a $role agent ($who); pushed after \`lake build\` and \`scripts/lint.sh\` passed locally."
   fi
 fi
 
 if [ -s .agent/REPORT.md ]; then
   gh issue comment "$n" --body-file .agent/REPORT.md >/dev/null
   echo "posted report on #$n"
+  [ $changed = 1 ] || rel=$(released)
+  [ -z "${rel:-}" ] || note "Released."
 elif [ $changed = 0 ]; then
-  note "A $role agent ($cli) finished without changes or a report."
-fi
-if [ $changed = 0 ] && [ "$role" != scout ] && [ $resumed = 0 ]; then
-  gh issue edit "$n" --remove-label claimed >/dev/null
+  note "$(released)A $role agent ($who) finished without changes or a report."
 fi
 
 cd "$main"

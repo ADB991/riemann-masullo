@@ -56,6 +56,8 @@ def main():
     if branch != "main":
         print(f"note: on branch {branch}, not main", file=sys.stderr)
     sha = run(["git", "rev-parse", "--short", "HEAD"]).stdout.strip()
+    full_sha = run(["git", "rev-parse", "HEAD"]).stdout.strip()
+    url = run(["gh", "repo", "view", "--json", "url", "--jq", ".url"]).stdout.strip()
     current = sorries()
     listing = run(["gh", "issue", "list", "--label", "proof", "--state", "open", "--limit", "5000",
                    "--json", "number,body"])
@@ -74,9 +76,14 @@ def main():
     for key in new:
         s = current[key]
         title = f"Prove `{s['name']}`" + (f" ({s['paper']})" if s["paper"] else "")
-        body = (f"`{s['path']}`, line {s['line']} at {sha}\n\n```lean\n{s['block']}\n```\n\n"
-                "Replace the `sorry` with a proof, or split it into smaller lemmas. "
-                "See `prompts/prover.md`.\n\n" f"<!-- sorry: {key} -->\n")
+        body = (f"[`{s['path']}`, line {s['line']}]({url}/blob/{full_sha}/{s['path']}#L{s['line']})\n\n"
+                f"```lean\n{s['block']}\n```\n\n"
+                "Replace the `sorry` with a proof, or split it into smaller lemmas, without changing "
+                "the statement. If the statement looks wrong, say so here instead.\n\n"
+                "**To take this issue**, comment `Claiming`, then follow "
+                f"[CONTRIBUTING.md]({url}/blob/main/CONTRIBUTING.md). The paper is in "
+                f"[`paper/`]({url}/tree/main/paper).\n\n"
+                f"<!-- sorry: {key} -->\n")
         print(f"  open   {title}")
         if apply:
             cmd = ["gh", "issue", "create", "--title", title, "--body", body, "--label", "proof"]

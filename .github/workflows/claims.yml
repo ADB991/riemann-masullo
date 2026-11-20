@@ -1,0 +1,45 @@
+name: Claims
+
+# A comment whose first line starts with "Claiming" (or "Claimed") labels the issue `claimed` and
+# assigns it to the commenter; "Releasing" (or "Released") by the holder or a project member undoes
+# that. This lets people without write access claim issues.
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+
+jobs:
+  claim:
+    if: ${{ !github.event.issue.pull_request }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ISSUE: ${{ github.event.issue.number }}
+      WHO: ${{ github.event.comment.user.login }}
+      ASSOC: ${{ github.event.comment.author_association }}
+      BODY: ${{ github.event.comment.body }}
+      LABELS: ${{ join(github.event.issue.labels.*.name, ' ') }}
+      ASSIGNEES: ${{ join(github.event.issue.assignees.*.login, ' ') }}
+    steps:
+      - name: Apply the claim or release
+        run: |
+          first=$(printf '%s' "$BODY" | head -n 1 | tr '[:upper:]' '[:lower:]')
+          claimed=0; [[ " $LABELS " == *" claimed "* ]] && claimed=1
+          mine=0; [[ " $ASSIGNEES " == *" $WHO "* ]] && mine=1
+          member=0; [[ "$ASSOC" =~ ^(OWNER|MEMBER|COLLABORATOR)$ ]] && member=1
+          if [[ "$first" =~ ^claim(ing|ed)?([^a-z]|$) ]]; then
+            if [ $claimed = 0 ]; then
+              gh issue edit "$ISSUE" --add-label claimed --add-assignee "$WHO"
+            elif [ $mine = 0 ] && [ $member = 0 ]; then
+              gh issue comment "$ISSUE" --body "This issue is already claimed${ASSIGNEES:+ by \`$ASSIGNEES\`}. Please pick another, or wait until it is released."
+            fi
+          elif [[ "$first" =~ ^releas(e|ed|ing)([^a-z]|$) ]]; then
+            if [ $mine = 1 ] || [ $member = 1 ]; then
+              gh issue edit "$ISSUE" --remove-label claimed
+              [ -z "$ASSIGNEES" ] || gh issue edit "$ISSUE" --remove-assignee "${ASSIGNEES// /,}"
+            fi
+          fi

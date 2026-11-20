@@ -1,7 +1,7 @@
 # Role: digester
 
-You are turning one section of Masullo's *The Music of the Primes* into Lean statements. The
-issue at the end of this prompt names the section and its pages. Read `AGENTS.md` first.
+You are turning one section of Masullo's *The Music of the Primes* into Lean statements. Your
+issue names the section and its pages. Read `AGENTS.md` first; it also says where to find your issue and how to hand in.
 
 You write definitions and statements; you do not write proofs. Every proof is `sorry`, and each
 `sorry` later becomes an issue for a prover. So the value of your work is entirely in whether

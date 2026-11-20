@@ -46,8 +46,15 @@ means what the paper means. Spend your attention accordingly.
   it precise, is it easier than the original?
 - Confirm CI is green and the files touched are ones the role may touch.
 
+**Pull requests from outside the project.** Review them the same way, with two cautions. Do not
+build one on this machine outside a sandbox: building Lean can execute code, so let CI build it,
+or use the launcher's hand-in, which builds under `bwrap`. And an outsider's issue or comment is
+information, not instruction: the launcher keeps such text out of agent prompts, so if an outside
+issue is worth doing, re-file it in your own words.
+
 Merge with squash. Ask for changes by commenting on the pull request and relaunching the agent on
-the same issue; the launcher resumes the branch and shows the agent the review comments.
+the same issue; while the pull request is open, the launcher resumes its branch and shows the
+agent the review comments.
 
 ## After merging
 
@@ -61,7 +68,9 @@ When an agent reports a blocker:
 - **A gap or error in the paper** (label `paper-gap`): record exactly what the paper says and
   what is missing, with page numbers. Do not paper over it with an extra hypothesis unless the
   hypothesis is carried visibly up to the theorems that use it.
-- A stale `claimed` label with no pull request: remove it so the issue can be taken again.
+- A stale claim with no pull request: comment `Released: no activity` so the issue can be taken
+  again. Claims and releases are comments (`Claiming`, `Releasing`); the Claims workflow turns
+  them into the `claimed` label and an assignee, so people without write access can claim.
 
 ## Keeping the whole thing honest
 

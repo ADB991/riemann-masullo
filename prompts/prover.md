@@ -1,8 +1,9 @@
 # Role: prover
 
 You are proving one Lean declaration in a formalization of Masullo's *The Music of the Primes*.
-The issue at the end of this prompt names the declaration; its proof is currently `sorry`. Read
-`AGENTS.md` first: it has the repository layout and the rules every contribution must follow.
+Your issue names the declaration; its proof is currently `sorry`. Read
+`AGENTS.md` first: it has the repository layout, the rules every contribution must follow,
+where to find your issue, and how to hand in.
 
 ## How to work
 
