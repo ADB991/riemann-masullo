@@ -36,6 +36,10 @@
 # Needs: gh (logged in), jq, bwrap, and the Codex or Claude Code CLI.
 set -euo pipefail
 
+# Everything runs inside main, so bash has read the whole file before it starts. A launcher
+# waits on its agent for a long time, and the file may be edited or updated meanwhile.
+main() {
+
 usage="usage: agent.sh <prover|digester|scout> <issue|next> [--setup|--handin] [--cli codex|claude] [--model M] [--effort E] [--dry-run] [--force]"
 role=${1:?$usage}
 target=${2:?$usage}
@@ -253,3 +257,6 @@ for f in log.txt last-message.md build.txt; do
 done
 git worktree remove --force "$wt"
 echo "done: #$n"
+}
+
+main "$@"
