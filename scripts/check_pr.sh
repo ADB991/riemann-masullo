@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Integrator's tool: check a pull request that did not come from the launcher, such as one from
+# a fork, without trusting its code.
+#
+#   scripts/check_pr.sh <number>
+#
+# It merges the pull request into a copy of the current main in a scratch worktree and, under
+# bwrap with no network and no home directory, runs the lint, the build and the signature dump.
+# It then reports which files changed, whether any existing declaration's statement changed,
+# whether a definition contains `sorry`, and how many `sorry`s were added. Nothing is pushed or
+# merged; read the diff and decide.
+set -euo pipefail
+n=${1:?usage: check_pr.sh <pull request number>}
+main=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+cd "$main"
+command -v bwrap >/dev/null || { echo "bwrap (bubblewrap) is required" >&2; exit 2; }
+wt="$(dirname "$main")/$(basename "$main")-wt/pr-$n"
+git fetch -q origin main "pull/$n/head:refs/remotes/origin/pr-$n"
+[ -d "$wt" ] && git worktree remove --force "$wt"
+git worktree add -q -B "check/pr-$n" "$wt" origin/main
+trap 'cd "$main"; git worktree remove --force "$wt" 2>/dev/null; git branch -q -D "check/pr-$n" 2>/dev/null || true' EXIT
+cd "$wt"
+mkdir -p .lake .agent && ln -sfn "$main/.lake/packages" .lake/packages
+
+files=$(git diff --name-only "origin/main...origin/pr-$n")
+echo "files changed:"; echo "$files" | sed 's/^/  /'
+stray=$(echo "$files" | awk '!/^RiemannMasullo\/.*\.lean$/ || /^RiemannMasullo\/External\//')
+[ -z "$stray" ] || { echo "REFUSED: changes outside the library; read these by hand before running anything:"; echo "$stray" | sed 's/^/  /'; exit 1; }
+
+# The starting point, built from main's own code, which is trusted.
+scripts/signatures.sh >.agent/base.txt
+git merge -q --no-edit "origin/pr-$n" || { echo "REFUSED: does not merge cleanly into main"; exit 1; }
+echo "sorries added: $(git diff origin/main | grep -E '^\+[^+]' | grep -cw sorry || true)"
+
+sandboxed() {
+  bwrap --ro-bind / / --dev /dev --proc /proc --tmpfs /tmp --tmpfs /run --tmpfs "$HOME" \
+    --ro-bind "$HOME/.elan" "$HOME/.elan" --ro-bind "$main/.lake/packages" "$main/.lake/packages" \
+    --bind "$wt" "$wt" --chdir "$wt" --unshare-net --die-with-parent "$@"
+}
+if sandboxed bash -c 'scripts/lint.sh && lake build && scripts/signatures.sh >.agent/head.txt' >.agent/build.txt 2>&1; then
+  echo "lint and build: pass"
+else
+  echo "lint or build: FAIL"; tail -n 20 .agent/build.txt; exit 1
+fi
+"$main/scripts/signatures.sh" --compare "$wt/.agent/base.txt" "$wt/.agent/head.txt" &&
+  echo "statements: none of $(wc -l <.agent/base.txt) existing declarations changed"
+"$main/scripts/signatures.sh" --sorry-in-defs "$wt/.agent/head.txt" && echo "definitions: none contains sorry"
