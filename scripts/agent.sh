@@ -280,6 +280,11 @@ elif [ $changed = 0 ]; then
 fi
 
 cd "$main"
+# An agent CLI can leave helper processes behind (language servers, tool servers) that keep
+# running, and keep a core busy, after it exits. Stop whatever still lives in the worktree.
+for pid in $(pgrep -u "$(id -u)"); do
+  case "$(readlink "/proc/$pid/cwd" 2>/dev/null)" in "$wt"|"$wt"/*) kill "$pid" 2>/dev/null || true ;; esac
+done
 mkdir -p .agent/logs   # keep the agent's transcript; the worktree is about to go
 for f in log.txt last-message.md build.txt; do
   [ -f "$wt/.agent/$f" ] && cp "$wt/.agent/$f" ".agent/logs/$role-$n.$f"
