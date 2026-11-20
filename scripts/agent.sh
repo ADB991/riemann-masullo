@@ -29,7 +29,9 @@
 #   - only text written by the owner, members or collaborators reaches an agent's prompt;
 #   - a prover or digester may change only Lean files under RiemannMasullo/ (not External/);
 #   - the hand-in build runs under bwrap with no network and no home directory, because building
-#     Lean can execute code.
+#     Lean can execute code;
+#   - the hand-in compares the signature of every declaration with what it was when the agent
+#     started (scripts/signatures.sh), and refuses work that changed an existing statement.
 #
 # It works from a fork too: issues and pull requests are those of the `upstream` remote if there
 # is one (otherwise `origin`), and your branch is pushed to `origin`.
@@ -162,6 +164,13 @@ ${review:-(none)}"
   mkdir -p "$wt/.lake" "$wt/.agent"
   ln -sfn "$main/.lake/packages" "$wt/.lake/packages"   # share the built Mathlib
   printf '%s\n' "$prompt" >"$wt/.agent/PROMPT.md"
+  # Record every declaration's signature before the agent touches anything. It is kept outside
+  # the worktree so the agent cannot alter it. This also builds the project once for the agent.
+  if [ "$role" != scout ] && [ -z "$pr" ]; then
+    mkdir -p "$main/.agent/base"
+    (cd "$wt" && scripts/signatures.sh) >"$main/.agent/base/$role-$n.txt" 2>"$wt/.agent/base-build.txt" ||
+      { echo "could not build the starting point; see $wt/.agent/base-build.txt" >&2; exit 1; }
+  fi
 
   if [ "$role" != scout ] && [ -z "$pr" ]; then
     label --add-label claimed
@@ -225,6 +234,17 @@ $stray
 \`\`\`
 $(tail -n 25 "$wt/.agent/build.txt")
 \`\`\`"
+  check="Statement check: not run (no record of the starting point)."
+  if [ -s "$main/.agent/base/$role-$n.txt" ]; then
+    sandboxed scripts/signatures.sh >"$wt/.agent/signatures.txt" 2>>"$wt/.agent/build.txt"
+    diffout=$("$main/scripts/signatures.sh" --compare "$main/.agent/base/$role-$n.txt" "$wt/.agent/signatures.txt") ||
+      fail "A $role agent ($who) changed or removed declarations that already existed. Nothing was pushed.
+
+\`\`\`
+$diffout
+\`\`\`"
+    check="Statement check: none of the $(wc -l <"$main/.agent/base/$role-$n.txt") existing declarations changed; $(( $(wc -l <"$wt/.agent/signatures.txt") - $(wc -l <"$main/.agent/base/$role-$n.txt") )) added."
+  fi
   title="$role: #$n"; body=""
   if [ -s .agent/PR.md ]; then title=$(head -n 1 .agent/PR.md | sed 's/^#* *//'); body=$(tail -n +2 .agent/PR.md); fi
   [ "$role" = prover ] && link="Closes #$n" || link="Part of #$n"
@@ -237,7 +257,8 @@ $(tail -n 25 "$wt/.agent/build.txt")
 
 $link
 
-Written by a $role agent ($who); pushed after \`lake build\` and \`scripts/lint.sh\` passed locally."
+Written by a $role agent ($who); pushed after \`lake build\` and \`scripts/lint.sh\` passed locally.
+$check"
   fi
 fi
 

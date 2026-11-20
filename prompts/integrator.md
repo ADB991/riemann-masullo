@@ -45,7 +45,11 @@ means what the paper means. Spend your attention accordingly.
 - Check that each new definition has a sanity lemma and that no definition contains `sorry`.
 - Check that it reuses Mathlib and earlier sections instead of redefining.
 
-**Proof pull requests (prover).**
+**Proof pull requests (prover).** `scripts/land.sh` merges the ones that need no judgment: a
+launcher pull request from a project member that adds no `sorry`, touches only library files,
+and whose hand-in recorded that no existing declaration's signature changed
+(`scripts/signatures.sh`). Lean has checked the proof, so there is nothing to read. It lists the
+rest for you, and these rules apply to them:
 - The diff may add proofs and helper lemmas. It must not change the statement of anything that
   was already on `main`; read the diff for this rather than trusting the description.
 - For a split, read each new `sorry` lemma as you would a digester's statement: is it true, is

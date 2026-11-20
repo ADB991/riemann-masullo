@@ -87,7 +87,11 @@ you formalize a formula, look at the page image.
 lake build RiemannMasullo.Ch02_AdelicTheta.Sec1   # one module
 lake build                                        # everything; must pass before you hand in
 scripts/lint.sh
+scripts/signatures.sh > after.txt                 # one line per declaration: name and statement hash
 ```
+
+`scripts/signatures.sh --compare before.txt after.txt` lists every declaration whose statement
+or definition changed between two such files. A proof must leave that list empty.
 
 To check axioms, put `#print axioms RiemannMasullo.your_theorem` in a scratch file under `.agent/`
 (which git ignores) and run `lake env lean .agent/Check.lean`.
