@@ -82,3 +82,10 @@ no `sorry`.
 
 The paper's own main theorem (Theorem 13.3.1.2) is a placeholder in the current draft, so the last
 two statements were reconstructed from the introduction and have not been reviewed.
+
+## License
+
+The Lean code and everything else written for this project is released under the
+[Apache License 2.0](LICENSE), the license of Mathlib. The manuscript in [`paper/`](paper/README.md)
+belongs to its author and is not covered by it. Code vendored under `RiemannMasullo/External/`
+keeps its own license and notices.

@@ -17,12 +17,15 @@ locally convex and nuclear spaces, Hecke L-functions, stacks), so precedents are
    `lake env lean .agent/Check.lean`.
 2. **Other Lean projects.** The likely ones:
    [PrimeNumberTheoremAnd](https://github.com/AlexKontorovich/PrimeNumberTheoremAnd),
+   [algebraic-number-theory-lean](https://github.com/jonhanke/algebraic-number-theory-lean)
+   (Tate's thesis: theta functions, zeta integrals, Hecke functional equation),
    [FLT](https://github.com/ImperialCollegeLondon/FLT) (adeles, ideles, Haar measure),
    [Tau Ceti](https://github.com/TauCetiProject/TauCeti),
    [AxiomMath/Stacks](https://github.com/AxiomMath/Stacks),
    [AxiomMath/Mordell](https://github.com/AxiomMath/Mordell),
    [anthropics/fermats-last-theorem](https://github.com/anthropics/fermats-last-theorem),
-   [openai/math](https://github.com/openai/math). All are Apache-2.0. Search GitHub for others.
+   [openai/math](https://github.com/openai/math). All are Apache-2.0. Search GitHub for others, and read the
+   survey in issue #3 first so you do not repeat it.
    For each hit give the repository, commit, file, declaration name, Lean version, and whether it
    is free of `sorry`. Code with no license cannot be vendored; say so.
 3. **Literature**, only where the paper uses a standard result without proving it or cites a

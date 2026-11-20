@@ -6,8 +6,8 @@
 The announcement asks readers to check and formalize it.
 
 The manuscript belongs to its author. It is mirrored here unmodified, only so that the
-formalization can cite fixed page numbers, and it is not covered by any license of this
-repository.
+formalization can cite fixed page numbers, and it is not covered by this repository's
+Apache-2.0 license.
 
 - sha256: `e039d3f6cf0a4b14f03c7edb85097752dd65c0a2fe543c76fe992be234f97bf5`
 - `the-music-of-the-primes.txt` is `pdftotext -layout` of that file, for searching. It loses

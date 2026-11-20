@@ -9,6 +9,15 @@ directories below are reserved for the sources we expect to draw on.
 | [`TauCeti/`](TauCeti/) | <https://github.com/TauCetiProject/TauCeti> | Apache-2.0 | planned (selected modules) |
 | [`Stacks/`](Stacks/) | <https://github.com/AxiomMath/Stacks> | Apache-2.0 | under consideration |
 
+Further candidates found by scouting ([issue #3](https://github.com/mccorvie/riemann-masullo/issues/3)
+has exact declarations and pinned commits); none has a directory yet:
+
+| Upstream | License | What it offers |
+|---|---|---|
+| <https://github.com/jonhanke/algebraic-number-theory-lean> | Apache-2.0 | Tate's thesis: adelic theta functions and Poisson summation, the global zeta integral and its functional equation, the functional equation of Hecke L-functions, continuation of the Dedekind zeta function, Pontryagin duality (Chapters 2–3, Appendix D.1) |
+| <https://github.com/anthropics/fermats-last-theorem> | Apache-2.0 | adelic Schwartz–Bruhat functions and the Tate global zeta integral on their span (§2.1, §3.2) |
+| <https://github.com/ImperialCollegeLondon/FLT> | Apache-2.0 | Haar measure scaling on the adeles (Appendix A.3) |
+
 ## Convention
 
 Vendored code is copied, not added as a Lake dependency, so that each piece is pinned, auditable
