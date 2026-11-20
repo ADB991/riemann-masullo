@@ -1,0 +1,22 @@
+import Mathlib
+
+/-!
+# Chapter 9. Hardy-Sobolev topologies
+
+Formalization of Chapter 9 of A. M. Masullo, *The Music of the Primes*
+(see `paper/the-music-of-the-primes.pdf`).
+
+## Sections
+
+* §9.1 Sobolev spaces W^{s,2}(G)
+* §9.2 Hardy-Sobolev spaces W_I^s(G) and Paley-Wiener conditions
+* §9.3 Module structures over D(G) and approximate units
+
+## Status
+
+Not yet started.
+-/
+
+namespace RiemannMasullo
+
+end RiemannMasullo
