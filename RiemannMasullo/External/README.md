@@ -7,7 +7,7 @@ directories below are reserved for the sources we expect to draw on.
 |---|---|---|---|
 | [`PrimeNumberTheoremAnd/`](PrimeNumberTheoremAnd/) | <https://github.com/AlexKontorovich/PrimeNumberTheoremAnd> | Apache-2.0 | planned |
 | [`TauCeti/`](TauCeti/) | <https://github.com/TauCetiProject/TauCeti> | Apache-2.0 | planned (selected modules) |
-| [`Stacks/`](Stacks/) | Axiom's Stacks formalization (URL to be recorded) | to be confirmed | under consideration |
+| [`Stacks/`](Stacks/) | <https://github.com/AxiomMath/Stacks> | Apache-2.0 | under consideration |
 
 ## Convention
 

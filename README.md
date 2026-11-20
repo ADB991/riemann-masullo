@@ -8,7 +8,8 @@ The paper is in [`paper/`](paper/) (PDF plus a `pdftotext -layout` extraction fo
 
 ## Layout
 
-The library mirrors the paper's table of contents, one file per chapter/appendix:
+The library mirrors the paper's table of contents. Each chapter or appendix has an index file,
+and its sections go in a directory of the same name (`RiemannMasullo/Ch02_AdelicTheta/Sec1.lean`):
 
 | File | Paper |
 |---|---|
@@ -35,6 +36,13 @@ The library mirrors the paper's table of contents, one file per chapter/appendix
 
 Third-party formalizations we build on are vendored under
 [`RiemannMasullo/External/`](RiemannMasullo/External/README.md); nothing is vendored yet.
+
+## Contributing
+
+Work is organized with issues and pull requests: scouts find existing Lean, digesters turn paper
+sections into statements, provers close one `sorry` at a time, and an integrator reviews and
+merges. The workflow and rules are in [`AGENTS.md`](AGENTS.md), the role prompts in
+[`prompts/`](prompts/README.md).
 
 ## Building
 
