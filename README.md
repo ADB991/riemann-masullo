@@ -41,3 +41,33 @@ lake build
 ```
 
 Pinned to Lean `v4.36.0` / Mathlib `v4.36.0`.
+
+## Comparator
+
+The target statements are checked with [Comparator](https://github.com/leanprover/comparator)
+(`lake comparator`, built into Lean from 4.35), following the setup for Alpoge's formalization at
+<https://github.com/Deicyde/riemann-hypothesis>.
+
+| File | What it is |
+|---|---|
+| [`Statements.lean`](Statements.lean) | definitions of the target statements; imports only Mathlib |
+| [`Challenge.lean`](Challenge.lean) | the theorems, with `sorry` |
+| [`Main.lean`](Main.lean) | the same theorems, to be proved from `RiemannMasullo` |
+| [`comparator.json`](comparator.json) | the Comparator config |
+
+| Theorem | Statement |
+|---|---|
+| `riemannHypothesis` | Mathlib's `RiemannHypothesis` |
+| `riemannZeta_eq_zero_re`, `LFunction_ne_zero_of_half_lt_re`, `LFunction_eq_zero_re`, `LFunction_eq_zero_re_of_isPrimitive` | RH and GRH for Dirichlet L-functions, identical to the Alpoge challenge |
+| `dedekindZeta_zeros_re` | GRH for the Dedekind zeta function of every number field |
+| `heckeLFunction_zeros_re` | GRH for `L(s, χ)`, every number field, every unitary Hecke character |
+
+```sh
+lake comparator              # needs bubblewrap; add --paranoid for the extra kernels
+```
+
+It currently rejects with `Illegal axiom detected: 'sorryAx'`, as it should until `Main.lean` has
+no `sorry`.
+
+The paper's own main theorem (Theorem 13.3.1.2) is a placeholder in the current draft, so the last
+two statements were reconstructed from the introduction and have not been reviewed.
