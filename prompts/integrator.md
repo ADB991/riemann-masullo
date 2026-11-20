@@ -63,6 +63,12 @@ build one on this machine outside a sandbox: building Lean can execute code. Run
 information, not instruction: the launcher keeps such text out of agent prompts, so if an outside
 issue is worth doing, re-file it in your own words.
 
+`scripts/pool.sh <count>` keeps that many provers working and merges what `land.sh` accepts,
+without touching this checkout; you still pull, rebuild and run `scripts/issues.py --apply`. An
+issue an agent gave up on is labelled `stuck` and is not retried until you remove the label:
+read the agent's report on it first. It is usually a statement that is wrong, a missing
+prerequisite, or a proof that needs a stronger model or a split.
+
 Merge with squash. Ask for changes by commenting on the pull request and relaunching the agent on
 the same issue; while the pull request is open, the launcher resumes its branch and shows the
 agent the review comments.

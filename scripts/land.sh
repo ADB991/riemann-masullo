@@ -3,6 +3,7 @@
 #
 #   scripts/land.sh            show what would be merged and what needs review
 #   scripts/land.sh --apply    merge, then update and rebuild main
+#   scripts/land.sh --apply --no-pull    merge on GitHub only (for use by scripts/pool.sh)
 #
 # A pull request is merged without being read only if all of these hold:
 #   - it comes from a `prover/<issue>` branch opened by a project member with the launcher,
@@ -14,7 +15,10 @@
 # requests, splits, and anything from outside the project.
 set -euo pipefail
 cd "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
-apply=0; [ "${1:-}" = --apply ] && apply=1
+apply=0; pull=1
+for arg in "$@"; do
+  case $arg in --apply) apply=1 ;; --no-pull) pull=0 ;; esac   # --no-pull: merge on GitHub only
+done
 merged=0
 while read -r pr branch assoc; do
   reason=""
@@ -37,7 +41,7 @@ while read -r pr branch assoc; do
   fi
 done < <(gh api --paginate "repos/{owner}/{repo}/pulls?state=open&per_page=100" \
            --jq 'sort_by(.number) | .[] | "\(.number) \(.head.ref) \(.author_association)"')
-if [ $apply = 1 ] && [ $merged -gt 0 ]; then
+if [ $apply = 1 ] && [ $pull = 1 ] && [ $merged -gt 0 ]; then
   git pull -q origin main
   lake build 2>&1 | tail -n 1
 fi

@@ -1,0 +1,1025 @@
+#!/usr/bin/env python3
+"""Rebuild the proof-progress page from the current checkout and the live issue tracker.
+
+    python3 scripts/progress/build.py
+
+That one command is all there is: it runs `lake build RiemannMasullo`, reads the issues with
+`gh`, and writes `.agent/progress/index.html` (one self-contained file; `.agent/` is ignored
+by git). It changes nothing else: no git command that writes, no issue is touched. It can be
+rerun at any time, also while pull requests are being merged into the checkout: if `HEAD`
+moves or an `.olean` is missing halfway through, it starts over.
+
+    --out PATH      write the page somewhere else
+    --no-build      skip `lake build` and trust the existing build (sorries then come from the
+                    Lean environment instead of the build warnings)
+    --stats         also print per-section counts
+
+Where the data comes from
+
+* Sections and proof issues: `gh issue list --label section|proof --state all`.
+* Which theorems still have a `sorry`: the `declaration uses sorry` warnings of
+  `lake build RiemannMasullo`, as in `scripts/issues.py`, cross-checked against the terms.
+* Dependencies: `scripts/progress/Deps.lean` loads the built library with `importModules` at
+  `OLeanLevel.private`, so proof terms are visible, and lists for every constant the project
+  constants in its type and in its body. Nothing is guessed from the source text. Auxiliary
+  constants (`foo._proof_1`, structure projections, anonymous instances, ...) are folded into
+  the declaration a person wrote.
+* Waves that are not seeded yet: the Roadmap table of `README.md` and the table of contents at
+  the top of `paper/the-music-of-the-primes.txt`.
+
+Each run also appends one line of totals to `.agent/progress/history.jsonl` (skipped when
+nothing changed since the last line). The page shows the change since the previous line.
+
+Layout is a function of structure only (issue numbers, `needs` markers, source order), never
+of state, so a section or declaration stays where it is while the proof fills in.
+"""
+import argparse, collections, datetime, json, os, pathlib, re, subprocess, sys, tempfile, time
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
+HERE = pathlib.Path(__file__).resolve().parent
+LIB = "RiemannMasullo"
+WARN = re.compile(r"warning: (RiemannMasullo/\S+?\.lean):(\d+):(\d+): declaration uses `sorry`")
+SORRY_MARK = re.compile(r"<!-- sorry: (\S+) -->")
+NEEDS_MARK = re.compile(r"<!-- needs:([\d\s]*)-->")
+KEYWORD = re.compile(r"\b(theorem|lemma|def|abbrev|instance|structure|class|inductive|opaque|axiom)\b")
+PAPER = re.compile(r"Paper:\s*(.*?),?\s*pp?\.\s*(\d+)(?:\s*[-–]\s*(\d+))?\.?\s*", re.S)
+NUMBER = re.compile(r"(?:[A-E]|\d+)(?:\.\d+)+")
+
+
+class Retry(Exception):
+    """The checkout moved under us, or a build product was not there yet."""
+
+
+def run(cmd, check=True, **kw):
+    out = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, **kw)
+    if check and out.returncode:
+        raise RuntimeError(f"{' '.join(cmd[:4])} failed:\n{(out.stdout + out.stderr)[-2000:]}")
+    return out
+
+
+def note(notes, text):
+    if text not in notes:
+        notes.append(text)
+
+
+# ---------------------------------------------------------------------------------------------
+# Inputs
+
+
+def git_head():
+    return run(["git", "rev-parse", "HEAD"]).stdout.strip()
+
+
+def gh_json(args):
+    for attempt in range(3):
+        out = run(["gh"] + args, check=False)
+        if out.returncode == 0:
+            return json.loads(out.stdout)
+        time.sleep(3 * (attempt + 1))
+    raise RuntimeError("gh failed: " + out.stderr[-500:])
+
+
+def fetch_issues():
+    fields = "number,title,state,labels,body,assignees,createdAt,closedAt"
+    get = lambda label, limit: gh_json(["issue", "list", "--label", label, "--state", "all",
+                                        "--limit", str(limit), "--json", fields])
+    repo = gh_json(["repo", "view", "--json", "url,nameWithOwner"])
+    return repo, get("section", 1000), get("proof", 20000)
+
+
+def lake_build():
+    """Build the library; return {(path, line, col)} of `declaration uses sorry` warnings."""
+    out = run(["lake", "build", LIB], check=False)
+    if out.returncode:
+        raise Retry("lake build failed:\n" + (out.stdout + out.stderr)[-1500:])
+    return {(p, int(l), int(c)) for p, l, c in WARN.findall(out.stdout + out.stderr)}
+
+
+def lean_constants(modules):
+    out = run(["lake", "env", "lean", "--run", str(HERE / "Deps.lean")] + modules, check=False)
+    if out.returncode:
+        raise Retry("Deps.lean failed:\n" + (out.stdout + out.stderr)[-1500:])
+    rows = []
+    for line in out.stdout.splitlines():
+        if line.startswith("{"):
+            rows.append(json.loads(line))
+    if not rows:
+        raise Retry("Deps.lean printed nothing")
+    return rows
+
+
+def module_files():
+    files = sorted(p.relative_to(ROOT).as_posix() for p in (ROOT / LIB).rglob("*.lean"))
+    return {f[:-5].replace("/", "."): f for f in files}
+
+
+# ---------------------------------------------------------------------------------------------
+# Paper: table of contents and roadmap
+
+
+def parse_toc():
+    """Chapters and sections with their page ranges, from the top of the text extraction."""
+    path = ROOT / "paper" / "the-music-of-the-primes.txt"
+    chapters, sections, pending = [], [], None
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            lines = [next(fh, "") for _ in range(220)]
+    except OSError:
+        return {}, {}
+    for line in lines:
+        line = line.replace("\f", "").rstrip()
+        m = re.match(r"\s*(?:Chapter\s+(\d+)|Appendix\s+([A-E]))\.\s+(.*?)\s{2,}(\d+)$", line)
+        if m:
+            key = f"ch{int(m.group(1)):02d}" if m.group(1) else "app" + m.group(2)
+            chapters.append(dict(key=key, title=m.group(3).strip(), start=int(m.group(4))))
+            pending = None
+            continue
+        m = re.match(r"\s*((?:\d+|[A-E])\.\d+)\.\s+(.*?)(?:\s{2,}(\d+))?$", line)
+        if m and m.group(3):
+            sections.append(dict(num=m.group(1), title=m.group(2).strip(), start=int(m.group(3))))
+            pending = None
+        elif m:
+            pending = dict(num=m.group(1), title=m.group(2).strip())
+        elif pending and (m := re.search(r"\s{2,}(\d+)$", line)):
+            sections.append(dict(pending, start=int(m.group(1))))
+            pending = None
+    seen, order = set(), []
+    for c in chapters:                      # running heads can repeat a line
+        if c["key"] not in seen:
+            seen.add(c["key"]); order.append(c)
+    order.sort(key=lambda c: c["start"])
+    last = 940
+    for c, nxt in zip(order, order[1:] + [None]):
+        c["end"] = (nxt["start"] - 1) if nxt else last
+    by_key = {c["key"]: c for c in order}
+    secs = {}
+    for s in sections:
+        head = s["num"].split(".")[0]
+        ck = f"ch{int(head):02d}" if head.isdigit() else "app" + head
+        if ck in by_key and s["num"] not in secs:
+            secs[s["num"]] = dict(s, chapter=ck)
+    ordered = sorted(secs.values(), key=lambda s: s["start"])
+    for s, nxt in zip(ordered, ordered[1:] + [None]):
+        end = by_key[s["chapter"]]["end"]
+        if nxt and nxt["chapter"] == s["chapter"]:
+            end = max(s["start"], nxt["start"] - 1)
+        s["end"] = end
+    for c in order:
+        c["sections"] = [s["num"] for s in ordered if s["chapter"] == c["key"]]
+    return by_key, secs
+
+
+def chapter_label(key):
+    return f"Ch. {int(key[2:])}" if key.startswith("ch") else f"App. {key[3:]}"
+
+
+def chapter_sort(key):
+    """Appendices (the foundations) first, then chapters in order."""
+    return (0, key[3:]) if key.startswith("app") else (1, f"{int(key[2:]):03d}")
+
+
+def parse_roadmap(toc_chapters, toc_sections):
+    """Rows of the Roadmap table in README.md, with the chapters each one names."""
+    try:
+        text = (ROOT / "README.md").read_text(encoding="utf-8")
+    except OSError:
+        return [], ""
+    status = ""
+    m = re.search(r"^## Status\s+(.*?)(?=^## )", text, re.S | re.M)
+    if m and (b := re.search(r"\*\*(.+?)\*\*", m.group(1))):
+        status = b.group(1).strip().rstrip(".")
+    m = re.search(r"^## Roadmap\s+(.*?)(?=^## |\Z)", text, re.S | re.M)
+    waves = []
+    if not m:
+        return waves, status
+    unlink = lambda s: re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", s).strip()
+    for line in m.group(1).splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if not line.strip().startswith("|") or len(cells) < 3 or set(cells[0]) <= set("-: ") \
+                or cells[0].lower() == "wave":
+            continue
+        name, paper, state = unlink(cells[0]), unlink(cells[1]), unlink(cells[2])
+        flat = paper.replace("–", "-")
+        parts = collections.OrderedDict()           # chapter key -> None (whole) | [section nums]
+        item, sep = r"\d+(?:-\d+)?", r"(?:\s*,\s*|\s+and\s+)"
+        for g in re.finditer(rf"Chapters?\s+({item}(?:{sep}{item})*)", flat):
+            for part in re.split(sep, g.group(1)):
+                a, _, b = part.partition("-")
+                for n in range(int(a), int(b or a) + 1):
+                    parts[f"ch{n:02d}"] = None
+        for g in re.finditer(r"\b([A-E])\.(\d+)(?:-(?:[A-E]\.)?(\d+))?", flat):
+            key = "app" + g.group(1)
+            if key in parts and parts[key] is None:
+                continue
+            for n in range(int(g.group(2)), int(g.group(3) or g.group(2)) + 1):
+                parts.setdefault(key, []).append(f"{g.group(1)}.{n}")
+        for g in re.finditer(r"Appendi(?:x|ces)\s+([^;:()]*)", flat):
+            for tok in re.split(sep, g.group(1)):
+                if re.fullmatch(r"[A-E]", tok.strip()):
+                    parts["app" + tok.strip()] = None
+        chapters = []
+        for key, secs in parts.items():
+            c = toc_chapters.get(key)
+            if not c:
+                continue
+            if secs is None:
+                pages, count, label = [[c["start"], c["end"]]], len(c["sections"]), chapter_label(key)
+            else:
+                known = [toc_sections[s] for s in secs if s in toc_sections]
+                pages = [[s["start"], s["end"]] for s in known]
+                count, label = len(known), chapter_label(key) + " §" + compress_nums(secs)
+            chapters.append(dict(key=key, label=label, title=c["title"], pages=pages, sections=count))
+        waves.append(dict(name=name if name.lower().startswith(("wave", "later")) or not name.isdigit()
+                          else f"Wave {name}", text=paper, status=state, chapters=chapters))
+    for w in waves:
+        if w["name"].lower() == "later":
+            w["name"] = "Later"
+    return waves, status
+
+
+def compress_nums(nums):
+    """['B.1','B.2','B.3','B.6'] -> 'B.1–B.3, B.6'."""
+    out, run_ = [], []
+    flush = lambda: out.append(run_[0] if len(run_) == 1 else f"{run_[0]}–{run_[-1]}") if run_ else None
+    for n in nums:
+        if run_ and int(n.split(".")[1]) == int(run_[-1].split(".")[1]) + 1:
+            run_.append(n)
+        else:
+            flush(); run_ = [n]
+    flush()
+    return ", ".join(out)
+
+
+# ---------------------------------------------------------------------------------------------
+# Declarations
+
+
+def private_stripped(name):
+    """`_private.Mod.Ule.0.Ns.foo` -> `Ns.foo`."""
+    if name.startswith("_private."):
+        m = re.match(r"_private\..*?\.0\.(.*)$", name)
+        if m:
+            return m.group(1)
+    return name
+
+
+def display_name(name):
+    name = private_stripped(name)
+    return name[len(LIB) + 1:] if name.startswith(LIB + ".") else name
+
+
+def paper_item(doc):
+    """Split a docstring `Paper: Lemma A.2.3.4(2), p. 549. Text` into item, page and text."""
+    m = PAPER.match(doc or "")
+    if not m:
+        return None
+    raw = " ".join(m.group(1).split())
+    rest = " ".join(doc[m.end():].split())
+    num = NUMBER.search(raw)
+    if not num:
+        return dict(key=raw, label=raw, number="", page=int(m.group(2)), text=rest, raw=raw)
+    before = raw[:num.start()]
+    number = num.group(0)
+    if before.endswith("("):
+        label, kind = f"({number})", "eq"
+    elif before.endswith("§"):
+        label, kind = f"§{number}", "text"
+    else:
+        words = re.findall(r"[A-Za-z]+", before)
+        word = words[-1] if words else ""
+        word = {"Equations": "Equation", "Definitions": "Definition", "Lemmas": "Lemma"}.get(word, word)
+        label, kind = (f"{word} {number}" if word else number), word.lower() or "item"
+    return dict(key=f"{kind}:{number}", label=label, number=number, page=int(m.group(2)),
+                text=rest, raw=raw)
+
+
+def excerpt(text, limit=260):
+    text = " ".join((text or "").split())
+    if len(text) <= limit:
+        return text
+    cut = text[:limit].rsplit(" ", 1)[0]
+    return cut.rstrip(",;:") + " …"
+
+
+class Library:
+    """The user-written declarations of the library and how they depend on each other."""
+
+    def __init__(self, rows, files, notes):
+        self.notes = notes
+        self.rows = {r["n"]: r for r in rows}
+        self.files = files                                   # module -> path
+        self.src = {}
+        self.user = {}                                       # name -> declaration dict
+        self._find_user_declarations()
+        self._owners()
+        self._dependencies()
+
+    def lines(self, module):
+        if module not in self.src:
+            path = self.files.get(module)
+            if not path:
+                raise Retry(f"no source file for module {module}")
+            self.src[module] = (ROOT / path).read_text(encoding="utf-8").split("\n")
+        return self.src[module]
+
+    def _find_user_declarations(self):
+        """A constant is something a person wrote when a declaration keyword stands between the
+        start of its range and its name. That leaves out projections, constructors, anonymous
+        instances, notation and everything the elaborator generates."""
+        for name, r in self.rows.items():
+            if "r" not in r or "sel" not in r:
+                continue
+            L = self.lines(r["m"])
+            (l0, c0, _l1, _c1), (sl, sc) = r["r"], r["sel"]
+            if sl > len(L) or l0 > len(L):
+                raise Retry(f"{r['m']} is shorter than its build says")
+            head = L[l0 - 1][c0:sc] if sl == l0 else "\n".join(
+                [L[l0 - 1][c0:]] + L[l0:sl - 1] + [L[sl - 1][:sc]])
+            head = re.sub(r"/--.*?-/", "", head, flags=re.S)
+            kws = KEYWORD.findall(head)
+            if not kws:
+                continue
+            tok = re.match(r"[^\s:({\[]+", L[sl - 1][sc:])
+            tok = tok.group(0) if tok else ""
+            if not tok or not private_stripped(name).endswith(tok.replace("«", "").replace("»", "")) \
+                    and not private_stripped(name).endswith(tok):
+                raise Retry(f"{r['m']}:{sl} does not show `{display_name(name)}`; build out of date?")
+            kw = kws[-1]
+            if r["k"] == "theorem":
+                kind = "theorem"
+            elif kw in ("theorem", "lemma"):
+                kind = "def"            # a `theorem` whose type is not a Prop cannot happen
+            else:
+                kind = kw
+            self.user[name] = dict(
+                name=name, show=display_name(name), kind=kind, module=r["m"], mi=r.get("mi", 0),
+                path=self.files[r["m"]], line=sl, col=sc, start=l0, token=tok,
+                private="private" in head.split(), doc=r.get("doc", ""))
+
+    def _owners(self):
+        """Map every auxiliary constant to the user declaration it belongs to, if any."""
+        self.owner = {}
+        for name, r in self.rows.items():
+            if name in self.user:
+                continue
+            if r.get("of") in self.user:
+                self.owner[name] = r["of"]
+                continue
+            for cand in (name, private_stripped(name)):
+                parts = cand.split(".")
+                found = None
+                for i in range(len(parts) - 1, 0, -1):
+                    prefix = ".".join(parts[:i])
+                    if prefix in self.user:
+                        found = prefix
+                        break
+                if found:
+                    self.owner[name] = found
+                    break
+        self.aux_of = collections.defaultdict(list)
+        for aux, own in self.owner.items():
+            self.aux_of[own].append(aux)
+
+    def _closure(self, me, start):
+        """User declarations reached from the constants in `start`, looking through `me`'s own
+        auxiliary constants and through constants nobody owns (anonymous instances and the
+        like). Returns (declarations, whether a `sorry` hides in something looked through)."""
+        found, seen, hidden, todo = set(), set(), False, list(start)
+        while todo:
+            c = todo.pop()
+            if c in seen or c == me:
+                continue
+            seen.add(c)
+            if c in self.user:
+                found.add(c)
+                continue
+            r = self.rows.get(c)
+            if r is None:
+                continue
+            own = self.owner.get(c)
+            if own is not None and own != me:
+                found.add(own)
+                continue
+            if r.get("s") and own is None:
+                hidden = True
+            todo.extend(r.get("t", []))
+            todo.extend(r.get("v", []))
+        return found, hidden
+
+    def _dependencies(self):
+        for name, d in self.user.items():
+            r = self.rows[name]
+            stmt_start = list(r.get("t", []))
+            proof_start = []
+            if d["kind"] == "theorem":
+                proof_start = list(r.get("v", []))
+            else:
+                stmt_start += r.get("v", [])
+                for aux in self.aux_of.get(name, []):       # fields of a structure, and so on
+                    if self.rows[aux]["k"] in ("constructor",):
+                        stmt_start += self.rows[aux].get("t", [])
+            stmt, hid1 = self._closure(name, stmt_start)
+            proof, hid2 = self._closure(name, proof_start)
+            d["stmt"] = sorted(stmt)
+            d["proof"] = sorted(proof - stmt)
+            d["hidden_sorry"] = hid1 or hid2
+            d["sorry_term"] = bool(r.get("s")) or any(
+                self.rows[a].get("s") for a in self.aux_of.get(name, []))
+
+    def mark_sorries(self, warnings):
+        """Decide which declarations have a `sorry`. Lean's build warnings are the authority when
+        there was a build; the terms are the cross-check (and the fallback for --no-build)."""
+        at = {(d["path"], d["line"], d["col"]): n for n, d in self.user.items()}
+        if warnings is None:
+            for d in self.user.values():
+                d["sorry"] = d["sorry_term"]
+            return
+        warned = set()
+        for path, line, col in sorted(warnings):
+            n = at.get((path, line, col))
+            if n is None:       # fall back to the declaration whose range holds the position
+                inside = [m for m, d in self.user.items()
+                          if d["path"] == path and d["start"] <= line <= self.rows[m]["r"][2]]
+                n = inside[0] if len(inside) == 1 else None
+            if n is None:
+                note(self.notes, f"`sorry` outside a named declaration at {path}:{line} "
+                                 "(an anonymous instance?); it has no node on this page.")
+            else:
+                warned.add(n)
+        for n, d in self.user.items():
+            d["sorry"] = n in warned
+            if d["sorry"] != d["sorry_term"]:
+                note(self.notes, f"`{d['show']}`: the build {'reports' if d['sorry'] else 'does not report'}"
+                                 f" a sorry but its term {'has none' if d['sorry'] else 'has one'}.")
+            if d["sorry"] and d["kind"] != "theorem":
+                note(self.notes, f"`{d['show']}` is a {d['kind']} with a `sorry` inside, "
+                                 "which AGENTS.md forbids.")
+
+    def rest_on_sorry(self):
+        """open_below[d] = number of distinct sorried declarations d depends on, transitively."""
+        order = sorted(self.user, key=lambda n: (self.user[n]["mi"], self.user[n]["line"]))
+        below = {}
+        for n in order:                 # source order is a topological order
+            d = self.user[n]
+            acc = set()
+            for dep in d["stmt"] + d["proof"]:
+                if dep not in below:    # forward reference (mutual blocks); ignore
+                    continue
+                acc |= below[dep]
+                if self.user[dep]["sorry"]:
+                    acc.add(dep)
+            below[n] = acc
+            d["open_below"] = len(acc)
+        return order
+
+
+# ---------------------------------------------------------------------------------------------
+# Sections
+
+
+def section_meta(issue):
+    title = issue["title"]
+    m = re.match(r"\s*(§\s*\S+)\s*(.*)$", title)
+    num, rest = (m.group(1), m.group(2)) if m else ("#%d" % issue["number"], title)
+    pages = []
+    pm = re.search(r"\(pp?\.\s*([^)]*)\)\s*$", rest)
+    if pm:
+        rest = rest[:pm.start()].strip()
+        for a, b in re.findall(r"(\d+)(?:\s*[-–]\s*(\d+))?", pm.group(1)):
+            pages.append([int(a), int(b or a)])
+    head = re.match(r"§\s*([A-E]|\d+)\.", num)
+    labels = [l["name"] for l in issue["labels"]]
+    if head:
+        chapter = f"ch{int(head.group(1)):02d}" if head.group(1).isdigit() else "app" + head.group(1)
+    else:
+        chapter = next((l for l in labels if re.fullmatch(r"ch\d\d|app[A-E]", l)), "other")
+    body = issue["body"] or ""
+    nm = NEEDS_MARK.search(body)
+    needs = [int(x) for x in nm.group(1).split()] if nm else []
+    targets = re.findall(r"RiemannMasullo/(\w+)/(Sec\w*?)…?\.lean", body)
+    subs = []
+    sm = re.search(r"\*\*Subsections\*\*:\s*(.*)", body)
+    if sm:
+        for part in sm.group(1).split(" · "):
+            g = re.match(r"\s*((?:[A-E]|\d+)(?:\.\d+)+)\s+(.*?)\s*$", part)
+            if g:
+                subs.append([g.group(1), g.group(2)])
+    claimed = "claimed" in labels or bool(issue["assignees"])
+    if issue["state"] == "CLOSED":
+        state = "stated"
+    elif "blocked" in labels:
+        state = "blocked"
+    elif claimed:
+        state = "digesting"
+    else:
+        state = "ready"
+    return dict(id=issue["number"], num=num.replace("§ ", "§"), title=rest, pages=pages,
+                chapter=chapter, needs=needs, targets=targets, subs=subs, state=state,
+                labels=labels)
+
+
+def assign_modules(sections, files, lib, notes):
+    """Give every source module to the section whose target file name is the longest prefix of
+    its own (`Sec2a_part2.lean` belongs with `Sec2a.lean`). ForMathlib is its own group."""
+    owner = {}
+    for module, path in files.items():
+        parts = path.split("/")
+        if len(parts) < 3:
+            continue                                       # chapter index files
+        if parts[1] == "ForMathlib":
+            owner[module] = "formathlib"
+            continue
+        if parts[1] == "External":
+            owner[module] = "external"
+            continue
+        stem, best = parts[-1][:-5], None
+        for s in sections:
+            for d, t in s["targets"]:
+                if d == parts[1] and stem.startswith(t) and (best is None or len(t) > best[0]):
+                    best = (len(t), s["id"])
+        if best:
+            owner[module] = best[1]
+    # Cross-check with the page numbers in the docstrings, and place files no target names.
+    for module in files:
+        pages = [p["page"] for d in lib.user.values() if d["module"] == module
+                 for p in [paper_item(d["doc"])] if p]
+        votes = collections.Counter()
+        for pg in pages:
+            for s in sections:
+                if any(a <= pg <= b for a, b in s["pages"]):
+                    votes[s["id"]] += 1
+        if module not in owner:
+            if not any(d["module"] == module for d in lib.user.values()):
+                continue
+            if votes:
+                owner[module] = votes.most_common(1)[0][0]
+                note(notes, f"{files[module]} matches no section's target file; placed with "
+                            f"#{owner[module]} by the page numbers in its docstrings.")
+            else:
+                owner[module] = "other"
+                note(notes, f"{files[module]} belongs to no section issue; shown under Other files.")
+        elif isinstance(owner[module], int) and pages and votes.get(owner[module], 0) < len(pages) / 2:
+            top = votes.most_common(1)
+            note(notes, f"{files[module]} is filed under #{owner[module]} by its name, but most of its "
+                        f"page references fall in " + (f"#{top[0][0]}" if top else "no section") + ".")
+    return owner
+
+
+def layout_sections(sections, lanes):
+    """Rows for the overview: a section sits below everything it needs, and no two sections of
+    one chapter share a row. Depends only on the `needs` markers and the issue numbers."""
+    by_id = {s["id"]: s for s in sections}
+    lane_of = {k: i for i, k in enumerate(lanes)}
+    row, taken = {}, set()
+    pending = sorted(by_id)
+    while pending:
+        progressed = False
+        for sid in list(pending):
+            s = by_id[sid]
+            needs = [n for n in s["needs"] if n in by_id]
+            if any(n not in row for n in needs):
+                continue
+            r = 1 + max((row[n] for n in needs), default=-1)
+            while (lane_of[s["chapter"]], r) in taken:
+                r += 1
+            row[sid] = r
+            taken.add((lane_of[s["chapter"]], r))
+            pending.remove(sid)
+            progressed = True
+        if not progressed:                                  # a cycle in the markers
+            for sid in pending:
+                row[sid] = 1 + max(row.values(), default=-1)
+            break
+    for s in sections:
+        s["lane"], s["row"] = lane_of[s["chapter"]], row[s["id"]]
+
+
+def transitive_reduction(nodes, deps):
+    """deps[a] = set of things a depends on (a DAG). Returns the edges (a, b) that no longer
+    path from a to b makes redundant."""
+    memo = {}
+
+    def reach(a):
+        if a not in memo:
+            memo[a] = set()
+            acc = set()
+            for b in deps.get(a, ()):
+                acc.add(b)
+                acc |= reach(b)
+            memo[a] = acc
+        return memo[a]
+
+    keep = []
+    for a in nodes:
+        direct = deps.get(a, set())
+        for b in sorted(direct):
+            if not any(b in reach(c) for c in direct if c != b):
+                keep.append((a, b))
+    return keep
+
+
+# ---------------------------------------------------------------------------------------------
+# Assembling the page data
+
+
+def build_model(repo, section_issues, proof_issues, rows, files, warnings, head):
+    notes = []
+    lib = Library(rows, files, notes)
+    lib.mark_sorries(warnings)
+    order = lib.rest_on_sorry()
+    toc_chapters, toc_sections = parse_toc()
+    waves, readme_status = parse_roadmap(toc_chapters, toc_sections)
+
+    sections = sorted((section_meta(i) for i in section_issues), key=lambda s: s["id"])
+    by_id = {s["id"]: s for s in sections}
+    owner = assign_modules(sections, files, lib, notes)
+
+    # Proof issues, keyed the way scripts/issues.py keys them: path::name-as-written.
+    issues = collections.defaultdict(list)
+    for i in proof_issues:
+        m = SORRY_MARK.search(i["body"] or "")
+        if not m:
+            note(notes, f"Proof issue #{i['number']} has no `sorry:` marker.")
+            continue
+        labels = [l["name"] for l in i["labels"]]
+        issues[m.group(1)].append(dict(
+            number=i["number"], open=i["state"] == "OPEN",
+            claimed="claimed" in labels or bool(i["assignees"]),
+            who=[a["login"] for a in i["assignees"]]))
+    keys = collections.Counter(f"{d['path']}::{d['token']}" for d in lib.user.values())
+    matched = set()
+
+    # Groups: one per section issue, plus ForMathlib and anything unplaced.
+    groups = collections.OrderedDict()
+    for s in sections:
+        groups[s["id"]] = dict(s, key=f"section-{s['id']}", decls=[])
+    extra_titles = {"formathlib": ("ForMathlib", "General lemmas missing from Mathlib"),
+                    "external": ("External", "Vendored third-party Lean"),
+                    "other": ("Other files", "Files that belong to no section issue")}
+    index = {}
+    decls = []
+    for n in order:
+        d = lib.user[n]
+        g = owner.get(d["module"], "other")
+        if g not in groups:
+            num, title = extra_titles.get(g, (str(g), ""))
+            groups[g] = dict(id=None, key=str(g), num=num, title=title, pages=[], chapter=None,
+                             needs=[], subs=[], state="extra", labels=[], decls=[])
+        key = f"{d['path']}::{d['token']}"
+        mine = issues.get(key, [])
+        if mine:
+            matched.add(key)
+        if keys[key] > 1 and mine:
+            note(notes, f"{key} names {keys[key]} declarations; their proof issue cannot be told apart.")
+        open_issue = next((i for i in mine if i["open"]), None)
+        issue = open_issue or (max(mine, key=lambda i: i["number"]) if mine else None)
+        if d["kind"] != "theorem":
+            state = "def"
+        elif not d["sorry"]:
+            state = "proved"
+            if open_issue:
+                note(notes, f"#{open_issue['number']} is still open although `{d['show']}` has no "
+                            "sorry at this commit; `scripts/issues.py --apply` will close it.")
+        elif open_issue and open_issue["claimed"]:
+            state = "claimed"
+        elif open_issue:
+            state = "open"
+        else:
+            state = "unfiled"
+        paper = paper_item(d["doc"])
+        d.update(group=g, state=state, issue=issue["number"] if issue else None,
+                 who=issue["who"] if issue and state == "claimed" else [], paper=paper)
+        index[n] = len(decls)
+        decls.append(d)
+        groups[g]["decls"].append(n)
+
+    for key, lst in issues.items():
+        if key not in matched:
+            for i in lst:
+                if i["open"]:
+                    note(notes, f"#{i['number']} is open for `{key.split('::')[-1]}`, which is not in "
+                                f"{key.split('::')[0]} at this commit (renamed, moved or removed).")
+
+    # Items: declarations grouped by the paper item their docstring cites.
+    out_groups = []
+    for g, grp in groups.items():
+        items, item_of = collections.OrderedDict(), {}
+        names = grp["decls"]
+        if g == "formathlib" or g in ("external", "other"):
+            for n in names:
+                d = lib.user[n]
+                short = d["path"].split("/", 2)[-1][:-5]
+                items.setdefault("file:" + d["path"], dict(label=short, number="", page=None, decls=[]))
+                items["file:" + d["path"]]["decls"].append(n)
+                item_of[n] = "file:" + d["path"]
+        else:
+            # A declaration without a paper reference is a helper: it goes with the next
+            # declaration in the same file that has one (helpers precede what they support).
+            carry = []
+            last_key = {}
+            for n in names:
+                d = lib.user[n]
+                if carry and carry[0][1] != d["module"]:
+                    prev = last_key.get(carry[0][1])
+                    for h, _m in carry:
+                        k = prev or "helpers:" + carry[0][1]
+                        items.setdefault(k, dict(label="Helper lemmas", number="", page=None, decls=[]))
+                        items[k]["decls"].append(h); item_of[h] = k
+                    carry = []
+                p = d["paper"]
+                if not p:
+                    carry.append((n, d["module"]))
+                    continue
+                k = p["key"]
+                if k not in items:
+                    items[k] = dict(label=p["label"], number=p["number"], page=p["page"], decls=[])
+                for h, _m in carry:
+                    items[k]["decls"].append(h); item_of[h] = k
+                carry = []
+                items[k]["decls"].append(n); item_of[n] = k
+                last_key[d["module"]] = k
+            if carry:
+                prev = last_key.get(carry[0][1])
+                k = prev or "helpers:" + carry[0][1]
+                items.setdefault(k, dict(label="Helper lemmas", number="", page=None, decls=[]))
+                for h, _m in carry:
+                    items[k]["decls"].append(h); item_of[h] = k
+
+        # Bands: the paper's subsections, in paper order.
+        sub_titles = collections.OrderedDict((a, b) for a, b in grp.get("subs", []))
+        bands, band_of_item, prev_band = collections.OrderedDict(), {}, None
+        for s in sub_titles:
+            bands[s] = []
+        for k, it in items.items():
+            comps = it["number"].split(".") if it["number"] else []
+            band = None
+            for depth in (3, 2):
+                cand = ".".join(comps[:depth])
+                if len(comps) >= depth and cand in sub_titles:
+                    band = cand
+                    break
+            if band is None and not sub_titles and len(comps) >= 3:
+                band = ".".join(comps[:3])
+            if band is None:
+                band = prev_band if prev_band is not None else (next(iter(bands), None) or "")
+            bands.setdefault(band, []).append(k)
+            band_of_item[k] = band
+            prev_band = band
+        item_keys = [k for b in bands.values() for k in b]
+        item_index = {k: i for i, k in enumerate(item_keys)}
+
+        # Item edges inside the group, from the declaration dependencies.
+        stmt_e, any_e = collections.defaultdict(set), collections.defaultdict(set)
+        for n in names:
+            d = lib.user[n]
+            a = item_index[item_of[n]]
+            for kind, deps in (("stmt", d["stmt"]), ("proof", d["proof"])):
+                for dep in deps:
+                    if dep in item_of and item_index[item_of[dep]] != a:
+                        b = item_index[item_of[dep]]
+                        any_e[a].add(b)
+                        if kind == "stmt":
+                            stmt_e[a].add(b)
+        # Grouping can close a cycle between two items; drop the back edges so that the
+        # reduction below works on a DAG (they are still listed per declaration).
+        dag = {a: {b for b in bs if b < a} for a, bs in any_e.items()}
+        edges = [[a, b, 0 if b in stmt_e[a] else 1]
+                 for a, b in transitive_reduction(range(len(item_keys)), dag)]
+
+        g_decls = [index[n] for n in names]
+        thms = [lib.user[n] for n in names if lib.user[n]["kind"] == "theorem"]
+        counts = collections.Counter(d["state"] for d in thms)
+        out_items = []
+        for k in item_keys:
+            it = items[k]
+            out_items.append(dict(label=it["label"], page=it["page"], band=band_of_item[k],
+                                  decls=[index[n] for n in it["decls"]]))
+        uses = collections.Counter()
+        for n in names:
+            d = lib.user[n]
+            for dep in d["stmt"] + d["proof"]:
+                og = lib.user[dep]["group"]
+                if og != g:
+                    uses[og] += 1
+        g_files = sorted({lib.user[n]["path"] for n in names},
+                         key=lambda p: min(lib.user[n]["mi"] for n in names if lib.user[n]["path"] == p))
+        out_groups.append(dict(
+            key=grp["key"], id=grp["id"], num=grp["num"], title=grp["title"], pages=grp["pages"],
+            chapter=grp["chapter"], state=grp["state"], needs=[n for n in grp["needs"] if n in by_id],
+            lane=grp.get("lane"), row=grp.get("row"),
+            defs=len(names) - len(thms), thms=len(thms),
+            proved=counts["proved"], claimed=counts["claimed"], open=counts["open"],
+            unfiled=counts["unfiled"],
+            solid=sum(1 for d in thms if d["state"] == "proved" and not d["open_below"]
+                      and not d["hidden_sorry"]),
+            files=g_files, items=out_items,
+            bands=[[b, sub_titles.get(b, "")] for b, ks in bands.items() if ks],
+            edges=edges, uses=sorted(([groups[og]["key"], c] for og, c in uses.items()),
+                                     key=lambda x: -x[1]),
+            _decls=g_decls))
+
+    # Overview layout.
+    lanes = sorted({s["chapter"] for s in sections}, key=chapter_sort)
+    layout_sections(sections, lanes)
+    for og in out_groups:
+        if og["id"] is not None:
+            og["lane"], og["row"] = by_id[og["id"]]["lane"], by_id[og["id"]]["row"]
+    need_deps = {s["id"]: {n for n in s["needs"] if n in by_id} for s in sections}
+    drawn = collections.defaultdict(list)
+    try:
+        for a, b in transitive_reduction(sorted(by_id), need_deps):
+            drawn[a].append(b)
+    except RecursionError:
+        drawn = {a: sorted(bs) for a, bs in need_deps.items()}
+    for og in out_groups:
+        og["needsDrawn"] = sorted(drawn.get(og["id"], [])) if og["id"] is not None else []
+
+    for s in sections:
+        if s["state"] == "blocked" and all(by_id[n]["state"] == "stated" for n in s["needs"] if n in by_id):
+            note(notes, f"#{s['id']} ({s['num']}) is labelled blocked, but everything it needs is closed; "
+                        "`scripts/issues.py --apply` will unblock it.")
+        if s["state"] in ("ready", "digesting") and any(
+                by_id[n]["state"] != "stated" for n in s["needs"] if n in by_id):
+            note(notes, f"#{s['id']} ({s['num']}) is not labelled blocked although it needs a section "
+                        "that is still open.")
+        missing = [n for n in s["needs"] if n not in by_id]
+        if missing:
+            note(notes, f"#{s['id']} needs {', '.join('#%d' % n for n in missing)}, which "
+                        "is not a section issue.")
+        g = next(og for og in out_groups if og["id"] == s["id"])
+        if s["state"] == "stated" and not g["_decls"]:
+            note(notes, f"#{s['id']} ({s['num']}) is closed but no declarations were found for it.")
+        if s["state"] in ("blocked", "ready") and g["_decls"]:
+            note(notes, f"#{s['id']} ({s['num']}) is {s['state']} but already has "
+                        f"{len(g['_decls'])} declarations on main.")
+
+    # Declarations, compact: dependencies as indices.
+    file_list = sorted({d["path"] for d in decls})
+    file_idx = {p: i for i, p in enumerate(file_list)}
+    group_idx = {og["key"]: i for i, og in enumerate(out_groups)}
+    kind_code = {"theorem": "t", "def": "d", "abbrev": "a", "structure": "s", "class": "c",
+                 "inductive": "i", "instance": "n", "opaque": "o", "axiom": "x"}
+    out_decls = []
+    for d in decls:
+        p = d["paper"]
+        flags = (1 if d["private"] else 0) | (2 if "Deviation:" in d["doc"] else 0) \
+            | (4 if d["hidden_sorry"] else 0) | (0 if p else 8)
+        out_decls.append([
+            d["show"], kind_code.get(d["kind"], "d"), d["state"],
+            group_idx[groups[d["group"]]["key"]], file_idx[d["path"]], d["line"],
+            d["issue"], p["page"] if p else None, p["raw"] if p else "",
+            excerpt(p["text"] if p else d["doc"]), flags, d["open_below"],
+            [index[x] for x in d["stmt"]], [index[x] for x in d["proof"]], d["who"]])
+        if d["kind"] in ("axiom", "opaque"):
+            note(notes, f"`{d['show']}` is an {d['kind']}, which AGENTS.md forbids.")
+    for og in out_groups:
+        del og["_decls"]
+
+    # Waves: only the chapters that have no section issue yet.
+    seeded = {s["chapter"] for s in sections}
+    out_waves = []
+    for w in waves:
+        todo = [c for c in w["chapters"] if c["key"] not in seeded]
+        if w["chapters"] and not todo:
+            continue
+        out_waves.append(dict(name=w["name"], text=w["text"], status=w["status"], chapters=todo,
+                              partial=len(todo) != len(w["chapters"])))
+
+    thms = [d for d in decls if d["kind"] == "theorem"]
+    st = collections.Counter(d["state"] for d in thms)
+    sec_states = collections.Counter(s["state"] for s in sections)
+    totals = dict(
+        defs=len(decls) - len(thms), thms=len(thms), proved=st["proved"],
+        solid=sum(1 for d in thms if d["state"] == "proved" and not d["open_below"]
+                  and not d["hidden_sorry"]),
+        open=st["open"] + st["claimed"] + st["unfiled"], claimed=st["claimed"], unfiled=st["unfiled"],
+        paper=sum(1 for d in thms if d["paper"]),
+        paperProved=sum(1 for d in thms if d["paper"] and d["state"] == "proved"),
+        sections=len(sections), stated=sec_states["stated"], digesting=sec_states["digesting"],
+        ready=sec_states["ready"], blocked=sec_states["blocked"],
+        issuesOpen=sum(1 for i in proof_issues if i["state"] == "OPEN"),
+        issuesClosed=sum(1 for i in proof_issues if i["state"] != "OPEN"))
+
+    stamp = lambda s: int(datetime.datetime.fromisoformat(s.replace("Z", "+00:00")).timestamp())
+    timeline = dict(
+        filed=sorted(stamp(i["createdAt"]) for i in proof_issues if i.get("createdAt")),
+        closed=sorted(stamp(i["closedAt"]) for i in proof_issues
+                      if i.get("closedAt") and i["state"] != "OPEN"))
+
+    subject = run(["git", "log", "-1", "--format=%s", head], check=False).stdout.strip()
+    dirty = bool(run(["git", "status", "--porcelain", "--untracked-files=no", "--", LIB],
+                     check=False).stdout.strip())
+    if dirty:
+        note(notes, "The checkout has uncommitted changes under RiemannMasullo/; source links point "
+                    "at the commit and may be a few lines off.")
+    meta = dict(
+        generated=datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        commit=head, subject=subject, repo=repo["url"], name=repo["nameWithOwner"],
+        status=readme_status, sorrySource="build" if warnings is not None else "terms",
+        pagesTotal=max((c["end"] for c in toc_chapters.values()), default=0))
+    chapters = [dict(key=k, label=chapter_label(k) if k != "other" else "Other",
+                     title=toc_chapters.get(k, {}).get("title", "")) for k in lanes]
+    return dict(meta=meta, totals=totals, timeline=timeline, chapters=chapters, groups=out_groups,
+                waves=out_waves, files=file_list, decls=out_decls, notes=notes)
+
+
+# ---------------------------------------------------------------------------------------------
+# History and output
+
+
+def update_history(path, model):
+    """Append one line of totals unless nothing changed; return (history, previous snapshot)."""
+    history = []
+    if path.exists():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            try:
+                history.append(json.loads(line))
+            except ValueError:
+                pass
+    t = model["totals"]
+    snap = dict(time=model["meta"]["generated"], commit=model["meta"]["commit"][:10],
+                stated=t["thms"], proved=t["proved"], open=t["open"], claimed=t["claimed"],
+                defs=t["defs"], sections_closed=t["stated"], sections=t["sections"])
+    same = lambda a, b: all(a.get(k) == b.get(k) for k in snap if k != "time")
+    if not history or not same(history[-1], snap):
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(snap) + "\n")
+        history.append(snap)
+    prev = history[-2] if len(history) > 1 else None
+    return history, prev
+
+
+def render(model):
+    template = (HERE / "template.html").read_text(encoding="utf-8")
+    blob = json.dumps(model, ensure_ascii=False, separators=(",", ":"))
+    # Inside <script>: keep `</script>` and `<!--` from ending or confusing the block.
+    blob = blob.replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
+    if "/*__DATA__*/null" not in template:
+        raise RuntimeError("template.html has no /*__DATA__*/null placeholder")
+    return template.replace("/*__DATA__*/null", blob)
+
+
+def collect(args):
+    head = git_head()
+    files = module_files()
+    warnings = None if args.no_build else lake_build()
+    files_after = module_files()
+    if files_after != files:
+        raise Retry("source files appeared or disappeared during the build")
+    rows = lean_constants(sorted(files))
+    repo, section_issues, proof_issues = fetch_issues()
+    model = build_model(repo, section_issues, proof_issues, rows, files, warnings, head)
+    if git_head() != head:
+        raise Retry("HEAD moved during the run")
+    return model
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--out", default=str(ROOT / ".agent" / "progress" / "index.html"))
+    ap.add_argument("--no-build", action="store_true")
+    ap.add_argument("--stats", action="store_true")
+    args = ap.parse_args()
+    model = None
+    for attempt in range(6):
+        try:
+            model = collect(args)
+            break
+        except Retry as why:
+            print(f"retrying ({attempt + 1}/6): {str(why).splitlines()[0]}", file=sys.stderr)
+            last = str(why)
+            time.sleep(5 + 5 * attempt)
+    if model is None:
+        sys.exit("gave up; the existing page was left alone.\n" + last)
+
+    out = pathlib.Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    history, prev = update_history(out.parent / "history.jsonl", model)
+    model["prev"] = prev
+    model["history"] = history[-400:]
+    html = render(model)
+    fd, tmp = tempfile.mkstemp(dir=out.parent, suffix=".tmp")
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(html)
+    os.replace(tmp, out)
+
+    t, m = model["totals"], model["meta"]
+    print(f"{out}  ({len(html) // 1024} KB)")
+    print(f"commit {m['commit'][:10]}  sections {t['stated']}/{t['sections']} stated "
+          f"({t['digesting']} being digested, {t['ready']} ready, {t['blocked']} blocked)")
+    print(f"definitions {t['defs']}  theorems {t['thms']}: proved {t['proved']} "
+          f"({t['solid']} resting on no sorry), open {t['open']} "
+          f"({t['claimed']} claimed, {t['unfiled']} without an issue)")
+    print(f"proof issues: {t['issuesOpen']} open, {t['issuesClosed']} closed")
+    if args.stats:
+        for g in model["groups"]:
+            print(f"  {g['key']:<12} {g['state']:<9} {g['num']:<16} defs {g['defs']:>3}  thms {g['thms']:>3}"
+                  f"  proved {g['proved']:>3}  items {len(g['items']):>3}  edges {len(g['edges']):>3}")
+    if model["notes"]:
+        print(f"{len(model['notes'])} notes:")
+        for n in model["notes"]:
+            print("  - " + n)
+
+
+if __name__ == "__main__":
+    main()

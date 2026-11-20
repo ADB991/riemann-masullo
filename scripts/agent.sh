@@ -85,7 +85,7 @@ if [ "$target" = next ]; then
          file: ((.body // "") | (try (capture("<!-- sorry: (?<f>[^:]+)::").f) catch "-"))})
     | (map(select(.labels | index("claimed"))) | group_by(.file)
        | map({key: .[0].file, value: length}) | from_entries) as $busy
-    | map(select(.labels | (index("claimed") or index("blocked")) | not))
+    | map(select(.labels | (index("claimed") or index("blocked") or index("stuck")) | not))
     | sort_by([($busy[.file] // 0), .n]) | .[0].n // empty')
   [ -n "$target" ] || { echo "no unclaimed $label issue" >&2; exit 1; }
 fi
@@ -97,7 +97,9 @@ pr_number() { gh pr list --head "$branch" --author @me --state open --json numbe
 note() { gh issue comment "$n" --body "$1" >/dev/null; }
 label() { gh issue edit "$n" "$@" >/dev/null 2>&1 || true; }   # needs triage rights; the Claims workflow covers everyone else
 released() {   # "Released. " when no pull request holds the claim; the Claims workflow reads that word
-  [ "$role" = scout ] || [ -n "$(pr_number)" ] || { label --remove-label claimed; printf 'Released. '; }
+  # The issue is also labelled `stuck`, so that `next` does not hand it straight to another agent
+  # before the integrator has looked at why this one stopped.
+  [ "$role" = scout ] || [ -n "$(pr_number)" ] || { label --remove-label claimed --add-label stuck; printf 'Released. '; }
 }
 fail() {   # refuse the hand-in: tell the issue why, release the claim, keep the worktree
   note "$(released)$1"
