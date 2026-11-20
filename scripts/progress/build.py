@@ -472,18 +472,20 @@ class Library:
                                  "which AGENTS.md forbids.")
 
     def rest_on_sorry(self):
-        """open_below[d] = number of distinct sorried declarations d depends on, transitively."""
+        """Set `open_below`, the number of distinct sorried declarations each one depends on,
+        transitively. Returns the declarations in source order."""
         order = sorted(self.user, key=lambda n: (self.user[n]["mi"], self.user[n]["line"]))
         below = {}
         for n in order:                 # source order is a topological order
             d = self.user[n]
             acc = set()
             for dep in d["stmt"] + d["proof"]:
-                if dep not in below:    # forward reference (mutual blocks); ignore
+                if dep not in below:    # a forward reference inside a mutual block
                     continue
                 acc |= below[dep]
                 if self.user[dep]["sorry"]:
                     acc.add(dep)
+                d["hidden_sorry"] = d["hidden_sorry"] or self.user[dep]["hidden_sorry"]
             below[n] = acc
             d["open_below"] = len(acc)
         return order
@@ -610,6 +612,41 @@ def layout_sections(sections, lanes):
         s["lane"], s["row"] = lane_of[s["chapter"]], row[s["id"]]
 
 
+def group_items(names, lib, by_file):
+    """Group declarations into the nodes of one diagram: by the paper item their docstring
+    cites, or by source file for ForMathlib. Returns (items in source order, item of each)."""
+    items, item_of = collections.OrderedDict(), {}
+
+    def put(key, n, **first):
+        items.setdefault(key, dict(decls=[], **first))["decls"].append(n)
+        item_of[n] = key
+
+    if by_file:
+        for n in names:
+            path = lib.user[n]["path"]
+            put("file:" + path, n, label=path.split("/", 2)[-1][:-5], number="", page=None)
+        return items, item_of
+    # A declaration without a paper reference is a helper. It goes with the next declaration
+    # of its file that has one, since helpers stand just before what they support, and at the
+    # end of a file with the last one.
+    per_file = collections.OrderedDict()
+    for n in names:
+        per_file.setdefault(lib.user[n]["module"], []).append(n)
+    for module, ns in per_file.items():
+        following, nxt = {}, None
+        for n in reversed(ns):
+            nxt = lib.user[n]["paper"] or nxt
+            following[n] = nxt
+        last = next((lib.user[n]["paper"] for n in reversed(ns) if lib.user[n]["paper"]), None)
+        for n in ns:
+            p = following[n] or last
+            if p:
+                put(p["key"], n, label=p["label"], number=p["number"], page=p["page"])
+            else:
+                put("helpers:" + module, n, label="Helper lemmas", number="", page=None)
+    return items, item_of
+
+
 def transitive_reduction(nodes, deps):
     """deps[a] = set of things a depends on (a DAG). Returns the edges (a, b) that no longer
     path from a to b makes redundant."""
@@ -724,47 +761,8 @@ def build_model(repo, section_issues, proof_issues, rows, files, warnings, head)
     # Items: declarations grouped by the paper item their docstring cites.
     out_groups = []
     for g, grp in groups.items():
-        items, item_of = collections.OrderedDict(), {}
         names = grp["decls"]
-        if g == "formathlib" or g in ("external", "other"):
-            for n in names:
-                d = lib.user[n]
-                short = d["path"].split("/", 2)[-1][:-5]
-                items.setdefault("file:" + d["path"], dict(label=short, number="", page=None, decls=[]))
-                items["file:" + d["path"]]["decls"].append(n)
-                item_of[n] = "file:" + d["path"]
-        else:
-            # A declaration without a paper reference is a helper: it goes with the next
-            # declaration in the same file that has one (helpers precede what they support).
-            carry = []
-            last_key = {}
-            for n in names:
-                d = lib.user[n]
-                if carry and carry[0][1] != d["module"]:
-                    prev = last_key.get(carry[0][1])
-                    for h, _m in carry:
-                        k = prev or "helpers:" + carry[0][1]
-                        items.setdefault(k, dict(label="Helper lemmas", number="", page=None, decls=[]))
-                        items[k]["decls"].append(h); item_of[h] = k
-                    carry = []
-                p = d["paper"]
-                if not p:
-                    carry.append((n, d["module"]))
-                    continue
-                k = p["key"]
-                if k not in items:
-                    items[k] = dict(label=p["label"], number=p["number"], page=p["page"], decls=[])
-                for h, _m in carry:
-                    items[k]["decls"].append(h); item_of[h] = k
-                carry = []
-                items[k]["decls"].append(n); item_of[n] = k
-                last_key[d["module"]] = k
-            if carry:
-                prev = last_key.get(carry[0][1])
-                k = prev or "helpers:" + carry[0][1]
-                items.setdefault(k, dict(label="Helper lemmas", number="", page=None, decls=[]))
-                for h, _m in carry:
-                    items[k]["decls"].append(h); item_of[h] = k
+        items, item_of = group_items(names, lib, by_file=not isinstance(g, int))
 
         # Bands: the paper's subsections, in paper order.
         sub_titles = collections.OrderedDict((a, b) for a, b in grp.get("subs", []))
@@ -932,7 +930,7 @@ def build_model(repo, section_issues, proof_issues, rows, files, warnings, head)
                       if i.get("closedAt") and i["state"] != "OPEN"))
 
     subject = run(["git", "log", "-1", "--format=%s", head], check=False).stdout.strip()
-    dirty = bool(run(["git", "status", "--porcelain", "--untracked-files=no", "--", LIB],
+    dirty = bool(run(["git", "--no-optional-locks", "status", "--porcelain", "--", LIB],
                      check=False).stdout.strip())
     if dirty:
         note(notes, "The checkout has uncommitted changes under RiemannMasullo/; source links point "
@@ -946,6 +944,29 @@ def build_model(repo, section_issues, proof_issues, rows, files, warnings, head)
                      title=toc_chapters.get(k, {}).get("title", "")) for k in lanes]
     return dict(meta=meta, totals=totals, timeline=timeline, chapters=chapters, groups=out_groups,
                 waves=out_waves, files=file_list, decls=out_decls, notes=notes)
+
+
+def validate(model):
+    """Refuse to publish a page whose numbers do not add up."""
+    decls, groups, t = model["decls"], model["groups"], model["totals"]
+    seen = [i for g in groups for it in g["items"] for i in it["decls"]]
+    checks = [
+        (sorted(seen) == list(range(len(decls))), "every declaration sits in exactly one item"),
+        (t["proved"] + t["open"] == t["thms"], "proved + open = theorems"),
+        (sum(g["thms"] for g in groups) == t["thms"], "section theorem counts add up"),
+        (sum(g["proved"] for g in groups) == t["proved"], "section proved counts add up"),
+        (sum(g["defs"] for g in groups) == t["defs"], "section definition counts add up"),
+        (all(0 <= j < len(decls) and j != i for i, d in enumerate(decls) for j in d[12] + d[13]),
+         "dependencies point at declarations"),
+        (all(0 <= a < len(g["items"]) and 0 <= b < len(g["items"]) for g in groups for a, b, _ in g["edges"]),
+         "item edges point at items"),
+        (len({g["key"] for g in groups}) == len(groups), "section keys are unique"),
+        (len({(g["lane"], g["row"]) for g in groups if g["id"] is not None})
+         == sum(1 for g in groups if g["id"] is not None), "no two sections share a cell"),
+    ]
+    bad = [what for ok, what in checks if not ok]
+    if bad:
+        raise RuntimeError("the page data is inconsistent: " + "; ".join(bad))
 
 
 # ---------------------------------------------------------------------------------------------
@@ -1016,6 +1037,7 @@ def main():
             time.sleep(5 + 5 * attempt)
     if model is None:
         sys.exit("gave up; the existing page was left alone.\n" + last)
+    validate(model)
 
     out = pathlib.Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)

@@ -17,6 +17,7 @@
   --ok: #15803d; --ok-mid: #8fcf9f; --ok-soft: #dff3e4;
   --wip: #9a5800; --wip-fill: #f0a92b; --wip-soft: #fcefd3;
   --defn: #5a667d; --edge: #8a94a4; --hatch: rgba(21, 25, 34, .045);
+  --series-filed: #2a78d6; --series-closed: #15803d;
   --shadow: 0 1px 2px rgba(21, 25, 34, .06), 0 6px 24px rgba(21, 25, 34, .08);
   --font-ui: Inter, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
@@ -31,6 +32,7 @@
     --ok: #3fb950; --ok-mid: #256b35; --ok-soft: #13301d;
     --wip: #f0b648; --wip-fill: #d89614; --wip-soft: #3a2d0f;
     --defn: #9aa6ba; --edge: #5f6a7a; --hatch: rgba(232, 235, 240, .05);
+    --series-filed: #3987e5; --series-closed: #2ea043;
     --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 28px rgba(0, 0, 0, .45);
     color-scheme: dark;
   }
@@ -43,6 +45,7 @@
   --ok: #3fb950; --ok-mid: #256b35; --ok-soft: #13301d;
   --wip: #f0b648; --wip-fill: #d89614; --wip-soft: #3a2d0f;
   --defn: #9aa6ba; --edge: #5f6a7a; --hatch: rgba(232, 235, 240, .05);
+  --series-filed: #3987e5; --series-closed: #2ea043;
   --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 28px rgba(0, 0, 0, .45);
   color-scheme: dark;
 }
@@ -74,7 +77,6 @@ button { font: inherit; color: inherit; }
 .masthead .sub { color: var(--ink-2); font-size: 15px; max-width: 70ch; }
 .stamp { display: flex; flex-wrap: wrap; gap: 4px 18px; color: var(--ink-3); font-size: 12.5px; }
 .stamp b { font-weight: 600; color: var(--ink-2); }
-.hold { color: var(--wip); font-weight: 600; }
 .back { font-size: 13px; }
 
 /* Totals */
@@ -93,7 +95,7 @@ button { font: inherit; color: inherit; }
 .stat { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .stat .k { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
 .stat .v { font: 600 24px/1.15 var(--font-display); font-variant-numeric: tabular-nums; }
-.stat .v .delta { font: 600 12px var(--font-ui); color: var(--ok); margin-left: 6px; vertical-align: 3px; }
+.stat .v .delta { font: 600 12px var(--font-ui); color: var(--ink-3); margin-left: 6px; vertical-align: 3px; }
 .stat .d { font-size: 12px; color: var(--ink-2); }
 .since { font-size: 12px; color: var(--ink-3); }
 
@@ -209,7 +211,7 @@ button { font: inherit; color: inherit; }
 .panel { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 24px); overflow: auto;
   background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
 @media (max-width: 980px) {
-  .panel { position: static; max-height: none; }
+  .panel { position: static; max-height: none; order: -1; }
   .panel.picked { position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 20; max-height: 58vh; border-radius: 14px 14px 0 0;
     box-shadow: var(--shadow); padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
     padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
@@ -245,7 +247,9 @@ details.block[open] > summary { margin-bottom: 10px; }
 table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
 th, td { text-align: left; padding: 6px 12px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; white-space: nowrap; }
-td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sec-cell { display: flex; gap: 8px; align-items: flex-start; } .sec-cell .ico { margin-top: 3px; }
+@media (max-width: 700px) { .wide { display: none; } }
 td .g { vertical-align: -1px; margin-right: 6px; }
 td.name { font-family: var(--font-mono); font-size: 12px; overflow-wrap: anywhere; min-width: 200px; }
 .notes ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 12.5px; display: flex; flex-direction: column; gap: 4px; max-width: 100ch; }
@@ -433,6 +437,7 @@ function diagram(opts) {
     let cur = 0;
     for (let r = 0; r < rows; r++) {
       cur += r ? 12 : 0;
+      if (r && headH[r]) cur += 16;
       headY[r] = cur; cur += headH[r];
       const n = nTracks[r];
       if (opts.gap) { step[r] = n > 1 ? Math.min(STEP, (opts.gap - 26) / (n - 1)) : 0; cur += r ? opts.gap - 12 : 0; }
@@ -532,8 +537,9 @@ function diagram(opts) {
     pin(key) { pinned = key; highlight(key); },
     redraw() { lastW = -1; draw(); },
   };
-  if (window.ResizeObserver) new ResizeObserver(draw).observe(wrap); else window.addEventListener('resize', draw);
-  requestAnimationFrame(draw);
+  const later = () => requestAnimationFrame(draw);
+  if (window.ResizeObserver) new ResizeObserver(later).observe(wrap); else window.addEventListener('resize', later);
+  later();
   return api;
 }
 
@@ -549,7 +555,7 @@ function masthead(title, sub, back) {
     h('div', { class: 'stamp' },
       h('span', null, 'Generated ', h('b', null, h('time', { datetime: m.generated }, whenText))),
       h('span', null, 'Commit ', ext(repo + '/commit/' + sha, sha.slice(0, 7), 'mono'), m.subject ? ' ' + cut(m.subject, 70) : ''),
-      m.status ? h('span', null, 'README status: ', h('span', { class: 'hold' }, m.status)) : null));
+      m.status ? h('span', null, 'README status: ', h('b', null, m.status)) : null));
 }
 const cut = (t, n) => t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t;
 
@@ -571,7 +577,6 @@ function legendEdge(dashed, text) {
 /* ---------- overview ---------- */
 function overview() {
   const t = D.totals, frag = [];
-  document.title = 'RiemannMasullo Proof Progress';
   frag.push(masthead('Proof progress',
     'Every paper section that has been turned into Lean, how much of it is proved, and what each part is waiting for.'));
 
@@ -630,7 +635,7 @@ function overview() {
     return { key: g.id, col: g.lane, row: g.row, el };
   });
   dg = diagram({
-    cols: lanes.length, minPitch: 124, maxPitch: 190, cardH: 78, gapX: 26, plain: true, edges,
+    cols: lanes.length, minPitch: 156, maxPitch: 190, cardH: 78, gapX: 26, plain: true, edges,
     layout: () => ({
       cards,
       heads: lanes.map((c, i) => ({ row: 0, col: i, h: 50, el: h('div', { class: 'lane-head' }, h('b', null, c.label), h('span', null, c.title)) })),
@@ -683,16 +688,18 @@ function overview() {
   const tb = h('tbody');
   D.groups.forEach(g => {
     tb.appendChild(h('tr', null,
-      h('td', null, h('a', { href: '#' + g.key }, g.num), ' ', g.title),
-      h('td', null, g.id != null ? STATE_WORD[g.state] : 'support'),
-      h('td', { class: 'r' }, g.defs), h('td', { class: 'r' }, g.thms), h('td', { class: 'r' }, g.proved),
-      h('td', { class: 'r' }, g.claimed), h('td', { class: 'r' }, g.thms - g.proved),
-      h('td', null, g.id != null ? ext(issueUrl(g.id), '#' + g.id) : '')));
+      h('td', null, h('span', { class: 'sec-cell' }, stateIcon(g.state), h('span', null, h('a', { href: '#' + g.key }, g.num), ' ', g.title))),
+      h('td', { class: 'wide' }, g.id != null ? STATE_WORD[g.state] : 'support'),
+      h('td', { class: 'r wide' }, g.defs), h('td', { class: 'r' }, g.thms ? g.proved + ' / ' + g.thms : ''),
+      h('td', { class: 'r wide' }, g.claimed || ''), h('td', { class: 'r wide' }, g.thms - g.proved || ''),
+      h('td', { class: 'wide' }, g.id != null ? ext(issueUrl(g.id), '#' + g.id) : '')));
   });
-  frag.push(h('details', { class: 'block' }, h('summary', null, 'All sections as a table'),
+  const small = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
+  frag.push(h('details', { class: 'block', open: small ? '' : null }, h('summary', null, 'All sections as a table'),
     h('div', { class: 'tbl' }, h('table', null, h('thead', null, h('tr', null,
-      h('th', null, 'Section'), h('th', null, 'State'), h('th', { class: 'r' }, 'Definitions'), h('th', { class: 'r' }, 'Theorems'),
-      h('th', { class: 'r' }, 'Proved'), h('th', { class: 'r' }, 'Claimed'), h('th', { class: 'r' }, 'Open'), h('th', null, 'Issue'))), tb))));
+      h('th', null, 'Section'), h('th', { class: 'wide' }, 'State'), h('th', { class: 'r wide' }, 'Definitions'),
+      h('th', { class: 'r' }, 'Proved'), h('th', { class: 'r wide' }, 'Claimed'), h('th', { class: 'r wide' }, 'Open'),
+      h('th', { class: 'wide' }, 'Issue'))), tb))));
 
   frag.push(notes());
   frag.push(footer());
@@ -718,8 +725,8 @@ function timeline(host) {
   host.appendChild(h('div', { class: 'chart-head' },
     h('h3', null, 'Proof issues filed and closed'),
     h('div', { class: 'chart-legend' },
-      h('span', null, h('i', { style: 'background:var(--ink-2)' }), 'filed'),
-      h('span', null, h('i', { style: 'background:var(--ok)' }), 'closed'))));
+      h('span', null, h('i', { style: 'background:var(--series-filed)' }), 'filed'),
+      h('span', null, h('i', { style: 'background:var(--series-closed)' }), 'closed'))));
   const box = h('div', { class: 'chart' });
   host.appendChild(box);
   const end = Math.max(Date.parse(D.meta.generated) / 1000, filed[filed.length - 1]);
@@ -763,13 +770,13 @@ function timeline(host) {
       }
       return d + 'H' + x(end);
     };
-    svg.appendChild(s('path', { d: stepPath(closed) + 'V' + y(0) + 'H' + x(start) + 'Z', fill: 'var(--ok)', opacity: .1 }));
-    svg.appendChild(s('path', { d: stepPath(filed), fill: 'none', stroke: 'var(--ink-2)', 'stroke-width': 2, 'stroke-linejoin': 'round' }));
-    svg.appendChild(s('path', { d: stepPath(closed), fill: 'none', stroke: 'var(--ok)', 'stroke-width': 2, 'stroke-linejoin': 'round' }));
+    svg.appendChild(s('path', { d: stepPath(closed) + 'V' + y(0) + 'H' + x(start) + 'Z', fill: 'var(--series-closed)', opacity: .1 }));
+    svg.appendChild(s('path', { d: stepPath(filed), fill: 'none', stroke: 'var(--series-filed)', 'stroke-width': 2, 'stroke-linejoin': 'round' }));
+    svg.appendChild(s('path', { d: stepPath(closed), fill: 'none', stroke: 'var(--series-closed)', 'stroke-width': 2, 'stroke-linejoin': 'round' }));
     let yf = y(filed.length), yc = y(closed.length);
     if (yc - yf < 14) yc = yf + 14;
-    svg.appendChild(s('circle', { cx: x(end), cy: y(filed.length), r: 4, fill: 'var(--ink-2)', stroke: 'var(--bg)', 'stroke-width': 2 }));
-    svg.appendChild(s('circle', { cx: x(end), cy: y(closed.length), r: 4, fill: 'var(--ok)', stroke: 'var(--bg)', 'stroke-width': 2 }));
+    svg.appendChild(s('circle', { cx: x(end), cy: y(filed.length), r: 4, fill: 'var(--series-filed)', stroke: 'var(--bg)', 'stroke-width': 2 }));
+    svg.appendChild(s('circle', { cx: x(end), cy: y(closed.length), r: 4, fill: 'var(--series-closed)', stroke: 'var(--bg)', 'stroke-width': 2 }));
     svg.appendChild(s('text', { class: 'endlabel', x: x(end) + 9, y: yf + 4 }, filed.length + ' filed'));
     svg.appendChild(s('text', { class: 'endlabel', x: x(end) + 9, y: yc + 4 }, closed.length + ' closed'));
     const cross = s('path', { d: '', stroke: 'var(--line-2)', 'stroke-width': 1, fill: 'none' });
@@ -793,12 +800,13 @@ function timeline(host) {
     hit.addEventListener('pointermove', move); hit.addEventListener('pointerdown', move);
     hit.addEventListener('pointerleave', () => { tip.hidden = true; cross.setAttribute('d', ''); });
   }
-  if (window.ResizeObserver) new ResizeObserver(draw).observe(box); else window.addEventListener('resize', draw);
-  requestAnimationFrame(draw);
+  const later = () => requestAnimationFrame(draw);
+  if (window.ResizeObserver) new ResizeObserver(later).observe(box); else window.addEventListener('resize', later);
+  later();
 }
 
 /* ---------- one section ---------- */
-let pendingDecl = null;
+let pendingDecl = null, pickedItem = null, restore = null;
 function declLink(i) {
   const d = D.decls[i], g = D.groups[d[GROUP]];
   return h('a', { href: '#' + g.key, title: g.num + ' ' + g.title, onclick: () => { pendingDecl = i; if (location.hash === '#' + g.key) route(); } }, d[N]);
@@ -823,7 +831,6 @@ function declRow(i) {
 
 function sectionView(g) {
   const frag = [], isSection = g.id != null;
-  document.title = g.num + ' · RiemannMasullo Proof Progress';
   const head = masthead(g.num + ' ' + g.title, null, true);
   frag.push(head);
 
@@ -862,13 +869,14 @@ function sectionView(g) {
   let dg = null, selected = null;
   const cardEls = {};
   function showSummary() {
-    selected = null; panel.classList.remove('picked'); panel.textContent = ''; add(panel, summary());
+    selected = null; pickedItem = null; panel.classList.remove('picked'); panel.textContent = ''; add(panel, summary());
     if (dg) dg.pin(null);
     for (const k in cardEls) cardEls[k].classList.remove('sel');
   }
   function select(k, declIdx) {
     selected = k;
     const it = g.items[k];
+    pickedItem = it.key;
     for (const key in cardEls) cardEls[key].classList.toggle('sel', String(key) === String(k));
     if (dg) dg.pin(k);
     panel.classList.add('picked'); panel.textContent = '';
@@ -959,7 +967,11 @@ function sectionView(g) {
   if (pendingDecl != null && D.decls[pendingDecl][GROUP] === g.idx) {
     const i = pendingDecl; pendingDecl = null;
     requestAnimationFrame(() => select(itemOf[i], i));
-  } else pendingDecl = null;
+  } else if (restore && restore.hash === location.hash) {
+    const k = g.items.findIndex(it => it.key === restore.item);
+    if (k >= 0) requestAnimationFrame(() => select(k));
+  }
+  pendingDecl = null; restore = null;
   return frag;
 }
 
@@ -972,6 +984,11 @@ function route() {
   window.scrollTo(0, 0);
 }
 window.addEventListener('hashchange', route);
-route();
+// When the page is republished while someone has it open, the viewer hands the new copy what
+// the old one saved here: the item that was selected, by its stable key.
+function start(saved) { restore = saved && saved.item ? saved : null; route(); }
+const hot = window.claude && window.claude.hot;
+try { if (hot && hot.snapshot) hot.snapshot(() => ({ hash: location.hash, item: pickedItem })); } catch (e) { /* not in a viewer */ }
+if (hot && hot.ready) hot.ready(start); else start(hot && hot.data || {});
 })();
 </script>
