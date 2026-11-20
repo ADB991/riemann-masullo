@@ -154,6 +154,12 @@ ${review:-(none)}"
   fi
   if [ $dry = 1 ]; then echo "$prompt"; exit 0; fi
 
+  # Claim first: the rest of the setup takes a minute, and `next` must not hand the same issue
+  # to two launchers started close together.
+  if [ "$role" != scout ] && [ -z "$pr" ]; then
+    label --add-label claimed
+    note "Claimed by a $role agent ($who) on branch \`$branch\`."
+  fi
   if [ -d "$wt" ]; then
     if [ $force = 0 ] && [ -n "$(git -C "$wt" status --porcelain)" ]; then
       echo "worktree $wt has work that was not handed in; run --handin, or --force to discard it" >&2; exit 1
@@ -172,10 +178,6 @@ ${review:-(none)}"
       { echo "could not build the starting point; see $wt/.agent/base-build.txt" >&2; exit 1; }
   fi
 
-  if [ "$role" != scout ] && [ -z "$pr" ]; then
-    label --add-label claimed
-    note "Claimed by a $role agent ($who) on branch \`$branch\`."
-  fi
   if [ $mode = setup ]; then
     cat <<EOF
 Worktree ready: $wt
