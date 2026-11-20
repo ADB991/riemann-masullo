@@ -18,6 +18,9 @@ has exact declarations and pinned commits); none has a directory yet:
 | <https://github.com/anthropics/fermats-last-theorem> | Apache-2.0 | adelic Schwartz–Bruhat functions and the Tate global zeta integral on their span (§2.1, §3.2) |
 | <https://github.com/ImperialCollegeLondon/FLT> | Apache-2.0 | Haar measure scaling on the adeles (Appendix A.3) |
 
+[`SURVEY.md`](SURVEY.md) has the scout's full list of exact declarations. Proofs ported one at
+a time, without vendoring a whole module, are recorded in [`ATTRIBUTION.md`](ATTRIBUTION.md).
+
 ## Convention
 
 Vendored code is copied, not added as a Lake dependency, so that each piece is pinned, auditable

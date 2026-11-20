@@ -135,6 +135,19 @@ if [ $mode != handin ]; then
 
 $(jq -r '"**\(.title)**\n\n\(.body // "")"' <<<"$issue")
 $comments"
+  refs="$(dirname "$main")/$(basename "$main")-refs"
+  if [ -d "$refs" ]; then
+    prompt="$prompt
+
+---
+
+## Reference copies of other Lean projects
+
+Read-only, at the commits named in \`RiemannMasullo/External/SURVEY.md\`, under \`$refs\`:
+$(ls "$refs" | sed 's/^/- /')
+
+See \"Using existing Lean\" in AGENTS.md before porting anything from them."
+  fi
   if [ -n "$pr" ]; then
     review=$(
       gh api --paginate "$api/issues/$pr/comments" --jq ".[] | select(.author_association | $member) | .body + \"\n\""
