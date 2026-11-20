@@ -16,7 +16,8 @@
 #   --cli codex|claude   which agent to run (default: codex; claude for scouts)
 #   --model NAME         model to pass to the CLI
 #   --dry-run            print the prompt and change nothing
-#   --force              take an issue that is labelled `claimed`, or discard an existing worktree
+#   --force              take an issue that is labelled `claimed` or `blocked`, or discard an
+#                        existing worktree
 #
 # The agent needs no git access, and only scouts need the network: this script does the building,
 # committing, pushing and commenting. Relaunching on an issue that has an open pull request
@@ -102,6 +103,9 @@ if [ $mode != handin ]; then
     echo "instructions. Read it first; then re-file it yourself, or pass --force." >&2; exit 1
   fi
   labels=$(jq -r '[.labels[].name] | join(" ")' <<<"$issue")
+  if [[ " $labels " == *" blocked "* ]] && [ $force = 0 ]; then
+    echo "issue #$n is blocked: what it needs first is not on main yet (use --force to try anyway)" >&2; exit 1
+  fi
   git fetch -q "$up"; [ "$up" = origin ] || git fetch -q origin
   base="$up/main"; pr=""
   [ "$role" = scout ] || pr=$(pr_number)

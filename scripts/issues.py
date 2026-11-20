@@ -2,10 +2,13 @@
 """Keep `proof` issues in step with the `sorry`s in RiemannMasullo/.
 
     scripts/issues.py            show what would change
-    scripts/issues.py --apply    open an issue per new sorry, close issues whose sorry is gone
+    scripts/issues.py --apply    open an issue per new sorry, close issues whose sorry is gone,
+                                 and unblock section issues whose prerequisites are closed
 
 Run from an up-to-date `main`. Lean itself reports the sorries (`lake build` warnings), so this
 never misreads the source. An issue is tied to its declaration by a hidden marker in the body.
+A section issue lists the issues it waits for in a marker `<!-- needs: 12 15 -->`; when all of
+them are closed, its `blocked` label is removed.
 """
 import json, pathlib, re, subprocess, sys
 
@@ -96,8 +99,26 @@ def main():
         if apply:
             run(["gh", "issue", "close", str(open_issues[key]), "--comment",
                  f"`{key.split('::')[1]}` is no longer a `sorry` on main at {sha}."])
-    if not apply and (new or stale):
+    ready = unblock(apply)
+    if not apply and (new or stale or ready):
         print("dry run; pass --apply to make these changes")
+
+
+def unblock(apply):
+    """Remove `blocked` from open issues whose `<!-- needs: ... -->` issues are all closed."""
+    states = {i["number"]: i["state"] for i in json.loads(run(
+        ["gh", "issue", "list", "--state", "all", "--limit", "5000", "--json", "number,state"]).stdout)}
+    blocked = json.loads(run(["gh", "issue", "list", "--label", "blocked", "--state", "open",
+                              "--limit", "5000", "--json", "number,title,body"]).stdout)
+    ready = []
+    for issue in sorted(blocked, key=lambda i: i["number"]):
+        m = re.search(r"<!-- needs:([\d\s]*)-->", issue["body"] or "")
+        if m and all(states.get(int(n)) == "CLOSED" for n in m.group(1).split()):
+            ready.append(issue["number"])
+            print(f"  unblock #{issue['number']}  {issue['title']}")
+            if apply:
+                run(["gh", "issue", "edit", str(issue["number"]), "--remove-label", "blocked"])
+    return ready
 
 
 if __name__ == "__main__":

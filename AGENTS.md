@@ -10,7 +10,8 @@ Work is organized with GitHub issues and pull requests. There is no blueprint.
 
 ## How work flows
 
-1. Each paper section has a **section issue** (label `section`).
+1. Each paper section, or part of a long one, has a **section issue** (label `section`). It is
+   labelled `blocked` until the sections it builds on have their statements on `main`.
 2. A **scout** comments on it with what already exists in Mathlib and other Lean projects.
 3. A **digester** writes the section's definitions and statements in Lean, with `sorry` for every
    proof, and opens a pull request.
@@ -27,7 +28,7 @@ Role instructions are in [`prompts/`](prompts/README.md).
 
 | Path | Contents | Who edits |
 |---|---|---|
-| `RiemannMasullo/<Chapter>/Sec<N>.lean` | paper section N of that chapter | digesters, provers |
+| `RiemannMasullo/<Chapter>/Sec<N>.lean` | paper section N of that chapter; a long section is split into `Sec<N>a.lean`, `Sec<N>b.lean`, …, and the section issue names the file | digesters, provers |
 | `RiemannMasullo/<Chapter>.lean` | chapter index (docstring only) | nobody |
 | `RiemannMasullo/ForMathlib/` | general lemmas missing from Mathlib, at the path Mathlib would use | provers |
 | `RiemannMasullo/External/` | vendored third-party Lean, see its README | integrator |

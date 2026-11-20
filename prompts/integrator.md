@@ -19,11 +19,17 @@ is his to decide (listed at the end).
 
 ## Seeding work
 
-Open section issues a chapter at a time, in the order the mathematics needs them, not all
-eighty at once: a digester needs the sections it depends on to exist. A section issue has the
-title `§2.1 Schwartz-Bruhat functions (pp. 59–74)`, the labels `section` and the chapter label,
-and a body giving the page range, the target file (`RiemannMasullo/Ch02_AdelicTheta/Sec1.lean`)
-and the sections it depends on. Launch a scout on it before the digester.
+Section issues are seeded a wave at a time, in the order the mathematics needs them (the roadmap
+is in the README). Each one gives the pages, the target file, and the issues it **needs first**,
+both in words and in a marker `<!-- needs: 12 15 -->`; it carries the `blocked` label until
+those are closed. The dependencies come from counting the paper's numbered cross-references, so
+they are a good guide and sometimes wrong: when a digester reports a missing prerequisite, fix
+the issue's needs. Split a section of more than about twenty-five pages into parts, and put two
+sections that cite each other in one issue.
+
+Launch a scout on a section before its digester when the survey in issue #3 does not already
+cover it. Close a section issue once all of its statements are on `main`; `scripts/issues.py`
+then unblocks whatever was waiting for it.
 
 ## Reviewing pull requests
 
@@ -59,8 +65,8 @@ agent the review comments.
 ## After merging
 
 Run `scripts/issues.py` to see what it would do, then `scripts/issues.py --apply`. It opens a
-proof issue for each new `sorry` and closes issues whose `sorry` is gone. Run it from an
-up-to-date `main`.
+proof issue for each new `sorry`, closes issues whose `sorry` is gone, and removes `blocked` from
+section issues whose prerequisites are closed. Run it from an up-to-date `main`.
 
 When an agent reports a blocker:
 - **A wrong statement** (label `statement-bug`): fix the statement yourself or relaunch a

@@ -37,6 +37,23 @@ and its sections go in a directory of the same name (`RiemannMasullo/Ch02_Adelic
 Third-party formalizations we build on are vendored under
 [`RiemannMasullo/External/`](RiemannMasullo/External/README.md); nothing is vendored yet.
 
+## Roadmap
+
+The order follows the paper's own cross-references. Two streams run in parallel and meet at the
+trace formula:
+
+| Wave | Paper | Status |
+|---|---|---|
+| 1 | Appendices A.1–A.3, A.5, C, D; then Chapters 2–3 (adelic θ-functions, idelic zeta functions) and, independently, Chapters 4 and 9 (periodic Schauder bases, Hardy–Sobolev spaces) | [section issues open](https://github.com/mccorvie/riemann-masullo/issues?q=is%3Aissue+is%3Aopen+label%3Asection) |
+| 2 | Chapters 5–7, with Appendix B.1–B.3 and B.6 | not yet seeded |
+| 3 | Chapters 10–12: the trace formula, with Appendix B.4 | not yet seeded |
+| later | Chapters 8 and 14, Appendix E, A.4, B.5, B.7 | only when something needs them |
+
+An issue labelled `blocked` is waiting for the sections it builds on. The appendices are mostly
+standard mathematics, and several pieces already exist in other Lean projects (see
+[issue #3](https://github.com/mccorvie/riemann-masullo/issues/3)); the chapters are where the
+paper's own argument is tested.
+
 ## Contributing
 
 Work is organized with issues and pull requests: scouts find existing Lean, digesters turn paper
