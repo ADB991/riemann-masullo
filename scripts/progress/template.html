@@ -313,7 +313,9 @@ D.groups.forEach(g => g.needs.forEach(n => { (neededBy[n] = neededBy[n] || []).p
 
 const KINDS = { t: 'theorem', d: 'definition', a: 'abbreviation', s: 'structure', c: 'class',
   i: 'inductive type', n: 'instance', o: 'opaque constant', x: 'axiom' };
-const STATE_WORD = { stated: 'stated', digesting: 'being digested', ready: 'ready to digest', blocked: 'blocked' };
+const STATE_WORD = { stated: 'stated', digesting: 'being digested', ready: 'ready to digest', blocked: 'blocked', extra: 'support' };
+// An open, unclaimed section can already have part of its statements on main.
+const stateWord = g => g.state === 'ready' && g.defs + g.thms ? 'stated in part, rest ready to digest' : STATE_WORD[g.state];
 const srcUrl = d => repo + '/blob/' + sha + '/' + D.files[d[FILE]] + '#L' + d[LINE];
 const issueUrl = n => repo + '/issues/' + n;
 function glyphClass(d) {
@@ -334,7 +336,7 @@ function stateText(d) {
     default: return 'open, no issue yet';
   }
 }
-const glyph = d => h('i', { class: glyphClass(d), title: d[N] + ' — ' + stateText(d) });
+const glyph = (d, i) => h('i', { class: glyphClass(d), title: d[N] + ' — ' + stateText(d), 'data-d': i });
 
 /* ---------- icons for section states ---------- */
 function stateIcon(state) {
@@ -603,7 +605,9 @@ function overview() {
       stat('Theorems', t.thms, t.paper + ' cite the paper, ' + (t.thms - t.paper) + ' are helper lemmas', delta('thms')),
       stat('Proved', t.proved, soft ? t.solid + ' rest on no sorry, ' + soft + ' use open lemmas' : 'none of them uses an open lemma', delta('proved')),
       stat('Open', t.open, t.claimed + ' claimed' + (t.unfiled ? ' · ' + t.unfiled + ' without an issue' : ''), delta('open'))),
-    prev ? h('div', { class: 'since' }, 'Changes are since the previous run, ' +
+    prev ? h('div', { class: 'since' },
+      (['defs', 'proved', 'open'].some(k => t[k] !== prev[k]) || t.thms !== prev.stated ?
+        'Changes are since the previous run, ' : 'These totals are the same as at the previous run, ') +
       new Date(prev.time).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) +
       ' at commit ' + prev.commit.slice(0, 7) + '.') : null);
   const right = h('div', null);
@@ -618,7 +622,7 @@ function overview() {
   let dg;
   const cards = secs.map(g => {
     const el = h('a', { class: 'card sec ' + g.state, href: '#' + g.key,
-      title: g.num + ' ' + g.title + ' — ' + STATE_WORD[g.state] +
+      title: g.num + ' ' + g.title + ' — ' + stateWord(g) +
         (g.thms ? ', ' + g.proved + ' of ' + g.thms + ' theorems proved' : '') });
     el.appendChild(h('span', { class: 'r1' }, stateIcon(g.state), h('span', { class: 'n' }, g.num)));
     el.appendChild(h('span', { class: 't' }, g.title));
@@ -689,7 +693,7 @@ function overview() {
   D.groups.forEach(g => {
     tb.appendChild(h('tr', null,
       h('td', null, h('span', { class: 'sec-cell' }, stateIcon(g.state), h('span', null, h('a', { href: '#' + g.key }, g.num), ' ', g.title))),
-      h('td', { class: 'wide' }, g.id != null ? STATE_WORD[g.state] : 'support'),
+      h('td', { class: 'wide' }, stateWord(g)),
       h('td', { class: 'r wide' }, g.defs), h('td', { class: 'r' }, g.thms ? g.proved + ' / ' + g.thms : ''),
       h('td', { class: 'r wide' }, g.claimed || ''), h('td', { class: 'r wide' }, g.thms - g.proved || ''),
       h('td', { class: 'wide' }, g.id != null ? ext(issueUrl(g.id), '#' + g.id) : '')));
@@ -729,6 +733,8 @@ function timeline(host) {
       h('span', null, h('i', { style: 'background:var(--series-closed)' }), 'closed'))));
   const box = h('div', { class: 'chart' });
   host.appendChild(box);
+  host.appendChild(h('div', { class: 'since' }, 'Every sorry gets a proof issue, and the issue closes when the sorry is gone. ' +
+    'Theorems proved when they were stated never had one, so more theorems are proved than issues are closed.'));
   const end = Math.max(Date.parse(D.meta.generated) / 1000, filed[filed.length - 1]);
   const start = filed[0] - Math.max(60, (end - filed[0]) * 0.02);
   const countAt = (arr, t) => { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] <= t) lo = m + 1; else hi = m; } return lo; };
@@ -836,9 +842,9 @@ function sectionView(g) {
 
   const kv = h('dl', { class: 'kv' });
   const row = (k, v) => { kv.appendChild(h('dt', null, k)); kv.appendChild(h('dd', null, v)); };
-  const secTag = id => { const o = groupById[id]; return h('a', { class: 'tag', href: '#' + o.key, title: o.title + ' — ' + STATE_WORD[o.state] }, stateIcon(o.state), o.num); };
+  const secTag = id => { const o = groupById[id]; return h('a', { class: 'tag', href: '#' + o.key, title: o.title + ' — ' + stateWord(o) }, stateIcon(o.state), o.num); };
   if (isSection) {
-    row('State', h('span', { class: 'tags' }, h('span', { class: 'tag' }, stateIcon(g.state), STATE_WORD[g.state]),
+    row('State', h('span', { class: 'tags' }, h('span', { class: 'tag' }, stateIcon(g.state), stateWord(g)),
       ext(issueUrl(g.id), 'issue #' + g.id), g.pages.length ? h('span', { class: 'muted' }, fmtPages(g.pages)) : null));
     if (g.needs.length) row('Needs', h('span', { class: 'tags' }, g.needs.map(secTag)));
     if ((neededBy[g.id] || []).length) row('Needed by', h('span', { class: 'tags' }, neededBy[g.id].map(secTag)));
@@ -903,10 +909,13 @@ function sectionView(g) {
       const el = h('button', { type: 'button', class: 'card item' + (done ? ' done' : ''), 'data-item': it.key,
         title: it.label + (it.page ? ', p. ' + it.page : '') + ' — ' + plural(it.decls.length, 'declaration') });
       const gl = h('span', { class: 'gl' }), cap = 22;
-      it.decls.slice(0, it.decls.length > cap ? cap - 2 : cap).forEach(i => gl.appendChild(glyph(D.decls[i])));
+      it.decls.slice(0, it.decls.length > cap ? cap - 2 : cap).forEach(i => gl.appendChild(glyph(D.decls[i], i)));
       if (it.decls.length > cap) gl.appendChild(h('span', { class: 'more' }, '+' + (it.decls.length - cap + 2)));
       el.appendChild(h('span', { class: 'lab' }, it.label)); el.appendChild(gl);
-      el.addEventListener('click', () => selected === k ? showSummary() : select(k));
+      el.addEventListener('click', ev => {       // a click on one mark opens the item at that declaration
+        const mark = ev.target.closest && ev.target.closest('.g');
+        if (mark) select(k, +mark.getAttribute('data-d')); else if (selected === k) showSummary(); else select(k);
+      });
       el.addEventListener('mouseenter', () => dg.hover(k)); el.addEventListener('mouseleave', () => dg.hover(null));
       el.addEventListener('focus', () => dg.hover(k)); el.addEventListener('blur', () => dg.hover(null));
       cardEls[k] = el;
@@ -986,9 +995,16 @@ function route() {
 window.addEventListener('hashchange', route);
 // When the page is republished while someone has it open, the viewer hands the new copy what
 // the old one saved here: the item that was selected, by its stable key.
-function start(saved) { restore = saved && saved.item ? saved : null; route(); }
+let started = false;
+function start(saved) {
+  if (started) return;
+  started = true; restore = saved && saved.item ? saved : null; route();
+}
 const hot = window.claude && window.claude.hot;
 try { if (hot && hot.snapshot) hot.snapshot(() => ({ hash: location.hash, item: pickedItem })); } catch (e) { /* not in a viewer */ }
-if (hot && hot.ready) hot.ready(start); else start(hot && hot.data || {});
+if (hot && hot.ready) {
+  try { hot.ready(start); } catch (e) { /* fall through to the timer */ }
+  setTimeout(() => start({}), 1500);      // never leave the page blank waiting for the viewer
+} else start(hot && hot.data || {});
 })();
 </script>

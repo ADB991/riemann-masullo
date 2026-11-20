@@ -27,8 +27,13 @@ Where the data comes from
 * Waves that are not seeded yet: the Roadmap table of `README.md` and the table of contents at
   the top of `paper/the-music-of-the-primes.txt`.
 
-Each run also appends one line of totals to `.agent/progress/history.jsonl` (skipped when
-nothing changed since the last line). The page shows the change since the previous line.
+Each run also appends one line of totals to `history.jsonl` next to the page (skipped when
+nothing changed since the last line); the page shows the change since the previous line. The
+chart of proof issues over time is drawn from the issues' own timestamps, so it covers the
+whole history of the project and not only the runs of this script.
+
+Before anything is written the numbers are checked against each other; if they do not add up,
+or the build or `gh` fails, the existing page is left as it was and the exit status is 1.
 
 Layout is a function of structure only (issue numbers, `needs` markers, source order), never
 of state, so a section or declaration stays where it is while the proof fills in.
@@ -81,8 +86,14 @@ def gh_json(args):
 
 def fetch_issues():
     fields = "number,title,state,labels,body,assignees,createdAt,closedAt"
-    get = lambda label, limit: gh_json(["issue", "list", "--label", label, "--state", "all",
-                                        "--limit", str(limit), "--json", fields])
+
+    def get(label, limit):
+        # While issues are being opened the pages of the listing shift, and gh can return
+        # one issue twice; keep one copy of each.
+        listing = gh_json(["issue", "list", "--label", label, "--state", "all",
+                           "--limit", str(limit), "--json", fields])
+        return sorted({i["number"]: i for i in listing}.values(), key=lambda i: i["number"])
+
     repo = gh_json(["repo", "view", "--json", "url,nameWithOwner"])
     return repo, get("section", 1000), get("proof", 20000)
 
@@ -748,8 +759,8 @@ def build_model(repo, section_issues, proof_issues, rows, files, warnings, head)
 
     unfiled = [d["show"] for d in decls if d["state"] == "unfiled"]
     if unfiled:
-        note(notes, f"{len(unfiled)} theorem(s) have a sorry but no open proof issue yet "
-                    "(`scripts/issues.py --apply` opens them): "
+        note(notes, (f"{len(unfiled)} theorems have" if len(unfiled) > 1 else "1 theorem has")
+                    + " a sorry but no open proof issue yet (`scripts/issues.py --apply` opens them): "
                     + ", ".join(f"`{n}`" for n in unfiled[:12]) + (" …" if len(unfiled) > 12 else "") + ".")
     for key, lst in issues.items():
         if key not in matched:
@@ -868,9 +879,12 @@ def build_model(repo, section_issues, proof_issues, rows, files, warnings, head)
         g = next(og for og in out_groups if og["id"] == s["id"])
         if s["state"] == "stated" and not g["_decls"]:
             note(notes, f"#{s['id']} ({s['num']}) is closed but no declarations were found for it.")
-        if s["state"] in ("blocked", "ready") and g["_decls"]:
-            note(notes, f"#{s['id']} ({s['num']}) is {s['state']} but already has "
+        if s["state"] == "blocked" and g["_decls"]:
+            note(notes, f"#{s['id']} ({s['num']}) is labelled blocked but already has "
                         f"{len(g['_decls'])} declarations on main.")
+        if s["state"] == "ready" and g["_decls"]:
+            note(notes, f"#{s['id']} ({s['num']}) is open and unclaimed with {len(g['_decls'])} "
+                        "declarations on main: digested in part, the rest is free to take.")
 
     # Declarations, compact: dependencies as indices.
     file_list = sorted({d["path"] for d in decls})
