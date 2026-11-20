@@ -35,6 +35,10 @@ one, because provers will build on it.
   non-summable family, the integral of a non-integrable function, the derivative of a
   non-differentiable one, all equal to `0`); hypotheses nothing can satisfy, which make a
   theorem vacuous; a coercion that is not the map the paper means.
+- When a result has several parts that stand on their own, give each part its own declaration
+  (`foo_closed`, `foo_discrete`, …) instead of one long conjunction. Each `sorry` becomes one
+  issue, so smaller statements can be proved in parallel, and one wrong part does not make the
+  rest unprovable. Keep parts together only when one is stated in terms of another.
 - Keep the paper's generality. Do not strengthen or weaken a statement to make it easier to
   state or to prove.
 - Formalize statements, not the paper's proofs. Add an intermediate lemma only when the paper

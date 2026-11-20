@@ -10,7 +10,7 @@ never misreads the source. An issue is tied to its declaration by a hidden marke
 A section issue lists the issues it waits for in a marker `<!-- needs: 12 15 -->`; when all of
 them are closed, its `blocked` label is removed.
 """
-import json, pathlib, re, subprocess, sys
+import json, pathlib, re, subprocess, sys, time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 WARN = re.compile(r"warning: (RiemannMasullo/\S+?\.lean):(\d+):(\d+): declaration uses `sorry`")
@@ -94,6 +94,7 @@ def main():
                 cmd += ["--label", chapter_label(s["path"])]
             r = run(cmd)
             print("        ", (r.stdout or r.stderr).strip())
+            time.sleep(1.5)   # stay under GitHub's limit on creating content
     for key in stale:
         print(f"  close  #{open_issues[key]}  {key}")
         if apply:
