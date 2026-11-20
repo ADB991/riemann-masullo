@@ -8,20 +8,26 @@ The paper is in [`paper/`](paper/) (PDF plus a `pdftotext -layout` extraction fo
 
 ## Status
 
-**On hold (20 November 2026).** The paper's main theorem, the trace formula of Theorem 12.5.1.1,
-is in dispute. In the Lean Zulip thread
-[Formalising Masullo's proof of GRH](https://leanprover.zulipchat.com/#narrow/channel/113488-general/topic/Formalising.20Masullo.27s.20proof.20of.20GRH/with/642314625)
-it was reported that an LLM-assisted reading found a counterexample to it, and that correcting
-one of the errors reduces the theorem to a classical formula. The details have not been posted,
-and others in the thread consider a formalization premature. The draft is also incomplete:
-Chapter 13, which should deduce GRH, has no statement of its main theorem.
+**Active: formalizing the prerequisites.** The appendices and first chapters are being stated in
+Lean section by section, and each statement's proof is an open issue that anyone can take. See
+the roadmap below.
 
-Smaller problems found while formalizing (false statements, gaps, placeholders) are logged in
-[`ERRATA.md`](ERRATA.md).
+**Concerns about the main theorem.** Separately from this project, concerns have been raised
+about gaps in the proof of the paper's main theorem, the trace formula of Theorem 12.5.1.1. They
+come from readings of the paper discussed in the Lean Zulip thread
+[Formalising Masullo's proof of GRH](https://leanprover.zulipchat.com/#narrow/channel/113488-general/topic/Formalising.20Masullo.27s.20proof.20of.20GRH/with/642314625),
+where the details have not been posted. They did not come from this formalization, which has not
+reached that part of the paper and has not hit a roadblock. The draft is also unfinished by its
+author's own account: Chapter 13, which should deduce GRH from the trace formula, does not yet
+state its main theorem.
 
-Until people who know the area have settled this, the section issues stay open but nobody
-should spend much effort on them. The infrastructure here (the Comparator setup, the issue
-workflow, the agent launcher) is reusable for another target.
+**What the formalization has found.** Small errors and gaps met along the way are logged in
+[`ERRATA.md`](ERRATA.md). So far they are all in the appendices' and early chapters' accounts of
+standard material, and none touches the trace formula.
+
+The prerequisites (adeles and ideles, Haar measures, locally convex and nuclear spaces,
+Schwartz–Bruhat functions) are standard mathematics worth having in Lean whatever becomes of the
+main theorem, so that work continues.
 
 ## Layout
 
@@ -56,12 +62,12 @@ Third-party formalizations we build on are vendored under
 
 ## Roadmap
 
-On hold; see Status above. The order follows the paper's own cross-references. Two streams run in parallel and meet at the
+The order follows the paper's own cross-references. Two streams run in parallel and meet at the
 trace formula:
 
 | Wave | Paper | Status |
 |---|---|---|
-| 1 | Appendices A.1–A.3, A.5, C, D; then Chapters 2–3 (adelic θ-functions, idelic zeta functions) and, independently, Chapters 4 and 9 (periodic Schauder bases, Hardy–Sobolev spaces) | [section issues open](https://github.com/mccorvie/riemann-masullo/issues?q=is%3Aissue+is%3Aopen+label%3Asection) |
+| 1 | Appendices A.1–A.3, A.5, C, D; then Chapters 2–3 (adelic θ-functions, idelic zeta functions) and, independently, Chapters 4 and 9 (periodic Schauder bases, Hardy–Sobolev spaces) | in progress: [section issues](https://github.com/mccorvie/riemann-masullo/issues?q=is%3Aissue+label%3Asection), [proof issues](https://github.com/mccorvie/riemann-masullo/issues?q=is%3Aissue+is%3Aopen+label%3Aproof+-label%3Aclaimed) |
 | 2 | Chapters 5–7, with Appendix B.1–B.3 and B.6 | not yet seeded |
 | 3 | Chapters 10–12: the trace formula, with Appendix B.4 | not yet seeded |
 | later | Chapters 8 and 14, Appendix E, A.4, B.5, B.7 | only when something needs them |
