@@ -108,6 +108,16 @@ formula.
 | M5 | Remark C.2.4.5, p. 687, footnote 15 | The argument for the particular strong dual cited in the remark is left unfinished. A direct example of a weak dual that is not quasi-complete is given in the report on #7 (finitely supported sequences with the ℓ¹ norm). | #400 | reported |
 | M6 | Footnote 1, p. 753, and footnote 2, p. 757 | The first asks for an expansion covering powers of the one-dimensional factors; the second asks for the Fourier compatibility calculation used in the density argument. | #432 | reported |
 
+## Reported from reading, beyond what has been formalized
+
+The scouts who surveyed existing Lean also read ahead in the paper. These two reports concern
+parts that are not stated in Lean yet, so nothing here has been tested by the formalization.
+
+| # | Where | Report | Source | Checked |
+|---|---|---|---|---|
+| R1 | Proposition 8.2.0.4(1),(2), p. 386 | Uniqueness modulo the embedded local unit group is reported to fail for the full idele group as printed: for the adele that is zero at a finite place v and one elsewhere, both the identity and the idele with a uniformizer at v fix it. The proof itself computes the stabilizer in the full group as the whole local multiplicative group. Restricting to norm one is a candidate correction; Theorem 8.3.0.1(1) cites the proposition. | [`survey/geometry.md`](RiemannMasullo/External/survey/geometry.md) | scout, against the page image |
+| R2 | §1.4.3, p. 29, and §1.8.4.3, p. 54 | The bound on the archimedean terms, claimed to be uniform in the cutoff and used for a Montel extraction, is reported to fail for the printed family of test functions, already for ζ: with nonnegative approximants tending to t⁻² on t > 1, Fatou's lemma makes the archimedean contribution diverge as the cutoff neighbourhood of 1 shrinks. The report says this concerns the passage to the limit in the introduction's sketch and leaves the trace identity itself undecided. A sign discrepancy in the prime sum on p. 29 is also reported. | [`survey/endgame.md`](RiemannMasullo/External/survey/endgame.md) | scout, against the page images |
+
 ## How this file is kept
 
 Digesters and provers mark a problem where they meet it with a comment `-- TODO(paper-gap): …`

@@ -1,0 +1,32 @@
+# From the trace identity to zeros · §§1.4, 1.8 and Chapter 13
+
+The [prior formalizations follow-up](prior-formalizations.md) compares the critical-line statements in Alpöge’s submission with the fixed half-planes in OpenAI, Axiom and Hu. The gap below concerns Masullo’s own deduction.
+
+**The uniform bound used for Montel extraction in §1.4.3, p. 29, fails for the test family printed on pp. 28–29.** The same argument appears in §1.8.4.3, p. 54. This failure is visible for the Riemann zeta function itself.
+
+Take the field ℚ, the trivial character, a fixed a in (0,1), and the real parameter z = 2. A small closed disk about 2 satisfies the paper’s condition on K. Choose ordinary nonnegative mollifiers and the one-sided bump cutoffs specified in §1.4.2. Write φₙ(t) for the resulting functions along any sequence of such approximants with the stated pointwise limit. We have φₙ ≥ 0 and φₙ(t) → t⁻² for every t > 1. The positive-sign summand at the unique real place gives this lower bound on the archimedean contribution (the factor ½ is the printed normalization):
+
+$$
+ A_n \;\ge\; \frac12\int_1^2 \frac{\varphi_n(t)t^{-1/2}}{t-1}\,dt.
+$$
+
+Fatou’s lemma now gives
+$$
+ \liminf_n A_n
+ \;\ge\; \frac12\int_1^2 \frac{t^{-5/2}}{t-1}\,dt
+ \;=\;+\infty.
+$$
+
+Indeed, t⁻⁵ᐟ² ≥ 2⁻⁵ᐟ² on that interval. Each individual test function vanishes on a neighborhood of 1, so passing to the principal-value notation on p. 28 gives the ordinary integral on that test. The divergence occurs as that neighborhood shrinks. Page 29 explicitly claims a bound for the archimedean terms independent of the cutoff, before taking the limit of the zero sum. No such bound, even at the single parameter 2, can support this extraction. A cancellation after combining terms would need a separate estimate. This argument concerns the stated passage to the limit and leaves the global trace identity itself undecided. The formulas above were checked against the page images.
+
+**The prime sum on p. 29 also has a sign discrepancy.** For the same trivial character and real z = 2, the displayed prime-power weights have positive sign. The Euler product yields −ζ′(5/2)/ζ(5/2), while §1.4.4 prints +ζ′(5/2)/ζ(5/2). This can be checked independently of the archimedean limit.
+
+| Step in the draft | Reusable formal result and required hypothesis |
+|---|---|
+| §§1.4.2–1.4.3, pp. 28–29 · limiting real-place integral | Mathlib provides `MeasureTheory.lintegral_liminf_le` for nonnegative measurable functions and `intervalIntegrable_sub_inv_iff` for the endpoint singularity. [Fatou](https://github.com/leanprover-community/mathlib4/blob/fc4f59e577feb1a4956671bc04ac18aaaf8cd842/Mathlib/MeasureTheory/Integral/Lebesgue/Add.lean) · [reciprocal integrability](https://github.com/leanprover-community/mathlib4/blob/fc4f59e577feb1a4956671bc04ac18aaaf8cd842/Mathlib/Analysis/SpecialFunctions/NonIntegrable.lean) |
+| §§1.4.3, 1.8.4.3 · normal families | `TauCeti.montel` gives a strictly increasing subsequence and locally uniform convergence to a holomorphic function on an open domain, assuming the original sequence is holomorphic and locally bounded there. The scalar case applies to complex values. Isabelle/HOL’s `Great_Picard.Montel` proves the scalar compact-open extraction with bounds on each compact set. These supply the compactness theorem once its estimates are proved. [Lean](https://github.com/TauCetiProject/TauCeti/blob/8794ab329bb60340fa690a2902cf995f0571721b/TauCeti/Analysis/Complex/Conformal/Montel/Basic.lean) · [Isabelle](https://github.com/isabelle-prover/mirror-isabelle/blob/20d6a3f7ffbaaa82e77f341d90db5070b3428fbe/src/HOL/Complex_Analysis/Great_Picard.thy#L784) |
+| §§1.4.4, 1.8.5 · log derivative on the convergence half-plane | Mathlib’s `ArithmeticFunction.LSeries_vonMangoldt_eq_deriv_riemannZeta_div` gives the negative logarithmic derivative for ζ. Hanke’s `NumberFieldKB.NonVanishing.neg_logDeriv_eq` handles number-field Euler coefficients of norm ≤1 when the function agrees with the exponential of the Euler logarithm on Re(s)>1. Expand its geometric factors to compare the prime-power sum. [Mathlib](https://github.com/leanprover-community/mathlib4/blob/fc4f59e577feb1a4956671bc04ac18aaaf8cd842/Mathlib/NumberTheory/LSeries/Dirichlet.lean) · [Hanke](https://github.com/jonhanke/algebraic-number-theory-lean/blob/5ea368e03a066197d53114efa8be66d351a9f060/NumberFieldKB/NonVanishing/LogDeriv.lean) |
+| §§1.4.5, 1.8.5.1 · uniqueness and zeros | `TauCeti.eventuallyEq_of_meromorphic_of_eqOn_halfPlane` propagates equality on a right half-plane to equality of punctured germs at every point of ℂ. `MeromorphicOn.eventuallyEq_of_isPreconnected` works on a connected domain. Mathlib’s `meromorphicOrderAt_logDeriv_eq_neg_one` gives a simple pole at every zero or pole of finite nonzero order. If a holomorphic continuation of the corrected log derivative is obtained, this detects zeros away from the exceptional pole. For the left half-strip, also match the inverse-character functional equation and the nonvanishing completion factors. [Half-plane uniqueness](https://github.com/TauCetiProject/TauCeti/blob/8794ab329bb60340fa690a2902cf995f0571721b/TauCeti/Analysis/Meromorphic/Continuation.lean) · [connected-domain uniqueness](https://github.com/TauCetiProject/TauCeti/blob/8794ab329bb60340fa690a2902cf995f0571721b/TauCeti/Analysis/Meromorphic/Identity.lean) · [pole order](https://github.com/leanprover-community/mathlib4/blob/fc4f59e577feb1a4956671bc04ac18aaaf8cd842/Mathlib/Analysis/Meromorphic/Order.lean) |
+| §§13.1–13.3, p. 522 · comparison with the explicit formula | The main report records that the text refers to “Theorem ??” and leaves 13.3.1.2 blank. For a different classical comparison consult Connes’s Appendix II, Thm. 6. Masullo explicitly disclaims using Weil positivity in §1.4.6. I found no checked Lean or Isabelle proof of the printed test-family limit or of the deduction of Masullo’s divisor claim. [Connes](https://arxiv.org/pdf/math/9811068) |
+
+The newly cited Mathlib declarations were checked in `ScoutEndgameChecks.lean`. The divergence argument is a mathematical counterexample, not a compiled counterexample theorem. The external Lean sources were inspected at their linked revisions. The selected proof bodies contain no direct holes. TauCeti uses Lean 4.37.0-rc1 and Hanke uses 4.35.0, both Apache-2.0. The Isabelle proof is a reference for the complex-analytic argument and would require translation.
