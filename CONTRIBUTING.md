@@ -19,11 +19,16 @@ of them ask for one thing: prove a single Lean declaration whose statement is al
 
 ## With a coding agent
 
-Paste this into Codex, Claude Code or any agent that can run shell commands in your clone,
-replacing `N`:
+Paste this into Codex, Claude Code or any agent that can run shell commands:
 
-> Read `AGENTS.md` and `prompts/prover.md` in this repository and follow them for issue #N of
-> mccorvie/riemann-masullo. Read the issue with `gh issue view N -R mccorvie/riemann-masullo --comments`.
+> Help formalize a mathematics paper in Lean 4. Fork and clone
+> https://github.com/mccorvie/riemann-masullo, run `lake exe cache get`, then read `AGENTS.md`
+> and `prompts/prover.md`. Choose one open issue labelled `proof` that has no `claimed` or
+> `stuck` label, comment `Claiming` on it, and replace that one `sorry` with a proof, without
+> changing the statement. Run `lake build` and `scripts/lint.sh`. Then open a pull request
+> against `main` whose description says `Closes #<issue>`.
+
+To point it at a particular issue, add "Work on issue #N" to the instruction.
 
 Or let the launcher run the agent in its own worktree and open the pull request for you (it
 needs `gh`, `jq`, `bwrap`, and the Codex or Claude Code CLI):
