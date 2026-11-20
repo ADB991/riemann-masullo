@@ -244,5 +244,9 @@ elif [ $changed = 0 ]; then
 fi
 
 cd "$main"
+mkdir -p .agent/logs   # keep the agent's transcript; the worktree is about to go
+for f in log.txt last-message.md build.txt; do
+  [ -f "$wt/.agent/$f" ] && cp "$wt/.agent/$f" ".agent/logs/$role-$n.$f"
+done
 git worktree remove --force "$wt"
 echo "done: #$n"
