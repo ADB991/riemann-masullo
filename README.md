@@ -33,6 +33,9 @@ The library mirrors the paper's table of contents, one file per chapter/appendix
 
 (Chapter 1 is the informal introduction and has no file.)
 
+Third-party formalizations we build on are vendored under
+[`RiemannMasullo/External/`](RiemannMasullo/External/README.md); nothing is vendored yet.
+
 ## Building
 
 ```sh
