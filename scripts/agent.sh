@@ -15,6 +15,7 @@
 # Other options:
 #   --cli codex|claude   which agent to run (default: codex; claude for scouts)
 #   --model NAME         model to pass to the CLI
+#   --effort LEVEL       reasoning effort for Codex (low, medium, high, xhigh)
 #   --dry-run            print the prompt and change nothing
 #   --force              take an issue that is labelled `claimed` or `blocked`, or discard an
 #                        existing worktree
@@ -35,17 +36,18 @@
 # Needs: gh (logged in), jq, bwrap, and the Codex or Claude Code CLI.
 set -euo pipefail
 
-usage="usage: agent.sh <prover|digester|scout> <issue|next> [--setup|--handin] [--cli codex|claude] [--model M] [--dry-run] [--force]"
+usage="usage: agent.sh <prover|digester|scout> <issue|next> [--setup|--handin] [--cli codex|claude] [--model M] [--effort E] [--dry-run] [--force]"
 role=${1:?$usage}
 target=${2:?$usage}
 shift 2
-cli=""; model=""; mode=all; dry=0; force=0
+cli=""; model=""; effort=""; mode=all; dry=0; force=0
 while [ $# -gt 0 ]; do
   case $1 in
     --setup) mode=setup; shift ;;
     --handin) mode=handin; shift ;;
     --cli) cli=$2; shift 2 ;;
     --model) model=$2; shift 2 ;;
+    --effort) effort=$2; shift 2 ;;
     --dry-run) dry=1; shift ;;
     --force) force=1; shift ;;
     *) echo "unknown option $1" >&2; echo "$usage" >&2; exit 2 ;;
@@ -58,7 +60,7 @@ case $role in
   *) echo "unknown role $role" >&2; exit 2 ;;
 esac
 if [ $mode = all ] && [ -z "$cli" ]; then [ "$role" = scout ] && cli=claude || cli=codex; fi
-who="${cli:-interactive session}${model:+, $model}"
+who="${cli:-interactive session}${model:+, $model}${effort:+, $effort effort}"
 
 main=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 cd "$main"
@@ -186,6 +188,7 @@ if [ $mode = all ]; then
     codex)
       args=(exec --sandbox workspace-write -C "$wt" -o "$wt/.agent/last-message.md")
       [ -n "$model" ] && args+=(-m "$model")
+      [ -n "$effort" ] && args+=(-c "model_reasoning_effort=\"$effort\"")
       [ "$role" = scout ] && args+=(-c sandbox_workspace_write.network_access=true)
       codex "${args[@]}" "$prompt" >"$wt/.agent/log.txt" 2>&1 ;;
     claude)
