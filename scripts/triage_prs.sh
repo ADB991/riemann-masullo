@@ -12,8 +12,9 @@
 #           definition or file, an attribute, a `#` command, an import, or anything that could
 #           run code when the file is built. Read the diff, then merge it by hand.
 #           Also a docstring that cites the paper, or a new declaration outside ForMathlib/
-#           that is not `private`: if it states something from the paper it is a statement,
-#           so label it `integrator` instead of merging it.
+#           that is not `private`: a new definition from the paper, or a new theorem from the
+#           paper left as `sorry`, is a statement, so label it `integrator`; a new theorem
+#           proved in the pull request is not, so merge it.
 #   fail    it does not merge into main, build, pass the lint, or keep existing statements
 # Draft pull requests, and those labelled `integrator`, are left alone.
 set -uo pipefail
