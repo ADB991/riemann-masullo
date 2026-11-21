@@ -2128,7 +2128,12 @@ injective norms is an isometry. -/
 theorem completedInjectiveTensorMap_isometry :
     letI := (injectiveTensorNorm E F).toSeminormedAddCommGroup
     letI := (injectiveTensorNorm G H).toSeminormedAddCommGroup
-    Isometry (Completion.map (TensorProduct.map f.toLinearMap g.toLinearMap)) := by sorry
+    Isometry (Completion.map (TensorProduct.map f.toLinearMap g.toLinearMap)) := by
+  let T := TensorProduct.map f.toLinearMap g.toLinearMap
+  let := (injectiveTensorNorm E F).toSeminormedAddCommGroup
+  let := (injectiveTensorNorm G H).toSeminormedAddCommGroup
+  apply Isometry.completion_map
+  exact AddMonoidHomClass.isometry_of_norm T (injectiveTensorMap_isometry f g)
 
 end Isometries
 
