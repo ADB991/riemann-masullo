@@ -18,6 +18,9 @@ main=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 cd "$main"
 apply=0; [ "${1:-}" = --apply ] && apply=1
 mkdir -p .agent/pr-checks
+# One triage at a time: two would check the same pull request in the same scratch worktree.
+exec 9>.agent/pr-checks/.lock
+flock -n 9 || { echo "another triage is running; try again when it has finished"; exit 0; }
 list=$(gh api --paginate "repos/{owner}/{repo}/pulls?state=open&per_page=100" --jq \
   '.[] | select(.draft | not) | select(.author_association | IN("OWNER","MEMBER","COLLABORATOR") | not)
        | "\(.number) \(.head.sha) \(.user.login)"')
