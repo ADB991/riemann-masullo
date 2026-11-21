@@ -24,7 +24,7 @@ import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import RiemannMasullo.Ch03_IdelicZeta.Sec4
 import RiemannMasullo.ForMathlib.Analysis.Complex.Hadamard
 import RiemannMasullo.ForMathlib.Analysis.Complex.Liouville
-import RiemannMasullo.ForMathlib.Analysis.SpecialFunctions.Gamma.Bounds
+import RiemannMasullo.ForMathlib.Analysis.SpecialFunctions.Gamma.DeligneBounds
 import RiemannMasullo.ForMathlib.NumberTheory.NumberField.HeckeLFunction
 
 /-!
@@ -1942,6 +1942,35 @@ theorem finiteHeckeL_continuation_isBigO_exp (χ : U[F]) (L : ℂ → ℂ)
     simpa only [one_mul] using hBound
   exact hHO.congr' hAgree.symm EventuallyEq.rfl
 
+/-- A finite Hecke continuation is nonzero somewhere because its Dirichlet
+series tends to its first coefficient, one, along the positive real axis. -/
+private theorem finiteHeckeL_continuation_exists_ne_zero (χ : U[F]) (L : ℂ → ℂ)
+    (hSeries : ∀ s : halfPlane, L s = finiteHeckeL χ s) : ∃ s, L s ≠ 0 := by
+  let ψ := ideleClassNormTwist χ 0
+  have hCoeff : ψ.LFunction 1 = 1 := by
+    have hLocal (v : IsDedekindDomain.HeightOneSpectrum (𝓞 F)) : ψ.localEulerFactor v 1 = 1 := by
+      simp [NumberField.HeckeCharacter.localEulerFactor, NumberField.HeckeCharacter.localPowerSeries,
+        ArithmeticFunction.ofPowerSeries_apply_one, PowerSeries.constantCoeff_invOfUnit]
+    obtain ⟨S, hS⟩ := (heckeLocalEulerFactor_eventually_prod_eq ψ 1).exists
+    rw [← hS]
+    clear hS
+    classical
+    induction S using Finset.induction_on with
+    | empty => simp
+    | insert v S hv ih =>
+        rw [Finset.prod_insert hv, ArithmeticFunction.mul_apply_one, hLocal, ih, one_mul]
+  have hAbscissa : LSeries.abscissaOfAbsConv ψ.LFunction < ⊤ :=
+    (finiteHeckeL_seriesSummable χ ⟨2, by change 1 < (2 : ℂ).re; norm_num⟩).abscissaOfAbsConv_le.trans_lt
+      (EReal.coe_lt_top _)
+  have hLimit : Tendsto (fun t : ℝ ↦ L (t : ℂ)) atTop (𝓝 1) := by
+    rw [← hCoeff]
+    apply (LSeries.tendsto_atTop hAbscissa).congr'
+    filter_upwards [eventually_gt_atTop (1 : ℝ)] with t ht
+    exact (hSeries ⟨(t : ℂ), by change 1 < (t : ℂ).re; simpa using ht⟩).symm
+  by_contra! h
+  exact one_ne_zero (tendsto_nhds_unique_of_eventuallyEq hLimit tendsto_const_nhds
+    (Eventually.of_forall fun t ↦ h (t : ℂ)))
+
 /-- Paper: Equation (B.1.1.11), p. 590. The modulus of the completed functional equation's
 epsilon factor is unchanged by imaginary translation. In Tate's local factorization the
 archimedean phases have constant modulus and the finite norm powers have positive real bases. -/
@@ -1953,7 +1982,87 @@ private theorem completedHeckeL_continuation_epsilon_norm
     (hε : Differentiable ℂ ε) (hε₀ : ∀ s, ε s ≠ 0)
     (hEq : ∀ s, Λdual (1 - s) = ε s * Λ s) (s : ℂ) (t : ℝ) :
     ‖ε (s + (t : ℂ) * Complex.I)‖ = ‖ε s‖ := by
-  sorry
+  obtain ⟨fArch, fArchDual, c, hc, hFourier, hArch, hArchDual⟩ :=
+    exists_archimedeanHeckeTest_fourier χ
+  obtain ⟨f, a, b, q, ha, hb, hq, hf, hfDual⟩ :=
+    exists_globalHeckeTest_fourier χ fArch fArchDual c hc hFourier
+  let B (z : ℂ) := b * (q : ℂ) ^ z
+  have hq₀ : (q : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hq.ne'
+  have hB : Differentiable ℂ B :=
+    (differentiable_id.const_cpow (Or.inl hq₀)).const_mul b
+  have hB₀ (z : ℂ) : B z ≠ 0 := mul_ne_zero hb (Complex.cpow_ne_zero_iff.mpr (Or.inl hq₀))
+  let Z (z : ℂ) := globalIdelicZFunction (adeleSchwartzFourier f) (ideleClassNormTwist χ⁻¹ z)
+  have hZ := globalIdelicZFunction_meromorphic (adeleSchwartzFourier f) χ⁻¹
+  have hProd : MeromorphicNFOn (B * Λdual) univ := fun z hz ↦
+    (meromorphicNFAt_mul_iff_right (hB.analyticAt z) (hB₀ z)).mpr (hΛdual hz)
+  have hNear : ∀ᶠ z in 𝓝 (2 : ℂ), 1 < z.re :=
+    (isOpen_lt continuous_const Complex.continuous_re).mem_nhds (by norm_num)
+  -- Continue the Fourier-transformed integral from the half-plane of convergence.
+  have hOrd : meromorphicOrderAt (Z - B * Λdual) 2 = ⊤ := by
+    apply meromorphicOrderAt_eq_top_iff.mpr
+    filter_upwards [hNear.filter_mono nhdsWithin_le_nhds] with z hz
+    apply sub_eq_zero.mpr
+    change globalIdelicZFunction _ _ = B z * Λdual z
+    rw [globalIdelicZFunction_eq_integral _ (twist_mem_rightHalfPlane χ⁻¹ z hz),
+      hfDual ⟨z, hz⟩, hArchDual ⟨z, hz⟩, hDualSeries ⟨z, hz⟩]
+    rfl
+  have hZeq (z : ℂ) : Z z = B z * Λdual z := by
+    have h := (hZ.meromorphicOn.sub hProd.meromorphicOn).meromorphicOrderAt_eq_top_of_isPreconnected
+      isPreconnected_univ (mem_univ (2 : ℂ)) (mem_univ z) hOrd
+    have he : Z =ᶠ[𝓝[≠] z] B * Λdual :=
+      (meromorphicOrderAt_eq_top_iff.mp h).mono fun _ hz ↦ sub_eq_zero.mp hz
+    exact (((hZ (mem_univ z)).eventuallyEq_nhdsNE_iff_eventuallyEq_nhds
+      (hProd (mem_univ z))).mp he).eq_of_nhds
+  have hDual (z : ℂ) : dualQuasiCharacter (G := IdeleClassGroup (𝓞 F) F)
+      (ideleClassNorm F) (isProperMap_ideleClassNorm F).continuous (ideleClassNormTwist χ z) =
+      ideleClassNormTwist χ⁻¹ (1 - z) := by
+    ext1 g
+    let N : ℂ := (((ideleClassNorm F g : ℝ≥0) : ℝ) : ℂ)
+    have hN : N ≠ 0 :=
+      Complex.ofReal_ne_zero.mpr (NNReal.coe_ne_zero.mpr (ideleClassNorm F g).ne_zero)
+    change N * ideleClassNormTwist χ z g⁻¹ = _
+    rw [map_inv]
+    change N * ((χ g : ℂ) * N ^ z)⁻¹ = (χ g : ℂ)⁻¹ * N ^ (1 - z)
+    rw [mul_inv_rev, Complex.cpow_sub _ _ hN, Complex.cpow_one, div_eq_mul_inv]
+    ac_rfl
+  -- Cancel the completed L-function near 2 and extend the resulting entire identity.
+  obtain ⟨z₀, hz₀⟩ := finiteHeckeL_continuation_exists_ne_zero χ
+    (fun z ↦ Λ z / heckeGammaFactor χ z) (fun z ↦ by
+      rw [hSeries z, completedHeckeL, mul_div_cancel_left₀ _
+        (heckeGammaFactor_ne_zero_of_re_pos χ (zero_lt_one.trans z.property))]
+      rfl)
+  have hNotTop : meromorphicOrderAt Λ 2 ≠ ⊤ := by
+    intro h
+    have h₀ := hΛ.meromorphicOn.meromorphicOrderAt_eq_top_of_isPreconnected isPreconnected_univ
+      (mem_univ (2 : ℂ)) (mem_univ z₀) h
+    have hn : Λ z₀ ≠ 0 := fun he ↦ hz₀ (by simp [he])
+    rw [(hΛ (mem_univ z₀)).meromorphicOrderAt_eq_zero_iff.mpr hn] at h₀
+    exact WithTop.zero_ne_top h₀
+  have hConst : (fun z ↦ B (1 - z) * ε z) = fun _ ↦ a := by
+    apply AnalyticOnNhd.eq_of_frequently_eq (z₀ := 2)
+    · exact fun z _ ↦ ((hB.analyticAt (1 - z)).comp (analyticAt_const.sub analyticAt_id)).mul
+        (hε.analyticAt z)
+    · exact fun _ _ ↦ analyticAt_const
+    apply Eventually.frequently
+    filter_upwards [hNear.filter_mono nhdsWithin_le_nhds,
+      (meromorphicOrderAt_ne_top_iff_eventually_ne_zero (hΛ (mem_univ _)).meromorphicAt).mp hNotTop]
+      with z hz hne
+    have he := globalIdelicZFunction_functionalEquation f (ideleClassNormTwist χ z)
+    rw [hDual] at he
+    change globalIdelicZFunction f (ideleClassNormTwist χ z) = Z (1 - z) at he
+    rw [globalIdelicZFunction_eq_integral _ (twist_mem_rightHalfPlane χ z hz), hf ⟨z, hz⟩,
+      hArch ⟨z, hz⟩, hZeq, hEq] at he
+    change a * completedHeckeL χ ⟨z, hz⟩ = B (1 - z) * (ε z * Λ z) at he
+    rw [← hSeries ⟨z, hz⟩, ← mul_assoc] at he
+    exact mul_right_cancel₀ hne he.symm
+  have hNorm (z : ℂ) : ‖a / ε z‖ = ‖b‖ * q ^ (1 - z.re) := by
+    rw [(div_eq_iff (hε₀ z)).mpr (congrFun hConst z).symm]
+    simp only [B, norm_mul, Complex.norm_cpow_eq_rpow_re_of_pos hq, Complex.sub_re, Complex.one_re]
+  apply inv_injective
+  apply mul_left_cancel₀ (norm_ne_zero_iff.mpr ha)
+  change ‖a‖ / ‖ε (s + (t : ℂ) * Complex.I)‖ = ‖a‖ / ‖ε s‖
+  rw [← norm_div, ← norm_div, hNorm, hNorm]
+  simp [Complex.add_re, Complex.mul_re]
 
 /-- Paper: Equation (B.1.1.11), p. 590. The finite functional equation has a
 multiplier given by the archimedean gamma ratio and a nonzero constant times a
@@ -2322,6 +2431,120 @@ theorem finiteHeckeL_continuation_isBigO_rpow (χ : U[F]) (L : ℂ → ℂ)
   simpa only [Real.rpow_natCast] using ((hGL.symm.isBigO.mono hStrip).trans hGPoly).mono
     (hFilter (Icc_subset_Icc hl hu))
 
+/-- Shift the reflected numerator into the right half-plane. On the line
+`Re(s) = v - m`, conjugation then turns the ratio into an `m`-step recurrence.
+Interpolating from `v - M` to `v` gives the exponent `v - Re(s)` throughout. -/
+private theorem shiftedGammaℝRatio_isBigO (w : ℂ) (v : ℝ) (hv : 0 < v + w.re)
+    (M : ℕ) (hM : 0 < M) :
+    (fun s : ℂ ↦ Complex.Gammaℝ (2 * (v : ℂ) - s + conj w) / Complex.Gammaℝ (s + w))
+      =O[atHeight ⊓ 𝓟 (Complex.re ⁻¹' Icc (v - M) v)] fun s ↦ |s.im| ^ (v - s.re) := by
+  let u := v - M
+  let z (s : ℂ) := 2 * (v : ℂ) - s + conj w
+  let f (s : ℂ) := Complex.Gammaℝ (z s) / Complex.Gammaℝ (s + w)
+  have huv : u < v := sub_lt_self _ (Nat.cast_pos.mpr hM)
+  have hz (s : ℂ) (hs : s.re ∈ Icc u v) :
+      (z s).re ∈ Icc (v + w.re) (2 * v - u + w.re) := by
+    simp only [z, Complex.add_re, Complex.sub_re, Complex.conj_re, Complex.mul_re,
+      Complex.ofReal_re, Complex.ofReal_im, mul_zero, sub_zero, Complex.re_ofNat, mem_Icc]
+    exact ⟨by linarith [hs.2], by linarith [hs.1]⟩
+  have hAn (s : ℂ) (hs : s.re ∈ Icc u v) : AnalyticAt ℂ f s := by
+    have hn := Complex.Gammaℝ_ne_zero_of_re_pos (hv.trans_le (hz s hs).1)
+    have hnum := (Complex.differentiable_Gammaℝ_inv.analyticAt (z s)).inv (inv_ne_zero hn)
+    change AnalyticAt ℂ (fun t ↦ ((Complex.Gammaℝ t)⁻¹)⁻¹) (z s) at hnum
+    simp only [inv_inv] at hnum
+    have hz' : AnalyticAt ℂ z s := by dsimp [z]; fun_prop
+    have hden := (Complex.differentiable_Gammaℝ_inv.analyticAt (s + w)).comp (f := fun t ↦ t + w)
+      (show AnalyticAt ℂ (fun t : ℂ ↦ t + w) s by fun_prop)
+    simpa only [f, div_eq_mul_inv, Function.comp_def, Pi.mul_def] using (hnum.comp hz').mul hden
+  have hEdge (m : ℕ) :
+      f =O[atHeight ⊓ 𝓟 (Complex.re ⁻¹' {v - m})] fun s ↦ |s.im| ^ m := by
+    apply Asymptotics.IsBigO.of_norm_left
+    refine (gamma_shift_isBigO Complex.Gammaℝ 2 (fun _ h ↦ Complex.Gammaℝ_add_two h)
+      (v - m) w m).norm_left.congr' (eventually_inf_principal.mpr (Eventually.of_forall ?_))
+      EventuallyEq.rfl
+    intro s hs
+    change s.re = v - m at hs
+    have he : conj (z s) = s + w + (m : ℂ) * 2 := by
+      apply Complex.ext <;> simp [z, Complex.mul_re, Complex.mul_im, hs]; ring
+    simp only [f, norm_div, ← he, Complex.Gammaℝ_conj, Complex.norm_conj, Nat.cast_ofNat]
+  obtain ⟨C, hC⟩ := exists_norm_Gammaℝ_le_on_strip _ _ hv
+  have hNum : (fun s ↦ Complex.Gammaℝ (z s)) =O[atHeight ⊓ 𝓟 (Complex.re ⁻¹' Icc u v)]
+      fun _ ↦ (1 : ℝ) := by
+    refine Asymptotics.IsBigO.of_bound C (eventually_inf_principal.mpr (Eventually.of_forall ?_))
+    exact fun s hs ↦ by simpa using hC _ (hz s hs)
+  have hExp := hNum.mul (inv_Gammaℝ_add_isBigO_exp u v w)
+  have hLeft := hEdge M
+  have hRight : f =O[atHeight ⊓ 𝓟 (Complex.re ⁻¹' {v})] fun s ↦ |s.im| ^ (0 : ℝ) := by
+    simpa using hEdge 0
+  have hRight' := hRight.trans ((isBigO_im_rpow_of_le (Nat.cast_nonneg M)).mono inf_le_left)
+  have hPoly := isBigO_pow_verticalStrip_of_exp (f := f) huv
+    (fun s hs ↦ (hAn s hs).differentiableAt.differentiableWithinAt)
+    (by simpa only [f, div_eq_mul_inv, one_mul] using hExp) hLeft
+    (by simpa only [Real.rpow_natCast] using hRight')
+  have h := isBigO_height_affine (f := f) huv (Nat.cast_nonneg M) (Nat.cast_nonneg M) le_rfl
+    ⟨0, fun s hs _ ↦ hAn s hs⟩ (by simpa using hPoly) (by simpa using hLeft) hRight
+  have he (x : ℝ) : (1 - (x - u) / (v - u)) * M + (x - u) / (v - u) * 0 = v - x := by
+    dsimp [u]
+    field_simp [show (M : ℝ) ≠ 0 by exact_mod_cast hM.ne']
+    ring
+  simpa only [he] using h
+
+/-- Undo the numerator shift after interpolation. The shift gains one full
+power of height per recurrence step, including where the final exponent is negative. -/
+private theorem gammaℝRatio_isBigO_on_strip (w : ℂ) (a b : ℝ) (hab : a < b) :
+    (fun s : ℂ ↦ Complex.Gammaℝ (1 - s + conj w) / Complex.Gammaℝ (s + w))
+      =O[atHeight ⊓ 𝓟 (Complex.re ⁻¹' Icc a b)] fun s ↦ |s.im| ^ (1 / 2 - s.re) := by
+  obtain ⟨N, hN⟩ := exists_nat_gt (max b (-w.re))
+  let v : ℝ := N + 1 / 2
+  have hv : 0 < v + w.re := by dsimp [v]; linarith [le_max_right b (-w.re)]
+  have hbv : b < v := by dsimp [v]; linarith [le_max_left b (-w.re)]
+  obtain ⟨M, hM⟩ := exists_nat_gt (v - a)
+  have hMpos : 0 < M := Nat.cast_pos.mp ((sub_pos.mpr (hab.trans hbv)).trans hM)
+  obtain ⟨C, hC, T, hT⟩ := (isBigO_height_iff (p := fun x ↦ v - x)).mp
+    (shiftedGammaℝRatio_isBigO w v hv M hMpos)
+  let K := (4 * Real.pi) ^ N
+  refine (isBigO_height_iff (p := fun x ↦ 1 / 2 - x)).mpr
+    ⟨K * C, by dsimp [K]; positivity, max T (2 * |w.im| + 1), fun s hs ht ↦ ?_⟩
+  let z := 1 - s + conj w
+  have hσ : s.re ∈ Icc (v - M) v := by
+    constructor
+    · linarith [hs.1]
+    · exact hs.2.trans hbv.le
+  have hHeight : 2 * |w.im| + 1 ≤ |s.im| := (le_max_right _ _).trans ht
+  have ht₀ : 0 < |s.im| := by linarith [abs_nonneg w.im]
+  have hz : |s.im| ≤ 2 * |z.im| := by
+    have h := abs_sub_abs_le_abs_sub s.im (-w.im)
+    rw [abs_neg, sub_neg_eq_add] at h
+    have hi : z.im = -(s.im + w.im) := by simp [z]; ring
+    rw [hi, abs_neg]
+    linarith
+  have hStep := norm_Gammaℝ_mul_abs_im_pow z (fun he ↦ by simpa [he] using ht₀.trans_le hz) N
+  have hnum : ‖Complex.Gammaℝ z‖ * |s.im| ^ N ≤ K * ‖Complex.Gammaℝ (z + (N : ℂ) * 2)‖ := calc
+    _ ≤ ‖Complex.Gammaℝ z‖ * (2 * |z.im|) ^ N := by gcongr
+    _ = 2 ^ N * (‖Complex.Gammaℝ z‖ * |z.im| ^ N) := by rw [mul_pow]; ring
+    _ ≤ _ := by
+      refine (mul_le_mul_of_nonneg_left hStep (by positivity : (0 : ℝ) ≤ 2 ^ N)).trans_eq ?_
+      dsimp [K]
+      rw [← mul_assoc, ← mul_pow]
+      ring_nf
+  have he : z + (N : ℂ) * 2 = 2 * (v : ℂ) - s + conj w := by
+    dsimp [z, v]; push_cast; ring
+  have hShift := hT s hσ ((le_max_left _ _).trans ht)
+  rw [← he, norm_div] at hShift
+  rw [norm_div]
+  apply le_of_mul_le_mul_right (a := |s.im| ^ N) _ (pow_pos ht₀ _)
+  calc
+    ‖Complex.Gammaℝ z‖ / ‖Complex.Gammaℝ (s + w)‖ * |s.im| ^ N
+        = (‖Complex.Gammaℝ z‖ * |s.im| ^ N) / ‖Complex.Gammaℝ (s + w)‖ := by ring
+    _ ≤ K * (‖Complex.Gammaℝ (z + (N : ℂ) * 2)‖ / ‖Complex.Gammaℝ (s + w)‖) := by
+      rw [mul_div_assoc']
+      exact div_le_div_of_nonneg_right hnum (norm_nonneg _)
+    _ ≤ K * (C * |s.im| ^ (v - s.re)) :=
+      mul_le_mul_of_nonneg_left hShift (by dsimp [K]; positivity)
+    _ = _ := by
+      rw [mul_assoc (K * C), ← Real.rpow_natCast, ← Real.rpow_add ht₀]
+      rw [show v - s.re = 1 / 2 - s.re + N by dsimp [v]; ring, mul_assoc]
+
 /-- Paper: Equations (B.1.1.7)–(B.1.1.11), p. 590. Uniform Stirling estimates
 at the real and complex places bound the normal form of the archimedean gamma
 ratio by the height to the power `[F : ℚ] * (1 / 2 - Re(s))`. -/
@@ -2329,36 +2552,89 @@ private theorem heckeGammaRatio_isBigO_on_strip (χ : U[F]) (a b : ℝ) (hab : a
     toMeromorphicNFOn (fun z ↦ heckeGammaFactor χ⁻¹ (1 - z) / heckeGammaFactor χ z) univ
       =O[atHeight ⊓ 𝓟 (Complex.re ⁻¹' Icc a b)]
         fun s ↦ |s.im| ^ ((Module.finrank ℚ F : ℝ) * (1 / 2 - s.re)) := by
-  sorry
-
-/-- A finite Hecke continuation is nonzero somewhere because its Dirichlet
-series tends to its first coefficient, one, along the positive real axis. -/
-private theorem finiteHeckeL_continuation_exists_ne_zero (χ : U[F]) (L : ℂ → ℂ)
-    (hSeries : ∀ s : halfPlane, L s = finiteHeckeL χ s) : ∃ s, L s ≠ 0 := by
-  let ψ := ideleClassNormTwist χ 0
-  have hCoeff : ψ.LFunction 1 = 1 := by
-    have hLocal (v : IsDedekindDomain.HeightOneSpectrum (𝓞 F)) : ψ.localEulerFactor v 1 = 1 := by
-      simp [NumberField.HeckeCharacter.localEulerFactor, NumberField.HeckeCharacter.localPowerSeries,
-        ArithmeticFunction.ofPowerSeries_apply_one, PowerSeries.constantCoeff_invOfUnit]
-    obtain ⟨S, hS⟩ := (heckeLocalEulerFactor_eventually_prod_eq ψ 1).exists
-    rw [← hS]
-    clear hS
-    classical
-    induction S using Finset.induction_on with
-    | empty => simp
-    | insert v S hv ih =>
-        rw [Finset.prod_insert hv, ArithmeticFunction.mul_apply_one, hLocal, ih, one_mul]
-  have hAbscissa : LSeries.abscissaOfAbsConv ψ.LFunction < ⊤ :=
-    (finiteHeckeL_seriesSummable χ ⟨2, by change 1 < (2 : ℂ).re; norm_num⟩).abscissaOfAbsConv_le.trans_lt
-      (EReal.coe_lt_top _)
-  have hLimit : Tendsto (fun t : ℝ ↦ L (t : ℂ)) atTop (𝓝 1) := by
-    rw [← hCoeff]
-    apply (LSeries.tendsto_atTop hAbscissa).congr'
-    filter_upwards [eventually_gt_atTop (1 : ℝ)] with t ht
-    exact (hSeries ⟨(t : ℂ), by change 1 < (t : ℂ).re; simpa using ht⟩).symm
-  by_contra! h
-  exact one_ne_zero (tendsto_nhds_unique_of_eventuallyEq hLimit tendsto_const_nhds
-    (Eventually.of_forall fun t ↦ h (t : ℂ)))
+  classical
+  let l := atHeight ⊓ 𝓟 (Complex.re ⁻¹' Icc a b)
+  have hHeight : Tendsto (fun s : ℂ ↦ |s.im|) l atTop := tendsto_inf_left tendsto_comap
+  let w (ψ : U[F]) (v : InfinitePlace F) : ℂ :=
+    if hv : v.IsReal then
+      let d := (realHeckeCharacter_parameters ψ v hv).exists.choose
+      d.1 + (d.2.val : ℂ)
+    else
+      let d := (complexHeckeCharacter_parameters ψ v
+        (InfinitePlace.not_isReal_iff_isComplex.mp hv)).exists.choose
+      d.1 + (d.2.natAbs : ℂ) / 2
+  let G (v : InfinitePlace F) (z : ℂ) :=
+    if v.IsReal then Complex.Gammaℝ z else Complex.Gammaℂ z / 2
+  have hFact (ψ : U[F]) (s : ℂ) : heckeGammaFactor ψ s = ∏ v, G v (s + w ψ v) := by
+    unfold heckeGammaFactor
+    apply Finset.prod_congr rfl
+    intro v _
+    by_cases hv : v.IsReal <;> simp [G, w, hv, add_assoc]
+  have hInv (v : InfinitePlace F) : w χ⁻¹ v = conj (w χ v) := by
+    have hImag (z : ℂ) (hz : z.re = 0) : conj z = -z := by
+      apply Complex.ext <;> simp [hz]
+    by_cases hv : v.IsReal
+    · simp only [w, dite_eq_left hv, realHeckeCharacter_parameters_inv, map_add, map_natCast,
+        hImag _ (realHeckeCharacter_parameters χ v hv).exists.choose_spec.1]
+    · have hv' := InfinitePlace.not_isReal_iff_isComplex.mp hv
+      simp only [w, dite_eq_right hv, complexHeckeCharacter_parameters_inv, Int.natAbs_neg,
+        map_add, map_div₀, map_natCast, map_ofNat,
+        hImag _ (complexHeckeCharacter_parameters χ v hv').exists.choose_spec.1]
+  let p (s : ℂ) := 1 / 2 - s.re
+  have hLocal (v : InfinitePlace F) :
+      (fun s : ℂ ↦ G v (1 - s + w χ⁻¹ v) / G v (s + w χ v))
+        =O[l] fun s ↦ |s.im| ^ ((v.mult : ℝ) * p s) := by
+    rw [hInv]
+    have h := gammaℝRatio_isBigO_on_strip (w χ v) a b hab
+    by_cases hv : v.IsReal
+    · simpa only [G, ite_eq_left hv, hv.mult_eq_one, Nat.cast_one, one_mul, p] using h
+    · have hv' := InfinitePlace.not_isReal_iff_isComplex.mp hv
+      have h' := h.mul (gammaℝRatio_isBigO_on_strip (w χ v + 1) a b hab)
+      refine h'.congr' (Eventually.of_forall fun s ↦ ?_) ?_
+      · simp only [G, ite_eq_right hv, div_div_div_cancel_right₀ (two_ne_zero' ℂ),
+          ← Complex.Gammaℝ_mul_Gammaℝ_add_one, map_add, map_one, ← add_assoc, mul_div_mul_comm]
+      · filter_upwards [hHeight.eventually_gt_atTop 0] with s hs
+        rw [← Real.rpow_add hs, hv'.mult_eq_two, Nat.cast_ofNat, two_mul]
+  have hProd := Asymptotics.IsBigO.finsetProd (s := Finset.univ) (fun v _ ↦ hLocal v)
+  have hRaw : (fun s ↦ heckeGammaFactor χ⁻¹ (1 - s) / heckeGammaFactor χ s)
+      =O[l] fun s ↦ |s.im| ^ ((Module.finrank ℚ F : ℝ) * p s) := by
+    refine hProd.congr' (Eventually.of_forall fun s ↦ ?_) ?_
+    · simp only [hFact, Finset.prod_div_distrib]
+    · filter_upwards [hHeight.eventually_gt_atTop 0] with s hs
+      rw [← Real.rpow_sum_of_pos hs, ← Finset.sum_mul, ← Nat.cast_sum, InfinitePlace.sum_mult_eq]
+  -- Away from the finitely many pole heights the raw quotient is already in normal form.
+  have hne (z : ℂ) (hz : z.im ≠ 0) : Complex.Gammaℝ z ≠ 0 := by
+    rintro h
+    obtain ⟨n, rfl⟩ := Complex.Gammaℝ_eq_zero_iff.mp h
+    exact hz (by simp [Complex.mul_im])
+  have hNonzero (v : InfinitePlace F) : ∀ᶠ s : ℂ in l, G v (1 - s + w χ⁻¹ v) ≠ 0 := by
+    filter_upwards [hHeight.eventually_gt_atTop |(w χ⁻¹ v).im|] with s hs
+    let z := 1 - s + w χ⁻¹ v
+    have hz : z.im ≠ 0 := by
+      intro h
+      have he : s.im = (w χ⁻¹ v).im := by simpa [z, neg_add_eq_zero] using h
+      exact hs.ne (congrArg abs he.symm)
+    by_cases hv : v.IsReal
+    · simpa only [G, ite_eq_left hv] using hne z hz
+    · simp only [G, ite_eq_right hv, ← Complex.Gammaℝ_mul_Gammaℝ_add_one]
+      exact div_ne_zero (mul_ne_zero (hne z hz) (hne (z + 1) (by simpa using hz))) two_ne_zero
+  have hMer : MeromorphicOn (fun s ↦ heckeGammaFactor χ⁻¹ (1 - s) / heckeGammaFactor χ s) univ :=
+    fun s _ ↦ ((meromorphic_heckeGammaFactor χ⁻¹ (1 - s)).comp_analyticAt
+      (analyticAt_const.sub analyticAt_id)).div (meromorphic_heckeGammaFactor χ s)
+  refine hRaw.congr' ?_ EventuallyEq.rfl
+  filter_upwards [eventually_all.mpr hNonzero] with s hs
+  have hn : heckeGammaFactor χ⁻¹ (1 - s) ≠ 0 := by
+    rw [hFact]
+    exact Finset.prod_ne_zero_iff.mpr fun v _ ↦ hs v
+  have ha := ((differentiable_inv_heckeGammaFactor χ⁻¹).analyticAt (1 - s)).inv (inv_ne_zero hn)
+  change AnalyticAt ℂ (fun z ↦ ((heckeGammaFactor χ⁻¹ z)⁻¹)⁻¹) (1 - s) at ha
+  simp only [inv_inv] at ha
+  have hA : AnalyticAt ℂ (fun z ↦ heckeGammaFactor χ⁻¹ (1 - z) / heckeGammaFactor χ z) s := by
+    have hReflect : AnalyticAt ℂ (fun z : ℂ ↦ 1 - z) s := by fun_prop
+    simpa only [div_eq_mul_inv, Pi.mul_def, Function.comp_def] using
+      (ha.comp hReflect).mul ((differentiable_inv_heckeGammaFactor χ).analyticAt s)
+  rw [toMeromorphicNFOn_eq_toMeromorphicNFAt hMer (mem_univ s),
+    toMeromorphicNFAt_eq_self.mpr hA.meromorphicNFAt]
 
 /-- Paper: Equation (B.1.1.10), p. 590. The reflection factor in the functional
 equation satisfies the stated power bound on every fixed closed vertical strip. -/
