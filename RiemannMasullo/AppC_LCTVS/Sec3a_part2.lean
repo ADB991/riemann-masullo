@@ -154,10 +154,13 @@ theorem tendsto_sum_hilbertTrace_orthogonalProjections_mul [SeparableSpace H]
 
 /-- Paper: Remark C.3.5.2, p. 699. The finite sums of pairwise orthogonal
 projections converge strongly to the identity exactly when the algebraic
-sum of the subspaces is dense. -/
+sum of the subspaces is dense.
+The supremum is taken among submodules and only then viewed as a set: written with the set
+ascription outside, Lean coerces each summand first and forms the union, for which the statement
+is false (two coordinate axes in the plane). -/
 theorem tendsto_sum_orthogonalProjections_iff_dense_iSup (hV : PairwiseOrthogonal) :
     (∀ x, Tendsto (fun s : Finset ι ↦ (∑ i ∈ s, P(i)) x) atTop (𝓝 x)) ↔
-      Dense ((⨆ i, (V i : Submodule ℂ H)) : Set H) := by sorry
+      Dense (((⨆ i, V i : Submodule ℂ H) : Submodule ℂ H) : Set H) := by sorry
 
 end OrthogonalSummands
 

@@ -698,8 +698,11 @@ theorem weaklyDifferentiableOn_iff_existsUnique {Ω : Set V} (hΩ : IsOpen Ω) (
     exact hL.differentiableWithinAt
 
 /-- Paper: Definition C.5.1.6, p. 723. Weak continuous differentiability on an open
-set means continuous differentiability of each scalar evaluation. -/
-theorem weaklyContDiffOn_iff_scalar {Ω : Set V} (hΩ : IsOpen Ω) (f : V → E) :
+set means continuous differentiability of each scalar evaluation.
+The source is finite-dimensional, as in the paper (k^d): for an infinite-dimensional normed
+source, joint continuity of the scalar derivatives does not give continuity in operator norm. -/
+theorem weaklyContDiffOn_iff_scalar [FiniteDimensional k V] {Ω : Set V} (hΩ : IsOpen Ω)
+    (f : V → E) :
     WeaklyContDiffOn k f Ω ↔ ∀ φ : StrongDual ℂ E, ContDiffOn k 1 (φ ∘ f) Ω := by sorry
 
 /-- Paper: Definition C.5.1.8(1), p. 724. The continuous differential in the weak
