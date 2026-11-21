@@ -6,6 +6,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.UniformOn
 public import RiemannMasullo.AppB_AnalyticNT.Sec2
 public import RiemannMasullo.Ch03_IdelicZeta.Sec2
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import RiemannMasullo.ForMathlib.Analysis.Fourier.PoissonSummation
 import RiemannMasullo.ForMathlib.Analysis.MellinTransform
 
 /-!
@@ -248,6 +249,21 @@ theorem summable_mellinJumpMidpoint_lattice
 -- TODO(paper-gap): (B.4.1.15) drops the character twist at the translated point,
 -- and (B.4.1.17) omits the midpoint contributions from |m| ≤ N₀.
 
+/-- Paper: Proposition B.4.1.2, p. 609. The periodized, rescaled logarithmic profile
+has a symmetric average near zero that differs from the sum of the weighted midpoint
+samples by at most a constant times the distance to zero. One-sided derivative
+bounds give this estimate on the finitely many central translates. The exponential
+decay of the profile and its derivative gives a summable bound on the other translates. -/
+theorem mellinPeriodization_midpoint_bound
+    {f : ℝ → ℂ} (hf : IsPiecewiseSmoothMellinTest f) {d : ℝ} (hd : d ≠ 0) (ℓ : ℂ) :
+    let P (x : ℝ) := ∑' k : ℤ, Complex.exp (ℓ * ((x + (k : ℝ) : ℝ) : ℂ)) *
+      f ((x + (k : ℝ)) * d)
+    ∃ C δ : ℝ, 0 < δ ∧ ∀ x ∈ Ioo 0 δ,
+      ‖(P x + P (-x)) / 2 -
+        ∑' k : ℤ, Complex.exp (ℓ * (k : ℂ)) * mellinJumpMidpoint f ((k : ℝ) * d)‖ ≤ C * x := by
+  sorry
+
+open MeasureTheory in
 /-- Paper: Proposition B.4.1.2, p. 608. The symmetric frequency sums converge
 to the weighted midpoint sum times the logarithmic lattice spacing. The limit
 is the same for every complex logarithm of the character value on the generator.
@@ -260,7 +276,47 @@ theorem tendsto_mellinPoissonSum_of_piecewiseSmooth
       ∑ m ∈ Finset.Icc (-(N : ℤ)) (N : ℤ),
         logMellin f ((ℓ + twoPiI * (m : ℂ)) / (Real.log θ : ℂ))) atTop
       (𝓝 (((|Real.log θ| : ℝ) : ℂ) *
-        ∑' m : ℤ, (c : ℂ) ^ m * mellinJumpMidpoint f ((m : ℝ) * Real.log θ))) := by sorry
+        ∑' m : ℤ, (c : ℂ) ^ m * mellinJumpMidpoint f ((m : ℝ) * Real.log θ))) := by
+  let d := Real.log θ
+  have hd : d ≠ 0 := Real.log_ne_zero_of_pos_of_ne_one hθ hθ₁
+  have hdℂ : (d : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hd
+  let g (x : ℝ) := Complex.exp (ℓ * (x : ℂ)) * f (x * d)
+  have hg : Integrable g := by
+    have hi := (mellinConvergent_log_iff_integrable f (ℓ / (d : ℂ))).mp
+      (mellinConvergent_of_piecewiseSmoothMellinTest hf _)
+    convert hi.comp_mul_right' hd using 1
+    ext x
+    simp only [g, Complex.ofReal_mul]
+    rw [div_mul_eq_mul_div, ← mul_assoc, mul_div_cancel_right₀ _ hdℂ]
+  have hsample (m : ℤ) :
+      logMellin f ((ℓ + twoPiI * (m : ℂ)) / (d : ℂ)) =
+        ((|d| : ℝ) : ℂ) * (∫ x : ℝ, Complex.exp (twoPiI * (m : ℂ) * (x : ℂ)) * g x) := by
+    let H (x : ℝ) := Complex.exp (((ℓ + twoPiI * (m : ℂ)) / (d : ℂ)) * (x : ℂ)) * f x
+    change mellin (fun t ↦ f (Real.log t)) _ = _
+    rw [mellin_log_eq_integral]
+    change (∫ x, H x) = _
+    have hH (x : ℝ) : H (x * d) = Complex.exp (twoPiI * (m : ℂ) * (x : ℂ)) * g x := by
+      simp only [H, g, Complex.ofReal_mul]
+      rw [div_mul_eq_mul_div, ← mul_assoc, mul_div_cancel_right₀ _ hdℂ, add_mul,
+        Complex.exp_add]
+      ac_rfl
+    simp_rw [← hH]
+    rw [Measure.integral_comp_mul_right, abs_inv, Complex.real_smul, Complex.ofReal_inv,
+      ← mul_assoc, mul_inv_cancel₀ (Complex.ofReal_ne_zero.mpr (abs_ne_zero.mpr hd)), one_mul]
+  have hP := intervalIntegrable_periodization hg (-(1 / 2))
+  simp only [show -(1 / 2 : ℝ) + 1 = 1 / 2 by norm_num] at hP
+  have hmid := mellinPeriodization_midpoint_bound hf hd ℓ
+  have hsum := tendsto_sum_intervalIntegral_exp_of_midpoint_bound hP hmid
+  have hperiod (m : ℤ) := integral_exp_mul_eq_intervalIntegral_periodization hg (-(1 / 2)) m
+  simp only [show -(1 / 2 : ℝ) + 1 = 1 / 2 by norm_num] at hperiod
+  simp_rw [← hperiod] at hsum
+  have hpow (m : ℤ) : Complex.exp (ℓ * (m : ℂ)) = (c : ℂ) ^ m := by
+    rw [mul_comm, Complex.exp_int_mul, hℓ]
+  simp only [hpow] at hsum
+  change Tendsto (fun N : ℕ ↦ ∑ m ∈ Finset.Icc (-(N : ℤ)) (N : ℤ),
+      logMellin f ((ℓ + twoPiI * (m : ℂ)) / (d : ℂ))) atTop _
+  simp_rw [hsample, ← Finset.mul_sum]
+  exact (tendsto_const_nhds (x := ((|d| : ℝ) : ℂ))).mul hsum
 
 /-- Paper: Remark B.4.1.3, p. 608. The midpoint agrees with the original
 sample at all but finitely many integer powers of the lattice generator. -/
