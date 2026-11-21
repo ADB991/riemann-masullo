@@ -8,7 +8,8 @@ public import RiemannMasullo.ForMathlib.Analysis.SpecialFunctions.Pow.Complex
 # Eigendistributions and Weil's identity
 
 Masullo, §3.4, pp. 141–153. Page 154 is blank. The zeta integrals use the
-Tamagawa measures from Appendix A.
+Tamagawa measures from Appendix A. The local factorization recalled in
+Notation 3.4.1.1 is `heckeCharacter_eq_prod_restrictions` from §3.1.
 -/
 
 @[expose] public noncomputable section
@@ -43,8 +44,8 @@ local notation "μArch" => sMultiplicativeTamagawaMeasure F (∅ : Finset V)
 local notation "μv" => finiteLocalMultiplicativeTamagawaMeasure F
 local notation "valuation(" v ")" =>
   (Valued.v : Valuation (HeightOneSpectrum.adicCompletion F v) (WithZero (Multiplicative ℤ)))
-local notation "positive" => relativeRightHalfPlane (ideleClassNorm F)
-  (isProperMap_ideleClassNorm F) (ideleClassNorm_ne_one (F := F)) 0
+local notation "positive" => (relativeRightHalfPlane (G := C_F) (ideleClassNorm F)
+  (isProperMap_ideleClassNorm F) (ideleClassNorm_ne_one (F := F)) 0 : Set X)
 
 -- Named, because an anonymous instance gets the same generated name in every file that declares
 -- it, and two such files can then not be imported together.
@@ -157,12 +158,13 @@ theorem weilModifiedZeta_analyticOn (fArch : ℬ(AArch))
     AnalyticOnNhd ℂ (fun s ↦ weilModifiedZeta fArch K uniformizer (ideleClassNormTwist χ s))
       (Complex.re ⁻¹' Ioi 0) := by sorry
 
-/-- Paper: Proof of Theorem 3.4.1.1, p. 144. For a character unramified at every
-finite place the archimedean integral is the S-idelic zeta integral with no finite places. -/
+/-- Paper: Proof of Theorem 3.4.1.1, p. 144. For a character of positive abscissa
+unramified at every finite place, the archimedean integral equals the continued
+S-idelic Z-function with no finite places. -/
 theorem weilArchimedeanIntegral_eq_sLocal (fArch : ℬ(AArch)) (c : X)
-    (hc : c ∈ unramifiedOutside F ∅) :
+    (hc : c ∈ unramifiedOutside F ∅) (hpos : c ∈ positive) :
     weilArchimedeanIntegral fArch c =
-      sLocalIdelicZetaIntegral fArch (sIdeleRestriction F ∅ ⟨c, hc⟩) := by sorry
+      sLocalIdelicZFunction fArch (sIdeleRestriction F ∅ ⟨c, hc⟩) := by sorry
 
 -- TODO(paper-gap): Equations (3.4.1.5)–(3.4.1.6) omit the outside integer-unit masses.
 -- In (3.4.1.6) the ramified finite Euler factors are one, and the continuation
@@ -204,6 +206,23 @@ theorem weilIdentity_unramifiedOutside (S : Finset V) (fS : ℬ(SAdeleRing F S))
           (((μv v.val) (v.val.adicCompletionIntegers F).units).toReal : ℂ)) *
         sLocalIdelicZetaIntegral fS (sIdeleRestriction F S ⟨ideleClassNormTwist χ s, hc⟩) *
         ∏' v : {v : V // v ∉ S}, finiteHeckeEulerFactor χ v.val s := by sorry
+
+/-- Paper: Equation (3.4.1.6), pp. 143–144, as applied on p. 231. For a test extended
+from S, the global Z-function is the S-local Z-function times the continued outside
+Euler product and the outside integer-unit masses.
+Deviation: The continuation is expressed away from a discrete set of exponents. -/
+theorem weilIdentity_unramifiedOutside_meromorphic (S : Finset V) (fS : ℬ(SAdeleRing F S))
+    (χ : PontryaginDual C_F) (hc : ideleClassNormTwist χ 0 ∈ unramifiedOutside F S)
+    (L : ℂ → ℂ) (hL : MeromorphicNFOn L univ)
+    (hLf : ∀ (s : ℂ) (hs : 1 < s.re), L s = finiteHeckeL χ ⟨s, hs⟩) :
+    let cS := sIdeleRestriction F S ⟨ideleClassNormTwist χ 0, hc⟩
+    let twistS := quasiCharacterNormTwist (G := SIdeleQuotient F S) (sIdeleQuotientNorm F S)
+      (isProperMap_sIdeleQuotientNorm F S).continuous cS
+    (fun s ↦ globalIdelicZFunction (sAdeleSchwartzToGlobal F S fS) (ideleClassNormTwist χ s))
+      =ᶠ[codiscrete ℂ] (fun s ↦
+        (∏ᶠ v : {v : V // v ∉ S}, (((μv v.val) (v.val.adicCompletionIntegers F).units).toReal : ℂ)) *
+          sLocalIdelicZFunction fS (twistS s) * (∏ v ∈ S, (finiteHeckeEulerFactor χ v s)⁻¹) * L s) := by
+  sorry
 
 /-- Paper: Equation (3.4.1.6), p. 143. For a pure tensor the zeta integral is the
 modified zeta product times the finite Hecke L-function on the absolute-convergence half-plane.
@@ -470,8 +489,8 @@ theorem adelicStandardGaussian_trivial_zero :
 /-- Paper: Definition 3.4.3.2, p. 152. The adelic Gaussian depends only on
 the restriction of the unitary representative to the norm-one classes. -/
 theorem adelicStandardGaussian_eq_of_restriction (χ ψ : PontryaginDual C_F)
-    (h : normOneRestriction (ideleClassNorm F) (ideleClassNormTwist χ 0) =
-      normOneRestriction (ideleClassNorm F) (ideleClassNormTwist ψ 0)) :
+    (h : normOneRestriction (G := C_F) (ideleClassNorm F) (ideleClassNormTwist χ 0) =
+      normOneRestriction (G := C_F) (ideleClassNorm F) (ideleClassNormTwist ψ 0)) :
     adelicStandardGaussian χ = adelicStandardGaussian ψ := by sorry
 
 -- TODO(paper-gap): Even with the corrected complex Gaussians, the Tamagawa
@@ -590,6 +609,11 @@ theorem adelicEigendistribution_apply_pureTensor (χ : PontryaginDual C_F) (s : 
           (∏ w : InfinitePlace F, fArch w (Multiplicative.ofAdd (x.1 w))) *
             ∏ᶠ v : V, fFin v (Multiplicative.ofAdd (x.2 v))) →
         T f = (∏ w : InfinitePlace F, TArch w (fArch w)) * ∏ᶠ v : V, TFin v (fFin v) := by sorry
+
+-- Remark 3.4.3.4, p. 153. The tensor acts on the full test space by continuity.
+-- The completed archimedean product uses `schwartzBruhat_kernel_equiv`; the finite
+-- stages and their passage to the adeles use `sAdeleSchwartz_inductiveTensor_equiv`
+-- and `sAdeleSchwartzToGlobal_finalTopology`.
 
 end Gaussians
 
