@@ -733,7 +733,7 @@ product with the power of the modulation. -/
 theorem modulatedExponentialDecayTwist_apply (a : I) (f : modulatedExponentialDecaySubmodule m I)
     (g : G) :
     modulatedExponentialDecayTwist m I a f g = ((((m g).val : ℝ) ^ (a : ℝ) : ℝ) : ℂ) * f.val g :=
-  by sorry
+  rfl
 
 variable [IsTopologicalGroup G] [T2Space G] [LocallyCompactSpace G]
 
