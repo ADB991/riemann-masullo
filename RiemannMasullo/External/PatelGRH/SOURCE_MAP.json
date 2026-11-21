@@ -1,0 +1,100 @@
+{
+  "PadicCharacterDenominators.lean": [
+    {
+      "path": "Proofs/Lemmas/PadicCharacterDenominators.lean",
+      "sha256": "80afbeb55b5de1d20512d25d835971a0c09169abbfb9fc81521324b7ba61f511"
+    }
+  ],
+  "PadicStandardCharacter.lean": [
+    {
+      "path": "Proofs/Theorems/PadicStandardCharacter.lean",
+      "sha256": "2daf3eacf17d74abb115c136550504442cb70cf7df8729965c1cddb9265b689f"
+    }
+  ],
+  "RationalAdeleAnnihilator.lean": [
+    {
+      "path": "Proofs/Theorems/RationalAdeleAnnihilator.lean",
+      "sha256": "97ab7b43a3ec40fc5d988fdcde002eec5593560e0f5c35504805f77ea7df28f6"
+    }
+  ],
+  "RationalAdeleCharacter.lean": [
+    {
+      "path": "Proofs/Theorems/RationalAdeleCharacter.lean",
+      "sha256": "8cb5f3e393bac76a635ff9d64856ac69d51ad15479b452dae7630e277aa866c2"
+    }
+  ],
+  "RationalAdeleClassDual.lean": [
+    {
+      "path": "Proofs/Lemmas/RationalAdeleClassDual.lean",
+      "sha256": "cee2cd70175270ed52358529ed171c436521c6ae983d606235bc145779380930"
+    },
+    {
+      "path": "Proofs/Theorems/RationalAdelePoisson.lean",
+      "sha256": "45bbdc965ed67eef556fedcc9e80fe8db4213fa17c5d05ea1a358e6c1538b68a"
+    }
+  ],
+  "RationalAdeleClassFourier.lean": [
+    {
+      "path": "Proofs/Theorems/RationalAdeleClassFourier.lean",
+      "sha256": "11294d45aa17aa0b2472165e47e9c2b292ed7e7515b189766e55bfff760a252e"
+    }
+  ],
+  "RationalAdeleClassFourierBasis.lean": [
+    {
+      "path": "Proofs/Theorems/RationalAdeleClassFourierBasis.lean",
+      "sha256": "62e4629ce54c1ff815d4ab31eff812d054488098c8002dfe0afec602dd9141f4"
+    }
+  ],
+  "RationalAdeleDenominators.lean": [
+    {
+      "path": "Proofs/Theorems/RationalAdeleDenominators.lean",
+      "sha256": "8749b8d379b8d13b685804e66786d1f3b1075e3d5060752754ed8fb7056a8b85"
+    }
+  ],
+  "RationalAdeleDual.lean": [
+    {
+      "path": "Proofs/Theorems/RationalAdeleDual.lean",
+      "sha256": "f135654e1b69696f5ed54254955aca378fff8306e06d3dce4656826cff0c7255"
+    }
+  ],
+  "RationalAdeleFiniteCharacter.lean": [
+    {
+      "path": "Proofs/Lemmas/RationalAdeleFiniteCharacter.lean",
+      "sha256": "9fdbd19c4be94d293ec75ec42f1fb6d294ef603701f448a08d2d6193f76e4811"
+    }
+  ],
+  "RationalAdelePrimeTests.lean": [
+    {
+      "path": "Proofs/Lemmas/RationalAdelePrimeTests.lean",
+      "sha256": "9f4b7a5ff44685752becfb5adec1d6215df925cb8fbd2a3dcf6860b6a3480d3f"
+    }
+  ],
+  "RationalDiagonalDual.lean": [
+    {
+      "path": "Proofs/Theorems/RationalDiagonalDual.lean",
+      "sha256": "19e3e78a13bf1cd376169d640a641fee257cf2b870222fa14806eb586821ca26"
+    }
+  ],
+  "RationalDiagonalPairing.lean": [
+    {
+      "path": "Proofs/Lemmas/RationalDiagonalPairing.lean",
+      "sha256": "b530ae8b439cf01cee3ff2ef222c5a3935c44bc2b22b5a3c7962cfe40f31ed12"
+    },
+    {
+      "path": "Proofs/Lemmas/RationalIntegralAdeles.lean",
+      "sha256": "bfb5f6f138d11ebbed822a2cdf010a2be107031234ddd3f39068ab911b3b3c0b"
+    }
+  ],
+  "RationalDiagonalPhases.lean": [
+    {
+      "path": "Proofs/Theorems/RationalDiagonalPhases.lean",
+      "sha256": "8d5fa1fb7a8482f7855cd2e892ad1748315af23d0497e90a9e6cdbbdc33aac28"
+    }
+  ],
+  "RationalPadicPhase.lean": [
+    {
+      "path": "Proofs/Lemmas/RationalPadicPhase.lean",
+      "sha256": "2fc1d8a581b68943fc1111e125eaf94d745d284bfe260cb13131784c677f22be"
+    }
+  ]
+}

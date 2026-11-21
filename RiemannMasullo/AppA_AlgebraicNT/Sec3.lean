@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.DedekindDomain.Different
 public import Mathlib.Topology.Algebra.Group.Units
 
 import all RiemannMasullo.AppA_AlgebraicNT.Sec2  -- for the diagonal adelic basis
+import RiemannMasullo.External.PatelGRH.RationalAdeleDual
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
@@ -2887,6 +2888,53 @@ private theorem tamagawaFourier_ratAdeleGaussian :
     by_contra hn
     exact hne (mul_left_cancel₀ hn (hJ.symm.trans (mul_one _).symm))
 
+open scoped ComplexConjugate Padic in
+/-- Our finite character uses the negative phase of Patel's local standard character. -/
+private theorem padicStandardCharacter_eq_conj_patel (p : ℕ) [Fact p.Prime] (x : ℚ_[p]) :
+    (padicStandardCharacter p x : ℂ) = conj (Masullo.padicStdAddChar p x) := by
+  let n := (-x.valuation).toNat
+  let a : ℤ_[p] := ⟨(p : ℚ_[p]) ^ n * x, padicStandardCharacter_integral p x⟩
+  rw [Masullo.padicStdAddChar_apply_of_scaled_integral (a := a) (n := n) p rfl,
+    ZMod.stdAddChar_apply, ZMod.toCircle_eq_circleExp, ← Circle.coe_inv_eq_conj,
+    ← Circle.exp_neg]
+  unfold padicStandardCharacter
+  push_cast
+  congr 3
+  ring
+
+/-- The rational adelic characters agree after coercion from the circle to ℂ. -/
+private theorem ratAdeleStandardCharacter_eq_patel (a : 𝔸[ℚ]) :
+    (ratAdeleStandardCharacter a : ℂ) = Masullo.rationalAdeleAddChar a := by
+  classical
+  let S := (Filter.eventually_cofinite.mp a.2.cofinite_mem_adicCompletionIntegers).toFinset
+  have hS (v : Primes(ℚ)) (hv : v ∉ S) : a.2 v ∈ v.adicCompletionIntegers ℚ := by
+    simpa [S] using hv
+  rw [Masullo.rationalAdeleAddChar_eq_prod a S hS]
+  change (↑(Circle.exp (2 * Real.pi * ratRealPart a) *
+    ∏ᶠ v : Primes(ℚ), ratLocalCharacter v (a.2 v)) : ℂ) = _
+  have hprod : (∏ᶠ v : Primes(ℚ), ratLocalCharacter v (a.2 v)) =
+      ∏ v ∈ S, ratLocalCharacter v (a.2 v) := by
+    apply finprod_eq_prod_of_mulSupport_subset
+    intro v hv
+    by_contra h
+    exact hv ((ratLocalCharacter_eq_one _ _).2 (hS v h))
+  rw [hprod, Circle.coe_mul, Circle.coe_exp]
+  congr 1
+  · rw [Masullo.rationalAdeleReal_apply]
+    change Complex.exp _ = Complex.exp (2 * (Real.pi : ℂ) * Complex.I * (ratRealPart a : ℂ))
+    push_cast
+    congr 1
+    ring
+  · change Circle.coeHom (∏ v ∈ S, ratLocalCharacter v (a.2 v)) = _
+    rw [map_prod]
+    apply Finset.prod_congr rfl
+    intro v _
+    let : Fact (Rat.HeightOneSpectrum.primesEquiv v).val.Prime :=
+      ⟨(Rat.HeightOneSpectrum.primesEquiv v).property⟩
+    rw [Masullo.rationalLocalFiniteAddChar_apply]
+    exact padicStandardCharacter_eq_conj_patel _ _
+
+open scoped RestrictedProduct in
 /-- Paper: Example A.3.1.8, p. 558. The product character pairing identifies
 the additive rational adeles with their Pontryagin dual as topological groups.
 The local integer rings are their own annihilators for the finite-place pairings. -/
@@ -2894,7 +2942,26 @@ theorem exists_ratAdeleDualEquiv :
     ∃ e : Multiplicative 𝔸[ℚ] ≃ₜ* PontryaginDual (Multiplicative 𝔸[ℚ]),
       ∀ x y : 𝔸[ℚ], e (Multiplicative.ofAdd x) (Multiplicative.ofAdd y) =
         ratAdeleStandardCharacter (x * y) := by
-  sorry
+  obtain ⟨_, _, _, _, _, hc, ht, _⟩ := adele_additive_quotient.{0, 0} ℚ
+  let : CompactSpace (𝔸[ℚ] ⧸ Masullo.rationalDiagonal) := hc
+  let : T2Space (𝔸[ℚ] ⧸ Masullo.rationalDiagonal) := ht
+  let : SigmaCompactSpace 𝔸[ℚ] := adeleHaar_sigmaCompactSpace ℚ
+  let (v : Primes(ℚ)) : CompactSpace (v.adicCompletionIntegers ℚ) :=
+    compactSpace_adicCompletionIntegers v
+  let : Fact (∀ v : Primes(ℚ), IsOpen (v.adicCompletionIntegers ℚ : Set (v.adicCompletion ℚ))) :=
+    ⟨fun v ↦ Valued.isOpen_valuationSubring _⟩
+  let : LocallyCompactSpace 𝔸[ℚ] := by
+    change LocallyCompactSpace (InfiniteAdeleRing ℚ ×
+      (Πʳ v : Primes(ℚ), [v.adicCompletion ℚ, v.adicCompletionIntegers ℚ]))
+    infer_instance
+  let e := Masullo.rationalAdelePontryaginDualEquiv
+  refine ⟨{ toMulEquiv := e.toAddEquiv.toMultiplicative
+            continuous_toFun := e.continuous
+            continuous_invFun := e.symm.continuous }, ?_⟩
+  intro x y
+  apply Circle.coe_injective
+  exact (Masullo.rationalAdelePontryaginDualEquiv_apply x y).trans
+    (ratAdeleStandardCharacter_eq_patel _).symm
 
 open scoped IsDedekindDomain.FiniteAdeleRing RestrictedProduct in
 /-- Paper: Example A.3.1.8, p. 558. The additive Tamagawa measure on the rational

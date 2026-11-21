@@ -1,10 +1,10 @@
 # External
 
-Third-party Lean developments vendored into this project. **Nothing is vendored yet**; the
-directories below are reserved for the sources we expect to draw on.
+Third-party Lean developments used by the formalization and candidates for future ports.
 
 | Directory | Upstream | License | Status |
 |---|---|---|---|
+| [PatelGRH](PatelGRH/) | [thatnealpatel/grh](https://github.com/thatnealpatel/grh) | MIT | rational adelic self-duality (Example A.3.1.8) |
 | [`PrimeNumberTheoremAnd/`](PrimeNumberTheoremAnd/) | <https://github.com/AlexKontorovich/PrimeNumberTheoremAnd> | Apache-2.0 | planned |
 | [`TauCeti/`](TauCeti/) | <https://github.com/TauCetiProject/TauCeti> | Apache-2.0 | planned (selected modules) |
 | [`Stacks/`](Stacks/) | <https://github.com/AxiomMath/Stacks> | Apache-2.0 | under consideration |

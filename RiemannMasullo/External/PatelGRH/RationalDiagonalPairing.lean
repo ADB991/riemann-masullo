@@ -1,0 +1,173 @@
+module
+
+public import Mathlib.Topology.Algebra.PontryaginDual
+public import RiemannMasullo.External.PatelGRH.RationalAdeleCharacter
+
+import RiemannMasullo.External.PatelGRH.RationalAdeleAnnihilator
+
+/-! # The adelic pairing and finite tests on the rational diagonal -/
+
+open NumberField IsDedekindDomain
+open scoped BigOperators
+
+namespace Masullo
+
+local notation "A" => AdeleRing (𝓞 ℚ) ℚ
+local notation "ι" => algebraMap ℚ A
+
+/-- The diagonal image of ℚ in the additive adele group. -/
+@[expose]
+public noncomputable def rationalDiagonal : AddSubgroup A := (ι).toAddMonoidHom.range
+
+/-- Parametrize the additive diagonal by the rationals. -/
+public noncomputable def rationalDiagonalEquiv : ℚ ≃ rationalDiagonal :=
+  Equiv.ofBijective (fun q ↦ (⟨ι q, ⟨q, rfl⟩⟩ : rationalDiagonal))
+    ⟨fun _ _ h ↦ AdeleRing.algebraMap_injective (𝓞 ℚ) ℚ (congrArg Subtype.val h),
+      fun ⟨_, ⟨q, hq⟩⟩ ↦ ⟨q, Subtype.ext hq⟩⟩
+
+public theorem rationalDiagonalEquiv_apply (q : ℚ) : (rationalDiagonalEquiv q : A) = ι q := by
+  unfold rationalDiagonalEquiv
+  rfl
+
+local notation "D" => rationalDiagonal
+local notation "R" => Multiplicative D
+
+private noncomputable def phase (x : A) : Circle :=
+  ⟨rationalAdeleAddChar x, mem_sphere_zero_iff_norm.mpr (norm_rationalAdeleAddChar x)⟩
+
+private theorem continuous_phase : Continuous phase :=
+  continuous_rationalAdeleAddChar.subtype_mk _
+
+private theorem phase_add (x y : A) : phase (x + y) = phase x * phase y :=
+  Circle.coe_injective (rationalAdeleAddChar.map_add_eq_mul x y)
+
+/-- The standard circle-valued pairing, as a homomorphism into the full adelic dual. -/
+public noncomputable def rationalAdelePairing : A →+ Additive (PontryaginDual (Multiplicative A)) where
+  toFun a := Additive.ofMul ({
+    toFun := fun x : Multiplicative A ↦ phase (a * x.toAdd)
+    map_one' := Circle.coe_injective (by
+      change rationalAdeleAddChar (a * 0) = 1
+      simp)
+    map_mul' := fun x y ↦ by
+      change phase (a * (x.toAdd + y.toAdd)) = _
+      rw [mul_add, phase_add]
+    continuous_toFun := continuous_phase.comp <| continuous_const.mul continuous_id
+  } : Multiplicative A →ₜ* Circle)
+  map_zero' := PontryaginDual.ext fun _ ↦ Circle.coe_injective (by
+    change rationalAdeleAddChar (0 * _) = 1
+    simp)
+  map_add' a b := PontryaginDual.ext fun x ↦ by
+    change phase ((a + b) * x.toAdd) = phase (a * x.toAdd) * _
+    rw [add_mul, phase_add]
+    rfl
+
+@[simp] public theorem rationalAdelePairing_apply (a x : A) :
+    ((rationalAdelePairing a).toMul (Multiplicative.ofAdd x) : ℂ) =
+      rationalAdeleAddChar (a * x) := by
+  rw [rationalAdelePairing]
+  rfl
+
+public theorem continuous_rationalAdelePairing : Continuous rationalAdelePairing := by
+  change Continuous (fun a ↦ (rationalAdelePairing a).toMul : A → PontryaginDual (Multiplicative A))
+  apply ContinuousMonoidHom.continuous_of_continuous_uncurry
+  exact continuous_phase.comp (continuous_fst.mul continuous_snd)
+
+/-- The diagonal inclusion, with multiplicative notation for the additive groups. -/
+@[expose] public noncomputable def rationalDiagonalInclusion : R →ₜ* Multiplicative A where
+  toMonoidHom := (D).subtype.toMultiplicative
+  continuous_toFun := continuous_subtype_val
+
+/-- Pair with an adele and restrict the resulting character to the rational diagonal. -/
+@[expose] public noncomputable def rationalAdeleRestrictChar : A →+ Additive (PontryaginDual R) :=
+  (PontryaginDual.map rationalDiagonalInclusion).toMonoidHom.toAdditive.comp rationalAdelePairing
+
+@[simp] public theorem rationalAdeleRestrictChar_apply (a : A) (r : R) :
+    ((rationalAdeleRestrictChar a).toMul r : ℂ) = rationalAdeleAddChar (a * (r.toAdd : A)) := by
+  rw [rationalAdeleRestrictChar]
+  exact rationalAdelePairing_apply a (r.toAdd : A)
+
+public theorem continuous_rationalAdeleRestrictChar : Continuous rationalAdeleRestrictChar :=
+  (PontryaginDual.map rationalDiagonalInclusion).continuous.comp continuous_rationalAdelePairing
+
+public theorem ker_rationalAdeleRestrictChar : rationalAdeleRestrictChar.ker = D := by
+  ext a
+  change rationalAdeleRestrictChar a = 0 ↔ ∃ q : ℚ, ι q = a
+  rw [← exists_congr (fun _ ↦ eq_comm), ← rationalAdele_orthogonal_iff]
+  constructor
+  · intro h q
+    have he := congrArg (fun χ : Additive (PontryaginDual R) ↦
+      (χ.toMul (Multiplicative.ofAdd (rationalDiagonalEquiv q)) : ℂ)) h
+    rw [rationalAdeleRestrictChar_apply] at he
+    change rationalAdeleAddChar (a * (rationalDiagonalEquiv q : A)) = 1 at he
+    rwa [rationalDiagonalEquiv_apply] at he
+  · intro h
+    change (rationalAdeleRestrictChar a).toMul = (1 : PontryaginDual R)
+    apply PontryaginDual.ext
+    intro r
+    obtain ⟨q, hq⟩ := rationalDiagonalEquiv.surjective r.toAdd
+    apply Circle.coe_injective
+    rw [rationalAdeleRestrictChar_apply, ← hq, rationalDiagonalEquiv_apply, h]
+    rfl
+
+/-- The element of the multiplicatively tagged additive diagonal at a rational input. -/
+@[expose] public noncomputable def rationalDiagonalInput (r : ℚ) : R :=
+  Multiplicative.ofAdd (rationalDiagonalEquiv r)
+
+private theorem diag_zpow (r : ℚ) (n : ℤ) :
+    rationalDiagonalInput r ^ n = rationalDiagonalInput (n • r) := by
+  change (n • rationalDiagonalEquiv r : D) = rationalDiagonalEquiv (n • r)
+  apply Subtype.ext
+  change n • ((rationalDiagonalEquiv r : D) : A) = (rationalDiagonalEquiv (n • r) : A)
+  rw [rationalDiagonalEquiv_apply, rationalDiagonalEquiv_apply, map_zsmul]
+
+/-- On any finite list of rational inputs it suffices to match the character
+at the reciprocal of a common denominator. -/
+public theorem exists_rationalAdele_matching_diagonal_tests (χ : PontryaginDual R) (s : Finset ℚ) :
+    ∃ a : A, ∀ r ∈ s,
+      (rationalAdeleRestrictChar a).toMul (rationalDiagonalInput r) = χ (rationalDiagonalInput r) := by
+  let d : ℕ := ∏ r ∈ s, r.den
+  have hd : d ≠ 0 := Finset.prod_ne_zero_iff.mpr (fun _ _ ↦ Rat.den_ne_zero _)
+  let u : ℚ := 1 / d
+  have hu : (u : ℝ) ≠ 0 := by simp [u, hd]
+  obtain ⟨θ, hθ⟩ := Circle.exp_surjective (χ (rationalDiagonalInput u))
+  let t := θ / (2 * Real.pi * (u : ℝ))
+  let arch := (RingEquiv.piUnique InfinitePlace.Completion).trans
+    (InfinitePlace.Completion.ringEquivRealOfIsReal Rat.isReal_infinitePlace)
+  let a : A := (arch.symm t, 0)
+  have hreal : rationalAdeleReal (a * ι u) = t * (u : ℝ) := by
+    rw [rationalAdeleReal_apply, Prod.fst_mul, Pi.mul_apply, map_mul,
+      ← rationalAdeleReal_apply, ← rationalAdeleReal_apply, rationalAdeleReal_algebraMap]
+    rw [rationalAdeleReal_apply]
+    exact congrArg (· * (u : ℝ)) (arch.apply_symm_apply t)
+  have hfin (v : HeightOneSpectrum (𝓞 ℚ)) : (a * ι u).2 v ∈ v.adicCompletionIntegers ℚ := by
+    change (0 : v.adicCompletion ℚ) * _ ∈ _
+    rw [zero_mul]
+    exact (v.adicCompletionIntegers ℚ).zero_mem
+  have hmatch :
+      (rationalAdeleRestrictChar a).toMul (rationalDiagonalInput u) = χ (rationalDiagonalInput u) := by
+    apply Circle.coe_injective
+    rw [rationalAdeleRestrictChar_apply, show ((rationalDiagonalInput u).toAdd : A) = ι u from
+      rationalDiagonalEquiv_apply u, ← hθ, Circle.coe_exp]
+    rw [rationalAdeleAddChar_eq_prod _ ∅ (fun v _ ↦ hfin v), hreal,
+      Finset.prod_empty, mul_one]
+    have ht : 2 * Real.pi * (t * (u : ℝ)) = θ := by
+      dsimp [t]
+      field_simp [Real.pi_ne_zero, hu]
+    exact congrArg Complex.exp (by rw [← ht]; push_cast; ring)
+  refine ⟨a, fun r hr ↦ ?_⟩
+  obtain ⟨k, hk⟩ : r.den ∣ d := Finset.dvd_prod_of_mem (fun q : ℚ ↦ q.den) hr
+  let n : ℤ := r.num * (k : ℤ)
+  have hk' : k ≠ 0 := by
+    intro h
+    simp [h] at hk
+    exact hd hk
+  have hru : n • u = r := by
+    rw [zsmul_eq_mul, ← r.num_div_den]
+    dsimp [n, u]
+    rw [hk]
+    push_cast
+    field_simp [show (r.den : ℚ) ≠ 0 by exact_mod_cast r.den_ne_zero,
+      show (k : ℚ) ≠ 0 by exact_mod_cast hk']
+  rw [← hru, ← diag_zpow, map_zpow, map_zpow, hmatch]
+
+end Masullo
