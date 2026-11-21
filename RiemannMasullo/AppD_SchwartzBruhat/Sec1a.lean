@@ -11,6 +11,10 @@ public import Mathlib.Topology.Algebra.PontryaginDual
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 import RiemannMasullo.ForMathlib.Analysis.LocallyConvex.SmoothFamily
 import RiemannMasullo.ForMathlib.Topology.Algebra.PontryaginDual.Separation
+import RiemannMasullo.ForMathlib.Topology.Algebra.PontryaginDual.Compact
+import RiemannMasullo.ForMathlib.MeasureTheory.Function.ContinuousMapDense
+import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Continuous
+import Mathlib.Topology.UniformSpace.UniformApproximation
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import Mathlib.Topology.ContinuousMap.StoneWeierstrass
 import Mathlib.Topology.TietzeExtension
@@ -392,7 +396,95 @@ theorem lcaConvolution_integrable {f g : G → ℂ} (hf : Integrable f μ) (hg :
 /-- Paper: Lemma D.1.1.2(1), p. 746. The Fourier transform of an L¹ function
 is continuous and vanishes at infinity on the dual group. -/
 theorem lcaFourier_zeroAtInfty {f : G → ℂ} (hf : Integrable f μ) :
-    ∃ F : C₀(PontryaginDual G, ℂ), ∀ χ, F χ = lcaFourier μ f χ := by sorry
+    ∃ F : C₀(PontryaginDual G, ℂ), ∀ χ, F χ = lcaFourier μ f χ := by
+  have hEval : Continuous (fun p : PontryaginDual G × G ↦ (p.1 p.2 : ℂ)) :=
+    continuous_subtype_val.comp (continuous_eval (F := G →ₜ* Circle))
+  have hInt {g : G → ℂ} (hg : Integrable g μ) (χ : PontryaginDual G) :
+      Integrable (fun x ↦ g x * star (χ x : ℂ)) μ := by
+    apply hg.mul_bdd (c := 1)
+    · exact (continuous_subtype_val.comp (map_continuous χ)).star.aestronglyMeasurable
+    · exact .of_forall fun x ↦ by simp
+  have hBound {g h : G → ℂ} (hg : Integrable g μ) (hh : Integrable h μ)
+      (χ : PontryaginDual G) :
+      ‖lcaFourier μ g χ - lcaFourier μ h χ‖ ≤ ∫ x, ‖g x - h x‖ ∂μ := by
+    rw [lcaFourier, lcaFourier, ← integral_sub (hInt hg χ) (hInt hh χ)]
+    simpa only [← sub_mul, norm_mul, norm_star, Circle.norm_coe, mul_one] using
+      (norm_integral_le_integral_norm (μ := μ)
+        (fun x ↦ g x * star (χ x : ℂ) - h x * star (χ x : ℂ)))
+  -- The transforms of compactly supported continuous functions approximate the transform uniformly.
+  have hContinuous : Continuous (lcaFourier μ f) := by
+    apply continuous_of_uniform_approx_of_continuous
+    intro s hs
+    obtain ⟨ε, hε, hεs⟩ := Metric.uniformity_basis_dist.mem_iff.mp hs
+    obtain ⟨g, hgSupp, hfg, hgCont, hgInt⟩ :=
+      exists_hasCompactSupport_integral_sub_le_of_locallyCompact hf (half_pos hε)
+    refine ⟨lcaFourier μ g, ?_, fun χ ↦ hεs ?_⟩
+    · rw [← continuousOn_univ]
+      apply continuousOn_integral_of_compact_support hgSupp
+      · exact ((hgCont.comp continuous_snd).mul hEval.star).continuousOn
+      · intro χ x _ hx
+        simp [image_eq_zero_of_notMem_tsupport hx]
+    · change dist (lcaFourier μ f χ) (lcaFourier μ g χ) < ε
+      rw [dist_eq_norm]
+      exact ((hBound hf hgInt χ).trans hfg).trans_lt (half_lt_self hε)
+  refine ⟨⟨⟨lcaFourier μ f, hContinuous⟩, ?_⟩, fun _ ↦ rfl⟩
+  change Tendsto (lcaFourier μ f) (cocompact _) (𝓝 0)
+  have hTranslate (a : G) : Integrable (fun x ↦ f (a * x)) μ :=
+    (measurePreserving_mul_left μ a).integrable_comp_of_integrable hf
+  let : Fact ((1 : ℝ≥0∞) ≠ ⊤) := ⟨ENNReal.one_ne_top⟩
+  have hTranslationContinuous : Continuous (fun a : G ↦
+      ‖DomMulAct.mk a • hf.toL1 f - hf.toL1 f‖) := by
+    exact ((DomMulAct.continuous_mk.smul continuous_const).sub continuous_const).norm
+  have hTranslationNorm (a : G) :
+      ‖DomMulAct.mk a • hf.toL1 f - hf.toL1 f‖ = ∫ x, ‖f (a * x) - f x‖ ∂μ := by
+    change ‖DomMulAct.mk a • (memLp_one_iff_integrable.2 hf).toLp f - hf.toL1 f‖ = _
+    rw [DomMulAct.mk_smul_toLp]
+    change ‖(hTranslate a).toL1 _ - hf.toL1 f‖ = _
+    rw [← Integrable.toL1_sub, Integrable.norm_toL1_eq_lintegral_eNorm]
+    exact (integral_norm_eq_lintegral_eNorm ((hTranslate a).sub hf).aestronglyMeasurable).symm
+  have hShift (χ : PontryaginDual G) (a : G) :
+      star (χ a : ℂ) * lcaFourier μ (fun x ↦ f (a * x)) χ = lcaFourier μ f χ := by
+    rw [lcaFourier, ← integral_const_mul, lcaFourier,
+      ← integral_mul_left_eq_self (μ := μ) (fun x ↦ f x * star (χ x : ℂ)) a]
+    apply integral_congr_ae
+    exact .of_forall fun x ↦ by simp only [map_mul, Circle.coe_mul, star_mul]; ring
+  -- A character far from 1 on a small translation forces its Fourier coefficient to be small.
+  have hShiftBound (χ : PontryaginDual G) (a : G) :
+      dist (χ a) 1 * ‖lcaFourier μ f χ‖ ≤ ∫ x, ‖f (a * x) - f x‖ ∂μ := by
+    calc
+      _ = ‖(1 - star (χ a : ℂ)) * lcaFourier μ f χ‖ := by
+        rw [norm_mul, ← star_one (R := ℂ), ← star_sub, norm_star, norm_sub_rev]
+        change dist (χ a : ℂ) ((1 : Circle) : ℂ) * _ = _
+        rw [Circle.coe_one, dist_eq_norm]
+      _ = ‖star (χ a : ℂ) *
+          (lcaFourier μ (fun x ↦ f (a * x)) χ - lcaFourier μ f χ)‖ := by
+        rw [sub_mul, one_mul, mul_sub, hShift χ a]
+      _ = ‖lcaFourier μ (fun x ↦ f (a * x)) χ - lcaFourier μ f χ‖ := by
+        rw [norm_mul, norm_star, Circle.norm_coe, one_mul]
+      _ ≤ _ := hBound (hTranslate a) hf χ
+  have hArc : Circle.centeredArc (Real.pi / 2) ∈ 𝓝 (1 : Circle) := by
+    simpa using Circle.hasBasis_centeredArc_div_two_pow.mem_of_mem (i := 0) trivial
+  obtain ⟨r, hr, hrArc⟩ := Metric.mem_nhds_iff.mp hArc
+  apply Metric.tendsto_nhds.2
+  intro ε hε
+  let U := {a : G | ‖DomMulAct.mk a • hf.toL1 f - hf.toL1 f‖ < r * ε}
+  have hU : U ∈ 𝓝 (1 : G) :=
+    (isOpen_lt hTranslationContinuous continuous_const).mem_nhds (by
+      change ‖DomMulAct.mk (1 : G) • hf.toL1 f - hf.toL1 f‖ < r * ε
+      simpa [DomMulAct.mk_one] using mul_pos hr hε)
+  have hCompact := isCompact_closure_pontryaginDual_mapsTo_centeredArc hU
+  filter_upwards [hCompact.compl_mem_cocompact] with χ hχ
+  have hOutside : ¬ MapsTo χ U (Circle.centeredArc (Real.pi / 2)) :=
+    fun h ↦ hχ (subset_closure h)
+  simp only [MapsTo, not_forall] at hOutside
+  obtain ⟨a, ha, hχa⟩ := hOutside
+  have hDist : r ≤ dist (χ a) 1 :=
+    le_of_not_gt (fun h ↦ hχa (hrArc (Metric.mem_ball.mpr h)))
+  have hSmall : (∫ x, ‖f (a * x) - f x‖ ∂μ) < r * ε := hTranslationNorm a ▸ ha
+  rw [dist_zero_right]
+  exact lt_of_mul_lt_mul_left
+    (((mul_le_mul_of_nonneg_right hDist (norm_nonneg _)).trans (hShiftBound χ a)).trans_lt hSmall)
+    hr.le
 
 /-- Paper: Lemma D.1.1.2(2), p. 746. The integral formula gives an injective
 complex-linear map on L¹ equivalence classes with operator norm at most one. -/
