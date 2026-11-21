@@ -250,8 +250,28 @@ theorem sIdeleClassInsertion_unique :
 
 /-- Paper: Lemma D.1.10.1(3), p. 784. The induced map of class groups is
 continuous, injective and open. -/
-theorem sIdeleClassInsertion_isOpenEmbedding : IsOpenEmbedding (sIdeleClassInsertion F S) :=
-  by sorry
+theorem sIdeleClassInsertion_isOpenEmbedding : IsOpenEmbedding (sIdeleClassInsertion F S) := by
+  let D := (Units.map (integralAdeleDiagonal F S).toMonoidHom).range
+  let P := IdeleGroup.principalSubgroup (𝓞 F) F
+  have hsource := QuotientGroup.isOpenQuotientMap_mk (N := D)
+  have htarget := QuotientGroup.isOpenQuotientMap_mk (N := P)
+  have hinsertion := integralIdeleInsertion_isOpenEmbedding F S
+  refine IsOpenEmbedding.of_continuous_injective_isOpenMap
+    (hsource.continuous_comp_iff.mp (htarget.continuous.comp hinsertion.continuous)) ?_
+    (hsource.isOpenMap_iff.mpr (htarget.isOpenMap.comp hinsertion.isOpenMap))
+  apply (QuotientGroup.injective_lift_iff _ _ (integralIdeleInsertion_descends F S)).2
+  refine le_antisymm (integralIdeleInsertion_descends F S) ?_
+  intro g hg
+  change (QuotientGroup.mk (s := P) (integralIdeleInsertion F S g)) = 1 at hg
+  obtain ⟨u, hu⟩ := (QuotientGroup.eq_one_iff _).mp hg
+  have hval : algebraMap F 𝔸[F] u.val = g.val.val := congrArg Units.val hu
+  have hinv : algebraMap F 𝔸[F] u.inv = g.inv.val := congrArg Units.inv hu
+  -- The diagonal field element and its inverse are both S-integers.
+  let x : SUnits :=
+    ⟨⟨u.val, (diagonal_mem_integralAdelesOutside F S _).mp (hval.symm ▸ g.val.property)⟩,
+      ⟨u.inv, (diagonal_mem_integralAdelesOutside F S _).mp (hinv.symm ▸ g.inv.property)⟩,
+      Subtype.ext u.val_inv, Subtype.ext u.inv_val⟩
+  exact ⟨x, hinsertion.injective (Units.ext hval)⟩
 
 /-- Paper: Lemma D.1.10.1(3), p. 784. The quotient by the image of the S-idele
 classes is isomorphic to the finite Picard group of the S-integer ring. -/
