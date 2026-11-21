@@ -369,8 +369,8 @@ theorem modulatedCyclicExponential_split (τ : ℝ≥0ˣ →ₜ* G) (hτ : Right
 variable [MeasurableSpace G] [BorelSpace G]
 variable (μ₁ : Measure m.toMonoidHom.ker) [hHaar₁ : μ₁.IsHaarMeasure]
 
-local instance : MeasurableSpace Q := borel _
-local instance : BorelSpace Q := ⟨rfl⟩
+local instance instMeasurableSpaceCyclicQuotientSec4 : MeasurableSpace Q := borel _
+local instance instBorelSpaceCyclicQuotientSec4 : BorelSpace Q := ⟨rfl⟩
 variable (ν : Measure (G ⧸ Subgroup.zpowers γ)) [hHaar : ν.IsHaarMeasure]
 
 local notation "coeff⟦" j "⟧" => (fun f : S ↦ (L * μ₁.real univ)⁻¹ * lcaFourier ν f (ξ j))
@@ -443,13 +443,13 @@ theorem modulatedCyclicExponential_seminorm_multiplier
     (fun n : Multiplicative ℤ ↦ (p (e (ω, n.toAdd)) : ℂ) * v n) ∈
       schwartzBruhatSubmodule (Multiplicative ℤ) := by sorry
 
-include hm hτ hμ hν in
+include hm hγ hτ hμ hν in
 /-- Paper: Remark 4.4.2.7, p. 194. The Weil quotient measure has total mass
 equal to the product of the logarithmic period and the volume of the norm-one group. -/
 theorem modulatedCyclicQuotient_measure_univ :
     ν univ = ENNReal.ofReal L * μ₁ univ := by sorry
 
-include hm hτ hμ hν in
+include hm hγ hτ hμ hν in
 /-- Paper: Remark 4.4.2.7, p. 194. Dividing the quotient Haar measure by its
 specified total mass gives the probability Haar measure. -/
 theorem modulatedCyclicQuotient_probabilityHaar :
