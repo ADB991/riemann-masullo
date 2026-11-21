@@ -1433,7 +1433,15 @@ def nuclearTrace (hE : ApproxProp E) (A : E →L[ℂ] E) (hA : IsNuclearOperator
 of its functional at its spanning vector.
 Deviation: This is a check of the trace formula on one term. -/
 theorem nuclearTrace_smulRight (hE : ApproxProp E) (φ : E →L[ℂ] ℂ) (y : E) :
-    nuclearTrace hE (φ.smulRight y) (isNuclearOperator_smulRight φ y) = φ y := by sorry
+    nuclearTrace hE (φ.smulRight y) (isNuclearOperator_smulRight φ y) = φ y := by
+  obtain ⟨r, hc, hφ, hy, htail⟩ := nuclearPresentation_smulRight φ y 1 one_ne_zero
+  have htrace := ((exists_nuclearTrace_hasSum hE (φ.smulRight y)
+    (isNuclearOperator_smulRight φ y)).exists.choose_spec r).2
+  refine htrace.unique ((hasSum_ite_eq (0 : ℕ) (φ y)).congr_fun ?_)
+  intro n
+  cases n with
+  | zero => simp [hc, hφ, hy]
+  | succ n => simp [htail]
 
 /-- Paper: Proposition C.3.2.1, p. 694. Nuclearity is preserved by
 conjugation by a continuous linear automorphism. -/
