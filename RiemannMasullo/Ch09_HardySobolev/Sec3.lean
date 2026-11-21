@@ -22,8 +22,9 @@ variable {G : Type*} [CommGroup G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 section RegularizedAction
 
--- TODO(prerequisite): §9.2 provides the weighted Hilbert model for compact base
--- intervals. The closed unbounded intervals in §9.3 need a Hilbert model and action.
+-- TODO(paper-gap): On I = [0,∞) a log-coordinate bump supported in (−2,−1)
+-- has finite intervalSobolevENorm. Its translate by 3 has infinite norm.
+-- Full left translation therefore fails on the finite-norm domain of §9.2.
 
 variable [SecondCountableTopology G]
 variable (μ : Measure G) [μ.IsHaarMeasure]
@@ -59,6 +60,10 @@ theorem hardySobolevTranslation_apply (a b s : ℝ) (hab : a ≤ b) (hs : 0 ≤ 
       fun x ↦ u (g⁻¹ * x) := by sorry
 
 section Pettis
+
+-- TODO(paper-gap): Norm-continuous functionals on the bounded operators need
+-- not be measurable on translations. The Pettis formula below tests each orbit
+-- in the representation space, as in Lemma C.4.3.11.
 
 variable {E : Type*} [AddCommGroup E] [Module ℂ E] [UniformSpace E]
   [IsUniformAddGroup E] [PolynormableSpace ℂ E] [T2Space E]
@@ -139,6 +144,15 @@ theorem modulatedExponentialDecayTestAction_apply (hm : IsModulation m) (hms : S
     (modulatedExponentialDecayTestAction μ m hm hms I hInt hne φ u).val =
       lcaConvolution μ φ.val u.val := by sorry
 
+/-- Paper: Definition 9.3.1.1, p. 419. The decay-space convolution integrates
+the orbits of the left-translation representation of Proposition D.3.3.12. -/
+theorem modulatedExponentialDecayTestAction_pettis (hm : IsModulation m) (hms : Surjective m)
+    (I : Set ℝ) (hInt : OrdConnected I) (hne : I.Nonempty)
+    (φ : BruhatCompactSupport G) (u : ModulatedExponentialDecay m I) :
+    let τ := (exists_modulatedExponentialDecay_translationAction m I hm hms hInt hne).choose
+    HasPettisIntegral (.positive μ) (fun g ↦ φ.val g • τ g u)
+      (modulatedExponentialDecayTestAction μ m hm hms I hInt hne φ u) := by sorry
+
 /-- Paper: Lemma 9.3.1.3, p. 419. The test action on the Hardy–Sobolev
 space is continuous into the topology of uniform convergence on bounded sets.
 Deviation: The weighted Hilbert model is for a compact base interval. -/
@@ -151,9 +165,21 @@ theorem continuous_modulatedExponentialDecayTestAction (hm : IsModulation m) (hm
     (I : Set ℝ) (hInt : OrdConnected I) (hne : I.Nonempty) :
     Continuous (modulatedExponentialDecayTestAction μ m hm hms I hInt hne) := by sorry
 
+-- TODO(later): Remark 9.3.1.4, p. 420, restricts the regularized action to
+-- the global theta closure of §10.1 and to the S-local theta action of §5.4.
+
 -- TODO(paper-gap): Lemma 9.3.1.5's bound is zero at the identity for s > 0.
 -- The singleton polynomial-growth claim also omits the exponential twist for b ≠ 0.
 -- Borel measurability need not hold for arbitrary continuous operator seminorms.
+
+/-- Paper: Lemma 9.3.1.5, p. 421. Left translation is bounded by the maximum
+endpoint twist times a polynomial in the absolute log-module.
+Deviation: The factor at the identity is one. On a nonzero singleton base
+the endpoint twist still occurs. -/
+theorem norm_hardySobolevTranslation_le (a b s : ℝ) (hab : a ≤ b) (hs : 0 ≤ s) (g : G) :
+    ‖hardySobolevTranslation μ m a b s hab hs g‖ ≤
+      max (Real.exp (a * logMod g)) (Real.exp (b * logMod g)) *
+        (1 + |logMod g|) ^ (s / 2) := by sorry
 
 /-- Paper: Lemma 9.3.1.5, p. 421. The operator norm of left translation is a
 measurable function of the translating element.
@@ -183,6 +209,23 @@ theorem existsUnique_schwartzBruhat_zeroLineAction (s : ℝ) (hs : 0 ≤ s) :
       ∀ φ u, HasPettisIntegral (.positive μ)
         (fun g ↦ φ.val g • hardySobolevTranslation μ m 0 0 s le_rfl hs g u) (A φ u) := by sorry
 
+/-- Paper: Lemma 9.3.2.1, p. 422. On the b-line, kernels whose b-twist is
+Schwartz act continuously and extend the test action.
+Deviation: The source is the singleton decay space from Example D.3.3.5,
+as required by the conjugation in the proof on p. 422. -/
+theorem existsUnique_singletonDecay_lineAction (hm : IsModulation m) (hms : Surjective m)
+    (b s : ℝ) (hs : 0 ≤ s) :
+    let W := CompactIntervalSobolev μ (fun x ↦ Real.log ((m x).val : ℝ)) b b s
+    ∃! A : ModulatedExponentialDecay m {b} →L[ℂ] (W →L[ℂ] W),
+      (∀ φ u, HasPettisIntegral (.positive μ)
+        (fun g ↦ φ.val g • hardySobolevTranslation μ m b b s le_rfl hs g u) (A φ u)) ∧
+      ∀ (φ : BruhatCompactSupport G) u,
+        A (bruhatCompactSupportToModulatedExponentialDecay m {b} hm hms φ) u =
+          hardySobolevTestAction μ m b b s le_rfl hs φ u := by sorry
+
+-- Remark 9.3.2.2, p. 422, distinguishes the integral approximations from
+-- the metric approximation property of a Hilbert space.
+
 /-- Paper: Corollary 9.3.2.3(1), p. 425. The frequency band attached to a character
 consists of its twists by imaginary powers of the module with exponents in the given interval.
 Deviation: The band is a subset of the full dual, as in the construction in the proof. -/
@@ -195,6 +238,45 @@ contains exactly its starting character.
 Deviation: Sanity check on the frequency band. -/
 theorem modulatedFrequencyBand_zero (χ : PontryaginDual G) :
     modulatedFrequencyBand m χ 0 0 = {χ} := by sorry
+
+/-- Paper: Corollary 9.3.2.3(1), p. 425. Inclusion of circle characters
+into complex quasi-characters identifies the band with the imaginary
+norm twists of §3.1.1. -/
+theorem mem_modulatedFrequencyBand_iff_normTwist (χ ψ : PontryaginDual G) (α β : ℝ) :
+    let j : Circle →ₜ* ℂ := ⟨Circle.coeHom, continuous_subtype_val⟩
+    ψ ∈ modulatedFrequencyBand m χ α β ↔ ∃ t ∈ Icc α β,
+      j.comp ψ = quasiCharacterNormTwist m.toMonoidHom m.continuous (j.comp χ) ((t : ℂ) * Complex.I) :=
+  by sorry
+
+/-- Paper: Lemma 9.3.2.1(1)–(4), pp. 422–424. On each fixed kernel isotype
+there is a uniformly bounded sequence of convolutions converging strongly to
+the identity there, with band-limited twisted kernels.
+Deviation: A single homogeneous kernel kills the other isotypes. The
+left-translation eigencharacter is inverse to the Fourier frequency on the kernel. -/
+theorem exists_singletonDecay_isotype_approximation (hm : IsModulation m) (hms : Surjective m)
+    (b s : ℝ) (hs : 0 ≤ s) (χ : PontryaginDual G) :
+    let τ := hardySobolevTranslation μ m b b s le_rfl hs
+    let A := (existsUnique_singletonDecay_lineAction μ m hm hms b s hs).exists.choose
+    let Eχ := actionIsotype (τ.comp m.toMonoidHom.ker.subtype)
+      ((χ⁻¹).comp ⟨m.toMonoidHom.ker.subtype, continuous_subtype_val⟩)
+    ∃ φ : ℕ → ModulatedExponentialDecay m {b},
+      (∀ n, ‖A (φ n)‖ ≤ 2) ∧
+      (∀ (n : ℕ) (k : m.toMonoidHom.ker) x,
+        (φ n).val ((k : G)⁻¹ * x) = star (χ (k : G) : ℂ) * (φ n).val x) ∧
+      (∀ n, tsupport (lcaFourier μ (modulationWeight m b (φ n).val)) ⊆
+        modulatedFrequencyBand m χ (-(n : ℝ)) n) ∧
+      ∀ u : Eχ, Tendsto (fun n ↦ A (φ n) u.val) atTop (𝓝 u.val) := by sorry
+
+/-- Paper: Lemma 9.3.2.1(4), p. 422. Band-limited convolutions approximate
+the identity on the full b-line space with a uniform operator norm bound.
+Deviation: The kernels may combine finitely many compact-group frequencies,
+as needed for inputs with components in several isotypes. -/
+theorem exists_singletonDecay_approximation (hm : IsModulation m) (hms : Surjective m)
+    (b s : ℝ) (hs : 0 ≤ s) :
+    let A := (existsUnique_singletonDecay_lineAction μ m hm hms b s hs).exists.choose
+    ∃ φ : ℕ → ModulatedExponentialDecay m {b},
+      (∀ n, ‖A (φ n)‖ ≤ 2 ∧ HasCompactSupport (lcaFourier μ (modulationWeight m b (φ n).val))) ∧
+      ∀ u, Tendsto (fun n ↦ A (φ n) u) atTop (𝓝 u) := by sorry
 
 local instance instDualMeasurableSpaceSec3 : MeasurableSpace (PontryaginDual G) := borel _
 
@@ -281,6 +363,14 @@ theorem hardySobolevConvolution_apply (a b s : ℝ) (hab : a ≤ b) (hs : 0 ≤ 
     (hb : ∃ C : ℝ, ∀ x, ‖φ x‖ ≤ C) (u : W a b s) :
     ∀ᵐ x ∂μ, Integrable (fun g ↦ φ g * u (g⁻¹ * x)) μ ∧
       hardySobolevConvolution μ m a b s hab hs φ hφ hc hb u x = lcaConvolution μ φ u x := by sorry
+
+/-- Paper: §9.3.3.1, p. 426. On a test function the operator used for the
+trace is the regularized action of Definition 9.3.1.1. -/
+theorem hardySobolevConvolution_eq_testAction (a b s : ℝ) (hab : a ≤ b) (hs : 0 ≤ s)
+    (φ : BruhatCompactSupport G) (hφ : AEMeasurable φ.val μ)
+    (hb : ∃ C : ℝ, ∀ x, ‖φ.val x‖ ≤ C) :
+    hardySobolevConvolution μ m a b s hab hs φ.val hφ φ.property.2 hb =
+      hardySobolevTestAction μ m a b s hab hs φ := by sorry
 
 section Cutoffs
 
@@ -379,6 +469,29 @@ theorem modulatedCutoffOperator_apply (ν : Measure G) {Λ ε : ℝ} {ρ : G →
     (modulatedCutoffOperator m ν hρ u : G → ℂ) =ᵐ[ν]
       fun x ↦ (ρ x : ℂ) * u x := by sorry
 
+/-- Paper: Remark 9.3.3.2, pp. 427–428. A nonnegative cutoff acts by a
+positive self-adjoint operator on weighted L². -/
+theorem modulatedCutoffOperator_isPositive (ν : Measure G) {Λ ε : ℝ} {ρ : G → ℝ}
+    (hρ : IsModulatedCutoff m Λ ε ρ) :
+    (modulatedCutoffOperator m ν hρ).IsPositive := by sorry
+
+/-- Paper: Remark 9.3.3.2, p. 428. The multiplier norm is the essential
+supremum of its symbol for a sigma-finite measure.
+Deviation: A pointwise supremum of one can be attained only on a null set
+when the inner band is empty. -/
+theorem modulatedCutoffOperator_norm (ν : Measure G) [SigmaFinite ν] {Λ ε : ℝ} {ρ : G → ℝ}
+    (hρ : IsModulatedCutoff m Λ ε ρ) :
+    ‖modulatedCutoffOperator m ν hρ‖ = (eLpNorm ρ ∞ ν).toReal := by sorry
+
+/-- Paper: (9.3.3.3), p. 427. Inversion interchanges the two reflected
+interval spaces and intertwines their cutoff multipliers. -/
+theorem modulatedCutoffOperator_inversion (a b s : ℝ) (_hab : a ≤ b) (_hs : 0 ≤ s)
+    {Λ ε : ℝ} {ρ : G → ℝ} (hρ : IsModulatedCutoff m Λ ε ρ) :
+    ∃ J : W a b s ≃ₗᵢ[ℂ] W (-b) (-a) s,
+      (∀ u, (J u : G → ℂ) =ᵐ[μ] fun x ↦ u x⁻¹) ∧
+      ∀ u, J (modulatedCutoffOperator m (weightedMeasure a b s) hρ u) =
+        modulatedCutoffOperator m (weightedMeasure (-b) (-a) s) hρ (J u) := by sorry
+
 /-- Paper: Definition 9.3.3.3, p. 428. The absolute cutoff associated to a set
 of module values is the indicator of its inverse image.
 Deviation: Use the same formula for the positive, negative and two-sided cutoffs
@@ -408,9 +521,18 @@ theorem modulatedAbsoluteCutoff_measurable_bounded (J : Set ℝ) (_hJ : Measurab
 multiplication by the indicator of the chosen set of module values. -/
 def modulatedAbsoluteCutoffOperator (ν : Measure G) (J : Set ℝ) (hJ : MeasurableSet J) :
     Lp ℂ 2 ν →L[ℂ] Lp ℂ 2 ν :=
-  lpCutoffMultiplier ν (modulatedAbsoluteCutoff m J)
-    (modulatedAbsoluteCutoff_measurable_bounded m J hJ).1
-    (modulatedAbsoluteCutoff_measurable_bounded m J hJ).2
+  (hardySobolevCutoff_spec (μ := ν) (U := moduleValue ⁻¹' J)
+    (hJ.preimage (NNReal.continuous_coe.comp (Units.continuous_val.comp m.continuous)).measurable)).choose
+
+omit [IsTopologicalGroup G] [T2Space G] [LocallyCompactSpace G] [SecondCountableTopology G] in
+/-- Paper: Definition 9.3.3.3, p. 428. The band operator agrees with
+the measurable-set projection used in §9.2 on every input. -/
+theorem modulatedAbsoluteCutoffOperator_eq_hardySobolevCutoff (ν : Measure G)
+    (J : Set ℝ) (hJ : MeasurableSet J) (u : Lp ℂ 2 ν) :
+    modulatedAbsoluteCutoffOperator m ν J hJ u =
+      hardySobolevCutoff (U := moduleValue ⁻¹' J)
+        (hJ.preimage (NNReal.continuous_coe.comp (Units.continuous_val.comp m.continuous)).measurable) u :=
+  (((hardySobolevCutoff_spec (μ := ν) _).choose_spec.2) u).2.1
 
 /-- Paper: (9.3.3.6)–(9.3.3.7), p. 428. The absolute cutoff retains the input
 on the chosen band and vanishes outside it, as an identity of L² representatives. -/
@@ -423,6 +545,13 @@ theorem modulatedAbsoluteCutoffOperator_apply (ν : Measure G) (J : Set ℝ)
 -- bounded below away from zero almost everywhere. Each one-sided cutoff kills
 -- functions supported on its excluded half of the module axis.
 -- The two-sided cutoff is zero almost everywhere for Λ ≤ 1 on the positive reals.
+
+/-- Paper: Remark 9.3.3.4, p. 428. Every absolute band cutoff is an
+orthogonal projection with closed range, including the zero projection. -/
+theorem modulatedAbsoluteCutoffOperator_projection (ν : Measure G) (J : Set ℝ)
+    (hJ : MeasurableSet J) :
+    IsStarProjection (modulatedAbsoluteCutoffOperator m ν J hJ) ∧
+      IsClosed (range (modulatedAbsoluteCutoffOperator m ν J hJ)) := by sorry
 
 end Cutoffs
 
@@ -456,15 +585,16 @@ theorem truncatedHardySobolevConvolution_hilbertSchmidt
           (truncation hρ).comp A u x = ∫ y, k (x, y) * u y ∂ν := by sorry
 
 /-- Paper: Theorem 9.3.3.5(2), p. 429. For smooth compactly supported symbols
-and smooth cutoffs, the truncated convolution operator is nuclear, and its trace
+and piecewise smooth cutoffs, the truncated convolution operator is nuclear, and its trace
 equals the integral over the diagonal.
-Deviation: The diagonal is written relative to Haar measure after the weighted L²
+Deviation: A smooth multiplier equal to one on the compact cutoff support gives
+the factorization through the smooth case. The diagonal uses Haar measure after the weighted L²
 density cancels. The base interval is compact, as in the available Hilbert model. -/
 theorem truncatedHardySobolevConvolution_trace
     (_hm : IsModulation m) (_hms : Surjective m)
-    (hφsmooth : IsBruhatSmooth φ) (hρ : IsSmoothModulatedCutoff m Λ ε ρ)
+    (hφsmooth : IsBruhatSmooth φ) (hρ : IsModulatedCutoff m Λ ε ρ)
     (_hband : 0 < Λ⁻¹ + ε ∧ Λ⁻¹ + ε < Λ - ε) :
-    let T := (truncation hρ.1).comp A
+    let T := (truncation hρ).comp A
     ∃ hT : IsNuclearOperator T,
       Integrable (fun x ↦ (ρ x : ℂ) * φ 1) μ ∧
       hilbertTrace ⟨T, hT⟩ = ∫ x, (ρ x : ℂ) * φ 1 ∂μ := by sorry
@@ -472,10 +602,10 @@ theorem truncatedHardySobolevConvolution_trace
 -- TODO(paper-gap): Theorem 9.3.3.5(3) uses a point value and the nuclear trace.
 -- For general bounded symbols the point value can change without affecting convolution.
 
-/-- Paper: Theorem 9.3.3.5(3), p. 429. For the smooth trace in part (2), the
+/-- Paper: Theorem 9.3.3.5(3), p. 429. For a smooth convolution symbol, the
 difference from twice the logarithmic radius times the kernel Haar mass and φ(1)
 tends to zero if εΛ tends to zero.
-Deviation: This takes the nuclear trace under the smoothness hypotheses of part (2).
+Deviation: The convolution symbol is smooth and the cutoff may have jumps.
 A Haar splitting makes the normalization of the kernel Haar measure explicit. The
 base interval is compact. -/
 theorem truncatedHardySobolevConvolution_trace_tendsto
@@ -489,11 +619,11 @@ theorem truncatedHardySobolevConvolution_trace_tendsto
     (ε : ℝ → ℝ) (ρ : ℝ → G → ℝ)
     (_hε : Tendsto (fun Λ ↦ ε Λ * Λ) atTop (𝓝 0))
     (_hρlim : ∀ x, Tendsto (fun Λ ↦ ρ Λ x) atTop (𝓝 1))
-    (_hcutoff : ∀ᶠ Λ in atTop, IsSmoothModulatedCutoff m Λ (ε Λ) (ρ Λ) ∧
+    (_hcutoff : ∀ᶠ Λ in atTop, IsModulatedCutoff m Λ (ε Λ) (ρ Λ) ∧
       0 < Λ⁻¹ + ε Λ ∧ Λ⁻¹ + ε Λ < Λ - ε Λ) :
     ∃ traces : ℝ → ℂ,
-      (∀ᶠ Λ in atTop, ∃ (hρ : IsSmoothModulatedCutoff m Λ (ε Λ) (ρ Λ)),
-        let T := (truncation hρ.1).comp A
+      (∀ᶠ Λ in atTop, ∃ (hρ : IsModulatedCutoff m Λ (ε Λ) (ρ Λ)),
+        let T := (truncation hρ).comp A
         ∃ hT : IsNuclearOperator T, traces Λ = hilbertTrace ⟨T, hT⟩) ∧
       Tendsto (fun Λ ↦ traces Λ - (2 * Real.log Λ * μ₁.real univ : ℝ) * φ 1)
         atTop (𝓝 0) := by sorry

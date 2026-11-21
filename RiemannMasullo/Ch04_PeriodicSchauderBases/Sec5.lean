@@ -63,10 +63,7 @@ def modulatedPeriodizationCLM : E →L[ℂ] S :=
 
 local notation "P" => modulatedPeriodizationCLM m γ hm hms hγ
 
-/-- Paper: Equation (4.5.1.2), p. 197. At each lift of a quotient point the
-orbit series converges to the value of the bundled periodization. -/
-theorem modulatedPeriodizationCLM_hasSum (f : E) (x : G) :
-    HasSum (fun n : ℤ ↦ f.val (γ ^ n * x)) (P f (q x)) := by sorry
+-- Equation (4.5.1.2) at each lift is modulatedPeriodization_hasSum in §4.4.
 
 /-- Paper: Proposition 4.5.1.1(1), pp. 197–199. The ordinary orbit sums converge
 uniformly on compact sets of representatives in the original group.
@@ -75,6 +72,15 @@ functions on G only. -/
 theorem modulatedPeriodization_tendstoUniformlyOn (f : E) (C : Set G) (hC : IsCompact C) :
     TendstoUniformlyOn (fun s : Finset ℤ ↦ fun x ↦ ∑ n ∈ s, f.val (γ ^ n * x))
       (fun x ↦ P f (q x)) atTop C := by sorry
+
+/-- Paper: Proposition 4.5.1.1(1), pp. 197–199. On compact sets of lifts,
+each iterated directional derivative of the orbit sum is the locally uniform
+sum of the corresponding derivatives of the translates. -/
+theorem modulatedPeriodization_deriv_tendstoUniformlyOn (f : E)
+    (α : LCATopologicalLie G) (r : ℕ) (C : Set G) (hC : IsCompact C) :
+    let d := (bruhatDirectionalDeriv α)^[r]
+    TendstoUniformlyOn (fun s : Finset ℤ ↦ fun x ↦ ∑ n ∈ s, d f.val (γ ^ n * x))
+      (d (fun x ↦ P f (q x))) atTop C := by sorry
 
 /-- Paper: Proposition 4.5.1.1(1), pp. 197–198. Every Schwartz–Bruhat function
 on the compact cyclic quotient is a periodization. -/
@@ -90,6 +96,9 @@ theorem modulatedPeriodization_isOpenMap : IsOpenMap P := by sorry
 
 -- TODO(paper-gap): The continuity proof on pp. 199–200 assumes that a
 -- convergent net in a locally convex space has a bounded tail.
+-- The majorant on p. 199 also needs the supremum of the absolute values.
+-- Remark 4.5.1.3 uses the tensor comparison of §D.3.3. For the valid
+-- sequential assertion in Remarks 4.5.1.2 and 4.5.1.4 see the interval section.
 
 /-- Paper: Proposition 4.5.1.1(1), p. 198. Periodization takes the corresponding
 norm-one isotype on the decay space to a closed subspace of the quotient test space. -/
@@ -101,13 +110,7 @@ variable (μ₁ : Measure m.toMonoidHom.ker) [μ₁.IsHaarMeasure] (χ : Pontrya
 
 local notation "perχ" => modulatedIsotypicPeriodization m γ hm hms hγ μ₁ χ
 
-include hm hms hγ in
-/-- Paper: Proposition 4.5.1.1(2), p. 198. The character-weighted orbit sum is
-Schwartz–Bruhat on the compact cyclic quotient. Its membership witness is the
-one used in the definition of homogeneous periodization in §4.4. -/
-theorem modulatedIsotypicPeriodization_isSchwartzBruhat (f : E) :
-    (fun z : Q ↦ ∑' n : ℤ, ∫ u : K, (χ u.val : ℂ) * f.val (γ ^ n * (u.val * z.out)) ∂μ₁)
-      ∈ schwartzBruhatSubmodule Q := by sorry
+-- Proposition 4.5.1.1(2) is modulatedIsotypicPeriodization_mem in §4.4.
 
 /-- Paper: Proposition 4.5.1.1(3), p. 198. The homogeneous orbit sum of §4.4
 is linear and continuous. -/
@@ -122,11 +125,7 @@ def modulatedIsotypicPeriodizationCLM : E →L[ℂ] S :=
 
 local notation "Pχ" => modulatedIsotypicPeriodizationCLM m γ hm hms hγ μ₁ χ
 
-/-- Paper: Proposition 4.5.1.1(2–3), p. 198. At each representative the
-character-weighted orbit series converges to the bundled homogeneous periodization. -/
-theorem modulatedIsotypicPeriodizationCLM_hasSum (f : E) (x : G) :
-    HasSum (fun n : ℤ ↦ ∫ u : K, (χ u.val : ℂ) * f.val (γ ^ n * (u.val * x)) ∂μ₁)
-      (Pχ f (q x)) := by sorry
+-- The pointwise sum in (2–3) is modulatedIsotypicPeriodization_hasSum in §4.4.
 
 /-- Paper: §4.5 introduction and Proposition 4.5.1.1(2), pp. 197–198.
 The homogeneous orbit sums converge uniformly on compact sets of representatives.
@@ -137,6 +136,16 @@ theorem modulatedIsotypicPeriodization_tendstoUniformlyOn
       (fun s : Finset ℤ ↦ fun x : G ↦
         ∑ n ∈ s, ∫ u : K, (χ u.val : ℂ) * f.val (γ ^ n * (u.val * x)) ∂μ₁)
       (fun x ↦ Pχ f (q x)) atTop C := by sorry
+
+/-- Paper: §4.5 introduction and Proposition 4.5.1.1(2), pp. 197–199.
+On compact sets of lifts each directional derivative of homogeneous periodization
+is the locally uniform sum of the averaged derivatives. -/
+theorem modulatedIsotypicPeriodization_deriv_tendstoUniformlyOn (f : E)
+    (α : LCATopologicalLie G) (r : ℕ) (C : Set G) (hC : IsCompact C) :
+    let d := (bruhatDirectionalDeriv α)^[r]
+    TendstoUniformlyOn (fun s : Finset ℤ ↦ fun x : G ↦
+      ∑ n ∈ s, ∫ u : K, (χ u.val : ℂ) * d f.val (γ ^ n * (u.val * x)) ∂μ₁)
+      (d (fun x ↦ Pχ f (q x))) atTop C := by sorry
 
 /-- Paper: Proposition 4.5.1.1(3), p. 198. Homogeneous periodization is open
 as a map to its image with the subspace topology. -/
@@ -192,8 +201,9 @@ local notation "ωχ" => PontryaginDual.map
   (⟨(K).subtype, continuous_subtype_val⟩ : K →ₜ* G) χ
 local notation "Pχ" => modulatedIsotypicPeriodizationCLM m γ hm hms hγ μ₁ χ
 
--- TODO(paper-gap): The multiplier and evaluation lattice in the proof of (4)
--- on p. 202 have inconsistent phase signs, and the integer frequency lacks i.
+-- TODO(paper-gap): On p. 202 the multiplier needs χ(γ)⁻¹. With the Mellin
+-- weight χ(x)m(x)^s its zero lattice is 2πin/log(m γ) − it₀. The print has
+-- the i in the numerator and writes log γ for the logarithm of the module.
 
 /-- Paper: Proposition 4.5.1.1(4), p. 198. Inside the isotype, the kernel of
 homogeneous periodization is the closure of the differences of isotypic functions.
@@ -208,6 +218,9 @@ omit [MeasurableSpace G] [BorelSpace G] in
 is the closure of the image of the cyclic difference. -/
 theorem modulatedPeriodization_ker_eq_closure :
     (P).ker = (Δ).range.topologicalClosure := by sorry
+
+-- TODO(paper-gap): The opening of the proof of (6) on p. 203 uses equality
+-- with the actual difference range. Part (5) only identifies its closure.
 
 omit [MeasurableSpace G] [BorelSpace G] in
 /-- Paper: Proposition 4.5.1.1(6), p. 198. The cyclic difference has closed range. -/
@@ -328,14 +341,31 @@ theorem modulatedIsotypicPeriodizationQuotient_mkQ (ω : PontryaginDual K)
     T[ω] ((Pχ[ω]).ker.mkQ f) = P f := by sorry
 
 include hχ in
+/-- Paper: Equations (4.5.1.7)–(4.5.1.9) and (4.5.1.12), pp. 201, 204.
+On every lift the normalized quotient map applies the quotient projector after
+ordinary periodization. The unnormalized map of §4.4 multiplies this by the kernel mass. -/
+theorem modulatedIsotypicPeriodizationQuotient_projector (ω : PontryaginDual K) (f : E) :
+    T[ω] ((Pχ[ω]).ker.mkQ f) = Ψ[ω] (P f) ∧
+      Pχ[ω] f = (μ₁.real univ : ℂ) • Ψ[ω] (P f) := by sorry
+
+include hχ in
 /-- Paper: Equation (4.5.1.12), p. 204. The induced periodization identifies
 the kernel quotient topologically with the quotient isotype. -/
 theorem modulatedIsotypicPeriodizationQuotient_equiv (ω : PontryaginDual K) :
     ∃ F : V[ω] ≃L[ℂ] Sχ[ω], ∀ v, (F v).val = T[ω] v := by sorry
 
-/-- Paper: Equation (4.5.1.10), p. 204. The quotient functional is the
-Fourier coefficient of the normalized periodization multiplied by the
-quotient volume. Its integral on lifts is stated below. -/
+include hχ in
+/-- Paper: Proposition 4.5.1.1(4,6) and Corollary 4.5.1.6, pp. 198, 202–204.
+Inclusion identifies the isotype modulo its cyclic differences with the full
+decay space modulo homogeneous periodization. -/
+theorem modulatedIsotypicPeriodizationQuotient_fromIsotype (ω : PontryaginDual K) :
+    let H₀ := H[ω]
+    let N := (H₀.map (Δ).toLinearMap).comap H₀.subtype
+    ∃ F : (H₀ ⧸ N) ≃L[ℂ] V[ω], ∀ f : H₀, F (N.mkQ f) = (Pχ[ω]).ker.mkQ f.val := by sorry
+
+/-- Paper: Equation (4.5.1.10), p. 204. The quotient functional multiplies the
+Fourier coefficient of normalized periodization by the logarithmic period times
+the kernel mass. For the compatible Weil measure this is the quotient volume. -/
 def modulatedCyclicPairing (ω : PontryaginDual K) (n : ℤ) : StrongDual ℂ (V[ω]) :=
   volQ • (a (ω, n)).comp (T[ω])
 
@@ -385,8 +415,9 @@ variable (B : Set ℝ≥0ˣ) (k : Subgroup G)
 -- TODO(paper-gap): The opening of §4.5.2 uses a global completed projective
 -- tensor isomorphism despite the compact-generation restriction in Remark 4.5.1.3.
 
-/-- Paper: §4.5.2, p. 205. The fixed-support space consists of two-sided
-exponentially decaying functions with compact support over the module window.
+/-- Paper: §4.5.2, p. 205. The fixed-support space consists of compactly supported
+two-sided decay functions that vanish off the module window. For the paper's
+compact windows their topological support also lies in the window.
 Deviation: The support cylinder is written as the preimage of the window under
 the module. For a section τ this is τ(B) times the norm-one group. -/
 def modulatedCompactSupportSubmodule : Submodule ℂ E :=
@@ -434,6 +465,10 @@ theorem modulatedCompactSupportStage_testFunction_equiv :
       p.val.1 = ⊤ ∧ OrderDual.ofDual p.val.2 = k ∧ (C : Set G) = m ⁻¹' B ∧
       ∀ f, (F f).val.val = schwartzBruhatStageRealization p e f.val := by sorry
 
+-- Remark 4.5.2.2, p. 207, uses the Fréchet topology of this elementary
+-- stage. See also modulatedExponentialDecayStage_frechet and
+-- modulatedExponentialDecay_stageLimit in §D.3.3.
+
 variable (a b : ℝ≥0ˣ)
 variable (ha : 1 < a.val) (hwidth : Real.log ((m γ).val : ℝ) < 2 * Real.log (a.val : ℝ))
 
@@ -445,6 +480,12 @@ include hSC hm hms hγ ha hwidth in
 logarithmic period maps onto the cyclic quotient. -/
 theorem modulatedCompactSupport_quotient_image :
     q '' (m ⁻¹' window) = (univ : Set Q) := by sorry
+
+include hγ hwidth in
+/-- Paper: Proposition 4.5.2.1(2), pp. 205–206. The interior of a strict-width
+window already meets every orbit. -/
+theorem modulatedCompactSupport_quotient_image_interior :
+    q '' (m ⁻¹' interior window) = (univ : Set Q) := by sorry
 
 include hk hperp ha hwidth in
 /-- Paper: Proposition 4.5.2.1(2) and Equation (4.5.2.1), p. 205. On a window
@@ -459,6 +500,16 @@ theorem modulatedCompactSupportStage_periodization_equiv :
 -- G = ℝ_{>0}, γ = a > 1 and b = 1, its A is zero. A nonzero bump ψ in
 -- (1, γ) gives φ(x) = ψ(x) - ψ(γx) in the kernel with the required support,
 -- but a continuous ψ supported in {1} is zero.
+
+/-- Paper: Proposition 4.5.2.1(3), pp. 205–207. A supported kernel element
+has a k-invariant primitive supported over the window with its lower endpoint
+multiplied by the generator's module.
+Deviation: Forward and backward telescoping give this asymmetric interval
+in place of the false symmetric bound. -/
+theorem modulatedCompactSupportStage_exists_difference
+    (f : W) (hf : P f.val = 0) :
+    ∃ g : modulatedCompactSupportStage m (Icc (m γ * (b / a)) (b * a)) k,
+      Δ g.val = f.val := by sorry
 
 variable [MeasurableSpace G] [BorelSpace G]
 variable (μ₁ : Measure m.toMonoidHom.ker) [μ₁.IsHaarMeasure]
@@ -477,26 +528,30 @@ local notation "D[" B "]" => modulatedCompactSupportSubmodule m B
 -- with interior. Already G = ℝ_{>0}, χ = 1, B = [1, γ] misses the constant
 -- periodization, since a smooth function supported there vanishes at both endpoints.
 
-include ha hwidth in
-/-- Paper: Theorem 4.5.2.3 and Equation (4.5.2.2), p. 207. The supported
-homogeneous quotient with an interval as in part (2) is identified with the
-full homogeneous quotient by inclusion.
-Deviation: Uses the strict-width windows specified in part (2). The
-unrestricted window assertion has the counterexample above. -/
-theorem modulatedCompactSupport_isotypicQuotient_equiv (ω : PontryaginDual K) :
-    let N := (Pχ[ω]).ker.comap (D[window]).subtype
-    ∃ F : ((D[window]) ⧸ N) ≃L[ℂ] V[ω],
-      ∀ f : D[window], F (N.mkQ f) = (Pχ[ω]).ker.mkQ f.val := by sorry
+variable (hcover : q '' (m ⁻¹' interior B) = (univ : Set Q))
 
-include hk hperp ha hwidth in
-/-- Paper: Theorem 4.5.2.3 and Equation (4.5.2.2), p. 207. On a strict-width
-window the k-invariant part maps onto the image of all k-invariant functions
-in the homogeneous quotient.
-Deviation: Uses the strict-width windows specified in part (2). -/
+include hB hcover in
+/-- Paper: Theorem 4.5.2.3 and Equation (4.5.2.2), p. 207. The supported
+homogeneous quotient is identified with the full quotient by inclusion.
+Deviation: The interior of the compact module window must cover the quotient.
+Every strict-width interval in part (2) satisfies this condition. -/
+theorem modulatedCompactSupport_isotypicQuotient_equiv (ω : PontryaginDual K) :
+    let N := (Pχ[ω]).ker.comap (D[B]).subtype
+    ∃ F : ((D[B]) ⧸ N) ≃L[ℂ] V[ω],
+      ∀ f : D[B], F (N.mkQ f) = (Pχ[ω]).ker.mkQ f.val := by sorry
+
+include hk hperp hB hcover in
+/-- Paper: Theorem 4.5.2.3 and Equation (4.5.2.2), p. 207. On a compact window
+whose interior covers the quotient, inclusion identifies the two quotients of
+k-invariant functions with their quotient topologies.
+Deviation: Uses the interior coverage condition on the window. -/
 theorem modulatedCompactSupportStage_isotypicQuotient_image (ω : PontryaginDual K) :
-    Submodule.map (Pχ[ω]).ker.mkQ (W) =
-      Submodule.map (Pχ[ω]).ker.mkQ ((schwartzBruhatInvariantSubmodule k).comap twist₀) :=
-  by sorry
+    let J : Submodule ℂ E := (schwartzBruhatInvariantSubmodule k).comap twist₀
+    let W₀ := modulatedCompactSupportStage m B k
+    let i : W₀ →ₗ[ℂ] J := Submodule.inclusion (inf_le_right : W₀ ≤ J)
+    let N := (Pχ[ω]).ker.comap W₀.subtype
+    let N' := (Pχ[ω]).ker.comap J.subtype
+    ∃ F : (W₀ ⧸ N) ≃L[ℂ] (J ⧸ N'), ∀ f : W₀, F (N.mkQ f) = N'.mkQ (i f) := by sorry
 
 variable (ν : Measure (G ⧸ Subgroup.zpowers γ)) [ν.IsHaarMeasure]
 variable (τ : ℝ≥0ˣ →ₜ* G) (hτ : RightInverse τ m)
@@ -624,7 +679,39 @@ theorem modulatedIntervalPeriodization_factorization :
       (∀ (f : E) (x : G), (i f).val x = f.val x) ∧
       (∀ f, PI (i f) = P f) ∧
       Surjective PI ∧
-      ∀ T : D →L[ℂ] S, (∀ f, T f = P₀ (j₀ f)) → T = PI := by sorry
+      ∀ T : D →L[ℂ] S, T.comp i = P → T = PI := by sorry
+
+section ProjectivePeriodization
+
+attribute [local instance] uniformContinuousConstSMul_of_continuousConstSMul
+
+open UniformSpace in
+open scoped TensorProduct in
+/-- Paper: Remarks 4.5.1.2 and 4.5.1.4, pp. 198, 203. Periodization on the
+projective tensor completion is sequentially continuous and surjective. The
+induced bijection has a sequentially continuous inverse.
+Deviation: The interval contains zero. The tensor factors are ordered as in
+modulatedExponentialDecay_tensor_equiv. General forward continuity fails. -/
+theorem modulatedIntervalPeriodization_projective
+    (τ : ℝ≥0ˣ →ₜ* G) (hτ : RightInverse τ m)
+    (e : Completion (InductiveTensor (SchwartzBruhat K) (PositiveRealExponentialDecay I)) ≃L[ℂ] D)
+    (he : ∀ (h : SchwartzBruhat K) (p : PositiveRealExponentialDecay I) (u : K) (t : ℝ≥0ˣ),
+      (e (Completion.coe' (α := InductiveTensor (SchwartzBruhat K) (PositiveRealExponentialDecay I))
+        (h ⊗ₜ[ℂ] p))).val (u.val * τ t) = h u * p.val (Real.log (t.val : ℝ))) :
+    let TI := InductiveTensor (SchwartzBruhat K) (PositiveRealExponentialDecay I)
+    let TP := ProjectiveTensor (SchwartzBruhat K) (PositiveRealExponentialDecay I)
+    ∃ A : Completion TP →ₗ[ℂ] S, SeqContinuous A ∧ Surjective A ∧
+      (∀ z : Completion TI, A (@Completion.map TI _ TP _ id z) = PI (e z)) ∧
+      ∃ B : S ≃ₗ[ℂ] ((Completion TP) ⧸ A.ker),
+        SeqContinuous B ∧ ∀ z, B (A z) = A.ker.mkQ z := by sorry
+
+end ProjectivePeriodization
+
+-- TODO(paper-gap): Remark 4.5.1.4, p. 203, calls the forward quotient
+-- bijection continuous. For an infinite product of copies of ℤ/2, the
+-- quotient Schwartz space admits a continuous seminorm testing derivative
+-- order j at the jth coordinate character. On a fixed compact set no single
+-- continuous radial seminorm controls all those derivative orders.
 
 -- TODO(paper-gap): In (4.5.3.6) the ordinary Schwartz–Bruhat quotient map
 -- has the interval decay space printed in its codomain. On p. 208 the
@@ -668,6 +755,18 @@ Schwartz–Bruhat isotype the kernel consists of differences of functions of tha
 theorem schwartzBruhatCyclicDifference_range_isotype (ω : PontryaginDual K) :
     let H := actionIsotype ((ρG).comp (K).subtype) ω
     (P₀).ker ⊓ H = H.map (Δ₀).toLinearMap := by sorry
+
+include hOpen hγ in
+/-- Paper: Corollary 4.5.3.1, (4.5.3.4)–(4.5.3.6), pp. 208–209. The two
+inclusions identify the quotients by the three difference ranges, as used
+in Corollary 4.6.3.1. Both maps send each function to its own class. -/
+theorem modulatedIntervalDifference_quotient_equivs :
+    ∃ (i : E →L[ℂ] D)
+      (F : (E ⧸ (Δ).range) ≃L[ℂ] (D ⧸ (ΔI).range))
+      (J : (D ⧸ (ΔI).range) ≃L[ℂ] (S₀ ⧸ (Δ₀).range)),
+      (∀ (f : E) (x : G), (i f).val x = f.val x) ∧
+      (∀ f : E, F ((Δ).range.mkQ f) = (ΔI).range.mkQ (i f)) ∧
+      ∀ g : D, J ((ΔI).range.mkQ g) = (Δ₀).range.mkQ (j₀ g) := by sorry
 
 end Interval
 
