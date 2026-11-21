@@ -1,8 +1,15 @@
 name: Lean Action CI
 
+# For pull requests that touch anything besides the library's Lean files (scripts, workflows,
+# the lakefile, vendored code). `PR check` builds every pull request that changes only library
+# files, with the statement check on top, and `Main state` builds main, so running this as well
+# for those would only use up runners: the queue then delays everything, claims included.
 on:
-  push:
   pull_request:
+    paths:
+      - '**'
+      - '!RiemannMasullo/**/*.lean'
+      - 'RiemannMasullo/External/**'
   workflow_dispatch:
 
 jobs:
