@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run one agent on one issue in its own worktree, and hand in its work.
 #
-#   scripts/agent.sh <prover|digester|scout> <issue number|next> [options]
+#   scripts/agent.sh <prover|digester|scout|sweeper> <issue number|next> [options]
 #
 # With no mode option it does three steps: set up, run the agent, hand in. To drive the agent
 # yourself (for example an interactive Codex or Claude session), do the outer two separately:
@@ -42,7 +42,7 @@ set -euo pipefail
 # waits on its agent for a long time, and the file may be edited or updated meanwhile.
 main() {
 
-usage="usage: agent.sh <prover|digester|scout> <issue|next> [--setup|--handin] [--cli codex|claude] [--model M] [--effort E] [--dry-run] [--force]"
+usage="usage: agent.sh <prover|digester|scout|sweeper> <issue|next> [--setup|--handin] [--cli codex|claude] [--model M] [--effort E] [--dry-run] [--force]"
 role=${1:?$usage}
 target=${2:?$usage}
 shift 2
@@ -62,6 +62,7 @@ done
 case $role in
   prover) label=proof ;;
   digester) label=section ;;
+  sweeper) label=sweep ;;       # one agent closes out a whole file; see scripts/sweep.sh
   scout) label="" ;;
   *) echo "unknown role $role" >&2; exit 2 ;;
 esac
@@ -308,7 +309,7 @@ $baddefs
   fi
   title="$role: #$n"; body=""
   if [ -s .agent/PR.md ]; then title=$(head -n 1 .agent/PR.md | sed 's/^#* *//'); body=$(tail -n +2 .agent/PR.md); fi
-  [ "$role" = prover ] && link="Closes #$n" || link="Part of #$n"
+  case $role in prover|sweeper) link="Closes #$n" ;; *) link="Part of #$n" ;; esac
   git commit -q -m "$title" -m "$link"
   # GitHub now and then rejects a push for no reason of ours ("remote rejected ... (failed)").
   for attempt in 1 2 3; do
