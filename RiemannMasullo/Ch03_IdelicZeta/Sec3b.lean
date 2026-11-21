@@ -85,7 +85,11 @@ theorem realLocalEulerParameters (w : InfinitePlace F) (hw : w.IsReal)
 unique exponent for the squared absolute value and a unique angular weight. -/
 theorem complexLocalEulerParameters (w : InfinitePlace F) (hw : w.IsComplex)
     (c : QuasiCharacter w.Completionˣ) :
-    ∃! p : ℂ × ℤ, complexShape[hw, c, p.1, p.2] := by sorry
+    ∃! p : ℂ × ℤ, complexShape[hw, c, p.1, p.2] := by
+  let e := (complexModel(hw)).symm
+  let i : ℂˣ →ₜ* w.Completionˣ := ⟨Units.map e.toMonoidHom,
+    (InfinitePlace.Completion.isometryEquivComplexOfIsComplex hw).symm.continuous.units_map _⟩
+  exact existsUnique_complexUnits_quasiCharacter_parameters (c.comp i)
 
 /-- Paper: Equation (3.3.1.25), p. 134. The infinite local Euler factor is the
 real or complex gamma factor shifted by the sign parity or angular weight.
