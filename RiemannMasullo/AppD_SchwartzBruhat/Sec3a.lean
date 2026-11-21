@@ -2703,7 +2703,27 @@ variable [IsTopologicalGroup G] [T2Space G] [LocallyCompactSpace G]
 the decay submodule. -/
 theorem modulatedExponentialDecaySubmodule_translate (hm : IsModulation m) (hms : Surjective m)
     (g : G) (f : modulatedExponentialDecaySubmodule m I) :
-    (fun x : G ↦ f.val (g⁻¹ * x)) ∈ modulatedExponentialDecaySubmodule m I := by sorry
+    (fun x : G ↦ f.val (g⁻¹ * x)) ∈ modulatedExponentialDecaySubmodule m I := by
+  let translate : (G → ℂ) →ₗ[ℂ] (G → ℂ) :=
+    LinearMap.pi fun x ↦ LinearMap.proj (g⁻¹ * x)
+  have htranslate : schwartzBruhatSubmodule G ≤ (schwartzBruhatSubmodule G).comap translate := by
+    intro f hf
+    exact schwartzBruhat_translate_mem g ⟨f, hf⟩
+  refine (Submodule.mem_iInf _).2 fun a ↦ Submodule.mem_comap.2 ?_
+  let weight (x : G) : ℂ := (((m x).val : ℝ) ^ (a : ℝ) : ℝ)
+  have hweight (x : G) : weight x = weight g * weight (g⁻¹ * x) := by
+    have hx : (m x).val = (m g).val * (m (g⁻¹ * x)).val := by
+      rw [← Units.val_mul, ← map_mul, mul_inv_cancel_left]
+    unfold weight
+    rw [hx, NNReal.coe_mul, Real.mul_rpow (NNReal.coe_nonneg _) (NNReal.coe_nonneg _),
+      Complex.ofReal_mul]
+  have htwist : modulationWeight m a (fun x ↦ f.val (g⁻¹ * x)) =
+      weight g • translate (modulationWeight m a f.val) := by
+    funext x
+    change weight x * f.val (g⁻¹ * x) = weight g * (weight (g⁻¹ * x) * f.val (g⁻¹ * x))
+    rw [hweight, mul_assoc]
+  rw [htwist]
+  exact (schwartzBruhatSubmodule G).smul_mem _ (htranslate (modulationWeight_mem_schwartzBruhat m I a f))
 
 /-- An iterated derivative may be evaluated after transporting its order along an equality. -/
 private theorem iteratedFDeriv_cast_len {X Y : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
