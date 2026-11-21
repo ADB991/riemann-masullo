@@ -48,20 +48,23 @@ abbrev LineSobolev {A : Type*} [MeasurableSpace A] (μ : Measure A) (logNorm : A
     (b : ℝ) (N : ℕ) :=
   Lp ℂ 2 (μ.withDensity fun x ↦ ENNReal.ofReal (lineSobolevDensity b N (logNorm x)))
 
-/-- Paper: Definition 9.2.1.1(1), p. 404. For N ≥ 1 the scalar source uses
-the moments of order zero through N − 1, as printed in (9.2.1.2). -/
+/-- Paper: Definition 9.2.1.1(1), p. 404. The scalar b-line Sobolev space uses the
+moments of order zero through N.
+Deviation: (9.2.1.2) prints 0 ≤ k ≤ N − 1. The proof of Theorem 9.2.1.2(1) on p. 405, the
+target in Definition 9.2.1.1(2) and Theorem 9.2.1.5, which is the same space for a general
+group, all use 0 ≤ k ≤ N. -/
 abbrev ScalarLineSobolev (b : ℝ) (N : ℕ) :=
-  LineSobolev volume id b (N - 1)
+  LineSobolev volume id b N
 
 /-- Paper: Definition 9.2.1.1(1), p. 404. In the scalar model the weighted integral
 gives the norm, and the exponential-decay test profiles have dense image.
-Deviation: The largest order is N − 1, as printed in (9.2.1.2). -/
-theorem scalarLineSobolev_dense (b : ℝ) (N : ℕ) (_hN : 1 ≤ N) :
+Deviation: The largest order is N, see `ScalarLineSobolev`. -/
+theorem scalarLineSobolev_dense (b : ℝ) (N : ℕ) :
     ∃ j : PositiveRealExponentialDecay univ →L[ℂ] ScalarLineSobolev b N,
       Injective j ∧ DenseRange j ∧
       ∀ f, (j f : ℝ → ℂ) =ᵐ[volume] f.val ∧
-        Integrable (fun x ↦ ‖f.val x‖ ^ 2 * lineSobolevDensity b (N - 1) x) volume ∧
-        ‖j f‖ = Real.sqrt (∫ x, ‖f.val x‖ ^ 2 * lineSobolevDensity b (N - 1) x) := by
+        Integrable (fun x ↦ ‖f.val x‖ ^ 2 * lineSobolevDensity b N x) volume ∧
+        ‖j f‖ = Real.sqrt (∫ x, ‖f.val x‖ ^ 2 * lineSobolevDensity b N x) := by
   sorry
 
 /-- Paper: Definition 9.2.1.1(2), p. 404. Complete the entire Schwartz–Bergman
@@ -86,22 +89,23 @@ theorem gaussian_mem_hardySobolevTraceClosure {ι : Type*} [Fintype ι] (σ : ι
           (verticalPoint (σ i) y) := by sorry
 
 /-- Paper: Definition 9.2.1.1(2), p. 404. The scalar analytic space uses
-one line and derivatives of order zero through N. The measure puts the printed
-factor of `1/(2π)` outside the square root in each component.
-Deviation: The derivative is taken directly on the analytic input. The norm squares
-and sums the printed component norms. -/
+one line and derivatives of order zero through N, with the Plancherel measure `dy/(2π)`.
+Deviation: (9.2.1.3) prints the factor `1/(2π)` outside the square root. The proof of
+Theorem 9.2.1.2(2) uses the Plancherel measure `dx/(2π)`, which is what makes the Mellin
+transform isometric. The derivative is taken directly on the analytic input. The norm squares
+and sums the component norms. -/
 abbrev ScalarLineHardySobolev (b : ℝ) (N : ℕ) :=
   hardySobolevTraceClosure (fun _ : Unit ↦ b) N
-    (ENNReal.ofReal ((1 / (2 * Real.pi)) ^ 2) • volume)
+    (ENNReal.ofReal (1 / (2 * Real.pi)) • volume)
 
 /-- Paper: Definition 9.2.1.1(2), p. 404. The zeroth trace of the Gaussian
-has the L² norm in (9.2.1.3) with the printed normalization.
+has the L² norm in (9.2.1.3) with the Plancherel normalization.
 Deviation: Sanity check on the space and its vertical measure. -/
 theorem scalarLineHardySobolev_gaussian (b : ℝ) (N : ℕ) :
     let F := fun y : ℝ ↦ Complex.exp (verticalPoint b y ^ 2)
     ∃ u : ScalarLineHardySobolev b N,
       (u.val () 0 : ℝ → ℂ) =ᵐ[volume] F ∧
-      ‖u.val () 0‖ = (1 / (2 * Real.pi)) * Real.sqrt (∫ y, ‖F y‖ ^ 2) := by sorry
+      ‖u.val () 0‖ = Real.sqrt ((1 / (2 * Real.pi)) * ∫ y, ‖F y‖ ^ 2) := by sorry
 
 /-- Paper: Theorem 9.2.1.2(1), p. 404. On L² the cutoff by a measurable set
 is the class of the product with its indicator. -/
@@ -120,18 +124,30 @@ theorem hardySobolevCutoff_spec {A : Type*} [MeasurableSpace A] {μ : Measure A}
 
 /-- Paper: Theorem 9.2.1.2(1), p. 404. The closure of exponential-decay tests
 supported strictly above the cutoff is the range of the cutoff projection.
-Deviation: Use the source orders printed in (9.2.1.2) and logarithmic coordinates. -/
-theorem scalarLineSobolev_cutoff_closure (a b : ℝ) (_ha : 1 < a) (N : ℕ) (_hN : 1 ≤ N) :
+Deviation: Use logarithmic coordinates. -/
+theorem scalarLineSobolev_cutoff_closure (a b : ℝ) (_ha : 1 < a) (N : ℕ) :
     closure {u : ScalarLineSobolev b N | ∃ f : PositiveRealExponentialDecay univ,
       tsupport f.val ⊆ Ioi (-Real.log a) ∧ (u : ℝ → ℂ) =ᵐ[volume] f.val} =
     range (hardySobolevCutoff (μ := volume.withDensity fun x ↦
-      ENNReal.ofReal (lineSobolevDensity b (N - 1) x))
+      ENNReal.ofReal (lineSobolevDensity b N x))
       (U := Ici (-Real.log a)) measurableSet_Ici) := by sorry
 
--- TODO(paper-gap): Theorem 9.2.1.2(2–3) uses order N on the analytic side and
--- order N − 1 on the scalar source. The factor in (9.2.1.3) also differs from
--- the square-root Plancherel normalization. The Paley–Wiener bound has no stated
--- limiting regime and the printed split square roots fail at nonpositive real parts.
+/-- Paper: Theorem 9.2.1.2(2), p. 404. The Mellin transform extends to an isometric
+isomorphism from the b-line Sobolev space onto the b-line Hardy–Sobolev space.
+Deviation: Orders 0 through N on both sides and the Plancherel measure `dy/(2π)`, see
+`ScalarLineSobolev` and `ScalarLineHardySobolev`. -/
+theorem scalarLineSobolev_mellin (b : ℝ) (N : ℕ) :
+    ∃ M : ScalarLineSobolev b N ≃ₗᵢ[ℂ] ScalarLineHardySobolev b N,
+      ∀ (f : PositiveRealExponentialDecay univ) (u : ScalarLineSobolev b N),
+        (u : ℝ → ℂ) =ᵐ[volume] f.val →
+        ∀ k : Fin (N + 1), ((M u).val () k : ℝ → ℂ) =ᵐ[volume]
+          fun y ↦ iteratedDeriv (k : ℕ) (mellin (fun t ↦ f.val (Real.log t)))
+            (verticalPoint b y) := by sorry
+
+-- TODO(paper-gap): (9.2.1.2) prints orders up to N − 1 and (9.2.1.3) prints 1/(2π)
+-- outside the square root; with either as printed Theorem 9.2.1.2(2) is not an isometry.
+-- In Theorem 9.2.1.2(3) the Paley–Wiener bound has no stated limiting regime and the
+-- printed split square roots fail at nonpositive real parts.
 
 /-- Paper: Theorem 9.2.1.2(3), p. 405. The top row splits a supported L²
 class into its bounded-interval part and its right-hand part.
@@ -210,7 +226,7 @@ theorem modulatedLineSobolev_mellin (hm : IsModulation m)
     (a b : ℝ) (_ha : 1 < a) (N : ℕ) :
     let μ := canonicalModulatedHaar m hm
     let ν : Measure ℝ := ENNReal.ofReal (1 / (2 * Real.pi)) • volume
-    let H := hardySobolevTraceClosure (fun _ : Unit ↦ b) N ν
+    let H := ScalarLineHardySobolev b N
     ∃ M : LineSobolev μ (logModule m) b N ≃ₗᵢ[ℂ]
         UniformSpace.Completion (Lp ℂ 2 μ₁ ⊗[ℂ] H),
       ∀ (g : Lp ℂ 2 μ₁) (f : PositiveRealExponentialDecay univ)
@@ -273,14 +289,39 @@ abbrev CompactIntervalSobolev {A : Type*} [MeasurableSpace A] (μ : Measure A)
     (if dual then (intervalSobolevDensity a b s (logNorm x))⁻¹
      else intervalSobolevDensity a b s (logNorm x)))
 
+/-- Paper: Definition 9.2.2.9, p. 416, with §10.2.1, p. 439. For the base interval {0} the
+weighted measure is the Sobolev measure of Definition 9.1.2.1, so the space is W^{s,2}(G).
+Deviation: Sanity check tying the density to §9.1. -/
+theorem intervalSobolev_zero_eq_sobolevMeasure {G : Type*} [CommGroup G] [TopologicalSpace G]
+    [MeasurableSpace G] (m : G →ₜ* ℝ≥0ˣ) (μ : Measure G) (s : ℝ) :
+    (μ.withDensity fun x ↦ ENNReal.ofReal (intervalSobolevDensity 0 0 s (logModule m x))) =
+      sobolevMeasure μ (modulatedSobolevWeight m) s := by sorry
+
+/-- Paper: Proposition 9.2.2.11, p. 417, with Corollary 10.2.2.3, p. 447. For the base interval
+{0} the reciprocal-density measure is the Sobolev measure of degree −s of Proposition 9.1.2.5.
+Deviation: Sanity check tying the dual density to §9.1. -/
+theorem intervalSobolev_zero_dual_eq_sobolevMeasure {G : Type*} [CommGroup G]
+    [TopologicalSpace G] [MeasurableSpace G] (m : G →ₜ* ℝ≥0ˣ) (μ : Measure G) (s : ℝ) :
+    (μ.withDensity fun x ↦ ENNReal.ofReal (intervalSobolevDensity 0 0 s (logModule m x))⁻¹) =
+      sobolevMeasure μ (modulatedSobolevWeight m) (-s) := by sorry
+
+/-- Paper: Definition 9.2.1.1, p. 404. The b-line density and the density of the base
+interval {b} in degree 2N bound each other, so the two spaces have the same elements and
+topology.
+Deviation: Sanity check comparing the two norms the paper uses for W_b^{2N,2}. -/
+theorem lineSobolevDensity_le_interval (b : ℝ) (N : ℕ) (x : ℝ) :
+    lineSobolevDensity b N x ≤ intervalSobolevDensity b b (2 * (N : ℝ)) x ∧
+      intervalSobolevDensity b b (2 * (N : ℝ)) x ≤ 2 ^ N * lineSobolevDensity b N x := by sorry
+
 -- TODO(paper-gap): The proposed test pairing on all of S_J × S_J can
 -- diverge, and S_J need not be contained in the reciprocal-density space.
 
 /-- Paper: Proposition 9.2.1.8, p. 409. The strong dual of the scalar compact-interval
 space is represented isometrically by integration against the reciprocal-density space.
 Deviation: The duality is stated on the weighted L² spaces. The pairing on all of
-S_J × S_J in (9.2.1.27) can diverge. -/
-theorem scalarIntervalSobolev_dual (a b s : ℝ) (_hab : a < b) (_hs : 0 ≤ s) :
+S_J × S_J in (9.2.1.27) can diverge. The paper assumes a < b, but §10.2–10.4 apply the
+duality to I = [−α, α] with α ≥ 0, so the one-point base is included. -/
+theorem scalarIntervalSobolev_dual (a b s : ℝ) (_hab : a ≤ b) (_hs : 0 ≤ s) :
     ∃! T : StrongDual ℂ (CompactIntervalSobolev volume id a b s) ≃ₗᵢ[ℂ]
         CompactIntervalSobolev volume id a b s true,
       ∀ Λ f, Integrable (fun x ↦ f x * T Λ x) volume ∧
@@ -463,7 +504,7 @@ variable {G : Type*} [CommGroup G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 local notation "K" => m.toMonoidHom.ker
 
-local instance : MeasurableSpace (PontryaginDual K) := borel _
+local instance instMeasurableSpaceDualKerSec2 : MeasurableSpace (PontryaginDual K) := borel _
 
 /-- Paper: Definition 9.2.2.9, p. 416. For a compact base interval the
 canonical group-side Sobolev space is weighted L² for the canonical Haar measure.
@@ -562,9 +603,11 @@ theorem modulatedIntervalSobolev_enorm_Iic (b s : ℝ) (_hs : 0 ≤ s)
 /-- Paper: Proposition 9.2.2.11, p. 417. The weighted space pairs with the
 reciprocal-density space via the unweighted integral and represents its strong dual.
 Deviation: Use the Haar measure from the proposition on both sides. The test pairing
-on all of S_J × S_J and the reciprocal-norm completion of all of S_J can fail. -/
+on all of S_J × S_J and the reciprocal-norm completion of all of S_J can fail. The paper
+assumes a < b, but §10.2–10.4 apply (9.2.2.42) to I = [−α, α] with α ≥ 0, so the one-point
+base is included. -/
 theorem modulatedIntervalSobolev_dual (_hm : IsModulation m)
-    (μ : Measure G) [μ.IsHaarMeasure] (a b s : ℝ) (_hab : a < b) (_hs : 0 ≤ s) :
+    (μ : Measure G) [μ.IsHaarMeasure] (a b s : ℝ) (_hab : a ≤ b) (_hs : 0 ≤ s) :
     ∃! T : StrongDual ℂ (CompactIntervalSobolev μ (logModule m) a b s) ≃ₗᵢ[ℂ]
         CompactIntervalSobolev μ (logModule m) a b s true,
       ∀ Λ f, Integrable (fun g ↦ f g * T Λ g) μ ∧
