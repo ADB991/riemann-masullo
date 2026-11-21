@@ -41,7 +41,7 @@ title=$(head -n 1 <<<"$body")
 if [ -n "$issue" ]; then
   member='IN("OWNER","MEMBER","COLLABORATOR")'
   ibody=$(gh api "repos/{owner}/{repo}/issues/$issue" --jq "select(.author_association | $member) | .title + \"\n\" + .body" || true)
-  [ -n "$pages" ] || pages=$(grep -oE '\*\*Pages\*\*: [0-9]+[–-][0-9]+' <<<"$ibody" | head -n 1 | grep -oE '[0-9]+[–-][0-9]+' | tr '–' '-' || true)
+  [ -n "$pages" ] || pages=$(sed -nE 's/.*\*\*Pages\*\*: ([0-9]+)[^0-9]+([0-9]+).*/\1-\2/p' <<<"$ibody" | head -n 1)
   [ -z "$ibody" ] || title=$(head -n 1 <<<"$ibody")
   # The digester's report: the last comment on the issue by a project member.
   gh api --paginate "repos/{owner}/{repo}/issues/$issue/comments" \
