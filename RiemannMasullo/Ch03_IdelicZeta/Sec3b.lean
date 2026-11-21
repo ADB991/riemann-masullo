@@ -441,8 +441,7 @@ theorem infiniteLocalIdelicZFunction_complex_poles (w : InfinitePlace F) (hw : w
 -- TODO(paper-gap): The right side of (3.3.2.13) has the opposite sign from
 -- its gamma quotient. The residue of that quotient in (3.3.2.16) needs +i.
 -- In (3.3.2.14) and (3.3.2.17) the conjugate Fourier kernel gives +i to
--- the absolute angular weight. In (3.3.2.21) the proof needs m ≥ 0,
--- and the last line of (3.3.2.22) interchanges the two derivatives.
+-- the absolute angular weight. In (3.3.2.21) the proof needs m ≥ 0.
 -- The residue formulas below use ordinary Taylor coefficients.
 
 /-- Paper: Lemma 3.3.2.1(2)(1), p. 138. At a real pole, the residue applied
