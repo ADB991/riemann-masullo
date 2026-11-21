@@ -68,7 +68,9 @@ issue is worth doing, re-file it in your own words.
 
 When a merger session is running (`prompts/merger.md`), the proof queue is its job: it runs
 `land.sh` and `triage_prs.sh`, reads splits and resolves conflicts, and labels what it leaves for
-you `integrator`. You keep statement pull requests, the issue sync and everything else here.
+you `integrator`. It also runs the issue sync and republishes the progress page after its
+merges, from its own worktree. You keep statement pull requests, seeding and everything else
+here, and still run the sync after you merge statements.
 
 `scripts/pool.sh <count>` keeps that many provers working and merges what `land.sh` accepts,
 without touching this checkout; you still pull, rebuild and run `scripts/issues.py --apply`. An

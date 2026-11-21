@@ -15,15 +15,14 @@ Yours: every open pull request that proves or splits a declaration.
 Not yours:
 
 - **The working tree of the main checkout.** The integrator is working in it. Do not edit, pull,
-  build or commit there. The scripts below work in scratch worktrees and through `gh`.
+  build or commit there. The scripts below work in scratch worktrees and through `gh`. (Its
+  `.agent/` directory is shared scratch space, ignored by git; the scripts write there.)
 - **`main`.** You change it only by merging pull requests. Never push to it.
 - **Statement pull requests**: branches `digester/…`, and anything that adds or changes a
   definition or statement taken from the paper. Also anything that touches files outside
   `RiemannMasullo/` or inside `RiemannMasullo/External/` (scripts, workflows, prompts, the
   lakefile, the toolchain, the target statements). Label these `integrator` and leave them.
-- **The issue tracker.** Do not run `scripts/issues.py --apply` or `scripts/pool.sh`. A merged
-  pull request closes its own issue, and the integrator's sync opens issues for the `sorry`s a
-  split adds.
+- **Seeding work.** Section issues, labels on them, and `scripts/pool.sh` are the integrator's.
 
 ## One pass
 
@@ -36,10 +35,54 @@ Not yours:
    itself broke; it is retried on the next run). Never build an outside pull request any other
    way: building Lean can run code.
 3. Deal with what the two scripts left, oldest first, as described below.
-4. Repeat. When a pass merges nothing and leaves nothing for you to read, wait ten minutes.
+4. After a pass that merged anything, and at least every half hour, sync the issues and refresh
+   the progress page (next section).
+5. Repeat. When a pass merges nothing and leaves nothing for you to read, wait ten minutes.
 
 Merge with `gh pr merge <n> --squash`. About once an hour give the owner three lines: how many
 merged, what is waiting on its author, what you left for the integrator.
+
+## After merging: the issue sync and the progress page
+
+Both need a built copy of the current `main`, and the main checkout is not yours, so keep your
+own worktree. Set it up once, from the main checkout:
+
+```sh
+main=$PWD
+git fetch -q origin
+git worktree add --detach ../riemann-masullo-wt/merger origin/main
+mkdir -p ../riemann-masullo-wt/merger/.lake
+ln -s "$main/.lake/packages" ../riemann-masullo-wt/merger/.lake/packages    # the built Mathlib
+```
+
+Then, each time:
+
+```sh
+cd ../riemann-masullo-wt/merger
+git fetch -q origin && git checkout -q --detach origin/main
+lake build 2>&1 | grep -E "error|Build completed"    # the first run builds the whole project
+scripts/issues.py --apply
+python3 scripts/progress/build.py --out "$main/.agent/progress/index.html"
+```
+
+- **`lake build` must succeed.** Every pull request was checked against `main`, but two that
+  each pass can still clash, typically by adding a helper lemma of the same name. If `main` does
+  not build, repairing it comes before everything else: on a branch `fix/<what>` in this
+  worktree make the smallest repair (usually deleting the second copy of the helper), run
+  `lake build` and `scripts/lint.sh`, push, open a pull request, merge it, and tell the owner.
+- **`scripts/issues.py --apply`** opens a proof issue for each `sorry` that has none (a split
+  adds some), closes issues whose `sorry` is gone, and unblocks section issues whose
+  prerequisites are closed. It refuses to run from a checkout that is not at the tip of `main`;
+  if `main` moved while it ran, update and run it again. The integrator runs it too, after
+  merging statements; a lock keeps the two apart.
+- **The progress page** is <https://claude.ai/artifact/CtQyX8qfYAF822bgHJHHE3>, linked from the
+  README. `scripts/progress/build.py` regenerates the whole page from the build and the issue
+  tracker, checks its own numbers, and leaves the old file in place if anything fails (exit
+  status 1: read the message, do not publish). Publish the file it wrote,
+  `.agent/progress/index.html` in the main checkout, with the Artifact tool, passing that URL as
+  `url` so the link stays the same; the first time in a session the tool asks you to read the
+  page first. Never edit the page by hand: change `scripts/progress/` instead, which is the
+  integrator's. If your session has no Artifact tool, skip publishing and tell the owner.
 
 ## What the scripts leave for you
 
