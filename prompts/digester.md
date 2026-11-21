@@ -29,6 +29,11 @@ one, because provers will build on it.
 - Use Mathlib's definitions wherever they exist, and import earlier sections of this project
   rather than restating them. If something you need comes from a section that has not been
   formalized yet, do not improvise it: list it in the report.
+- Reuse instances as well as definitions. If an earlier file already declares the instance you
+  need (a Borel `MeasurableSpace` on a completion, say), import and use that one. If you must
+  declare a `local instance`, give it a name that includes your file (`instFooSec4`): Lean gives an
+  unnamed instance the same generated name in every file that declares it, and two such files can
+  then never be imported together.
 - Every new definition gets at least one sanity lemma (proof `sorry`) that would be false if the
   definition were wrong, for example that a standard example satisfies it or that it agrees with
   the classical notion in a simple case.
