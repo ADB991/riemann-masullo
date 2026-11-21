@@ -34,7 +34,10 @@ An attempt to autoformalize, in Lean 4 + Mathlib, the manuscript
 
 > Alessandro Maria Masullo, *The Music of the Primes* (940 pp.)
 
-The paper is in [`paper/`](paper/) (PDF plus a `pdftotext -layout` extraction for search/grep).
+The paper is in [`paper/`](paper/) (PDF plus a `pdftotext -layout` extraction for search/grep), and
+[`transcription/`](transcription/README.md) has a Markdown transcription with the formulas in
+LaTeX, contributed by [@aadrianvv](https://github.com/aadrianvv): a reading aid, checked against
+the PDF but not an exact copy.
 
 ## Status
 
