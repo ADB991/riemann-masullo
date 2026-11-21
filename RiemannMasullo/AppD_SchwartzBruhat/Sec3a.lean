@@ -11,6 +11,7 @@ import RiemannMasullo.ForMathlib.Analysis.Distribution.SchwartzSpace.Montel
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import RiemannMasullo.ForMathlib.Analysis.Distribution.ContDiffMapSupportedIn
+import RiemannMasullo.ForMathlib.Analysis.MellinTransform
 
 /-!
 # Schwartz–Bergman spaces and Schwartz–Bruhat functions with exponential decay
@@ -917,7 +918,11 @@ theorem positiveRealExponentialDecay_continuous_inclusion (h0 : 0 ∈ I) :
 /-- Paper: Proposition D.3.2.5, p. 802. On the strip, the positive-real Mellin
 integral converges absolutely. The profile is pulled back by the real logarithm. -/
 theorem positiveRealExponentialDecay_mellinConvergent (f : E) (s : ℂ) (hs : s.re ∈ I) :
-    MellinConvergent (fun t ↦ f.val (Real.log t)) s := by sorry
+    MellinConvergent (fun t ↦ f.val (Real.log t)) s := by
+  apply mellinConvergent_of_integrable_logWeight
+  have h : Integrable (fun x : ℝ ↦ logExponentialDecayTwist I ⟨s.re, hs⟩ f x) volume :=
+    (logExponentialDecayTwist I ⟨s.re, hs⟩ f).integrable
+  exact h.congr (Eventually.of_forall fun x ↦ logExponentialDecayTwist_apply I ⟨s.re, hs⟩ f x)
 
 /-- Paper: Proposition D.3.2.5, p. 802. The Mellin integral induces a unique
 continuous linear equivalence with the Schwartz–Bergman space on the strip. -/
