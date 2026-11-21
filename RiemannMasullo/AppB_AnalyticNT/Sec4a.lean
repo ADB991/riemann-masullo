@@ -242,9 +242,6 @@ theorem inv_one_sub_exp_eq_mittagLeffler {z : ℂ} (hz : z ∈ Complex.integerCo
     (1 - Complex.exp (twoPiI * z))⁻¹ =
       1 / 2 - 1 / (twoPiI * z) - (1 / twoPiI) * ∑' m, poleTerm m z := by sorry
 
--- TODO(paper-gap): The explicit complex expression in (B.4.1.29) needs
--- an absolute value to give the norm in (B.4.1.22).
-
 /-- Paper: Lemma B.4.1.9, p. 612. The norm of the sum of the regularized
 pole terms is bounded on each horizontal line of nonzero height, as in (B.4.1.22). -/
 theorem norm_tsum_expPoleTerms_le (a : ℝ) (ha : a ≠ 0) :
