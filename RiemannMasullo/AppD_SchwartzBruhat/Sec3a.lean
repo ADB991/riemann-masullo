@@ -581,10 +581,6 @@ theorem schwartzBergman_schwartzLine_topology (I : Set ℝ) (hI : IsOpen I)
     simp only [weightedVerticalTrace, pow_zero, one_mul]
     rfl
 
-/-- Paper: Lemma D.3.1.2, p. 799. The Schwartz–Bergman space is Fréchet. -/
-theorem schwartzBergman_frechet (I : Set ℝ) (hI : IsOpen I) (hInt : OrdConnected I)
-    (hne : I.Nonempty) : IsFrechetTVS (SchwartzBergman I) := by sorry
-
 /-- Paper: Lemma D.3.1.2, p. 799. The Schwartz–Bergman space is separable. -/
 theorem schwartzBergman_separable (I : Set ℝ) (hI : IsOpen I) (hInt : OrdConnected I)
     (hne : I.Nonempty) : SeparableSpace (SchwartzBergman I) := by sorry
@@ -1283,6 +1279,15 @@ the continuous linear equivalence furnished by the Mellin integral. -/
 def positiveRealFourierMellin (hOpen : IsOpen I) (hInt : OrdConnected I) (hne : I.Nonempty) :
     E ≃L[ℂ] SchwartzBergman I :=
   Classical.choose (existsUnique_positiveRealFourierMellin I hOpen hInt hne).exists
+
+/-- Paper: Lemma D.3.1.2, p. 799. The Schwartz–Bergman space is Fréchet. -/
+theorem schwartzBergman_frechet (I : Set ℝ) (hI : IsOpen I) (hInt : OrdConnected I)
+    (hne : I.Nonempty) : IsFrechetTVS (SchwartzBergman I) := by
+  let M := positiveRealFourierMellin I hI hInt hne
+  obtain ⟨_, _, hmetr, hcomp⟩ := positiveRealExponentialDecay_frechet I hInt hne
+  have : MetrizableSpace (PositiveRealExponentialDecay I) := hmetr
+  refine ⟨inferInstance, inferInstance, M.symm.toHomeomorph.isEmbedding.metrizableSpace, ?_⟩
+  exact (M.isUniformEmbedding.isUniformInducing.completeSpace_congr M.surjective).mp hcomp
 
 /-- Paper: Definition D.3.2.6, p. 803. Evaluation of the Fourier–Mellin
 transform on the strip gives the absolutely convergent Mellin integral. -/
