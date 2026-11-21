@@ -1278,17 +1278,68 @@ def bruhatDiffDegree (D : bruhatDiffAlgebra G) : ℕ :=
   sInf {n : ℕ | ∃ c : List (LCATopologicalLie G) →₀ ℂ,
     c.sum (fun w z ↦ z • bruhatDiffWord w) = D ∧ n = c.support.sup List.length}
 
-/-- Paper: Remark D.1.6.9, p. 768. A nontrivial one-parameter subgroup
-gives a differential operator of degree one. -/
-theorem bruhatDiffDegree_generator (a : LCATopologicalLie G) (ha : a ≠ 1) :
-    bruhatDiffDegree (bruhatDiffGenerator a) = 1 := by sorry
-
 /-- Paper: Remark D.1.6.11, p. 768. A character gives a Bruhat smooth
 function via its circle-valued character map.
 Deviation: The global differentiability definition in §D.1.5 allows any
 good subgroup in the kernel, so the symbol can use the character itself. -/
 theorem pontryaginDual_mem_bruhatSmooth (χ : PontryaginDual G) :
     (fun x : G ↦ (χ x : ℂ)) ∈ bruhatSmoothSubmodule := by sorry
+
+/-- Paper: Remark D.1.6.9, p. 768. A nontrivial one-parameter subgroup
+gives a differential operator of degree one. -/
+theorem bruhatDiffDegree_generator (a : LCATopologicalLie G) (ha : a ≠ 1) :
+    bruhatDiffDegree (bruhatDiffGenerator a) = 1 := by
+  classical
+  have hne : bruhatDiffGenerator a ≠ 0 := by
+    intro hzero
+    apply ha
+    apply ContinuousMonoidHom.ext
+    intro t
+    change a t = 1
+    apply (pontryaginDual_pairing_separates (G := G)).1
+    funext χ
+    let f : bruhatSmoothSubmodule (G := G) := ⟨_, pontryaginDual_mem_bruhatSmooth χ⟩
+    let orbit (u : ℝ) : ℂ := χ (a (Multiplicative.ofAdd u))
+    -- The generator gives the derivative at each time by shifting the orbit to time zero.
+    have hderiv (u : ℝ) : HasDerivAt orbit 0 u := by
+      have hz := congrArg (fun D : bruhatDiffAlgebra G ↦
+        (D.val f).val (a (Multiplicative.ofAdd u))) hzero
+      change bruhatDirectionalDeriv a f.val (a (Multiplicative.ofAdd u)) = 0 at hz
+      have hf := (mem_bruhatSmoothSubmodule_iff _).mp f.property 1
+      have h := hasDerivAt_bruhatDirectionalDeriv a hf (a (Multiplicative.ofAdd u))
+      rw [hz] at h
+      have hshift := HasDerivAt.comp_sub_const u u (by simpa only [sub_self] using h)
+      simpa only [orbit, ← map_mul a, ← ofAdd_add, add_comm u, sub_add_cancel] using hshift
+    apply Subtype.ext
+    simpa [orbit] using is_const_of_deriv_eq_zero
+      (fun u ↦ (hderiv u).differentiableAt) (fun u ↦ (hderiv u).deriv) t.toAdd 0
+  let lengths : Set ℕ := {n | ∃ c : List (LCATopologicalLie G) →₀ ℂ,
+    c.sum (fun w z ↦ z • bruhatDiffWord w) = bruhatDiffGenerator a ∧
+      n = c.support.sup List.length}
+  have hone : 1 ∈ lengths := by
+    refine ⟨Finsupp.single [a] (1 : ℂ), ?_, ?_⟩
+    · rw [Finsupp.sum_single_index (by simp), one_smul, bruhatDiffWord_singleton]
+    · simp
+  change sInf lengths = 1
+  refine le_antisymm (Nat.sInf_le hone) (Nat.one_le_iff_ne_zero.mpr ?_)
+  intro hzero
+  have hmem := Nat.sInf_mem ⟨1, hone⟩
+  rw [hzero] at hmem
+  obtain ⟨c, hc, hlen⟩ := hmem
+  -- A presentation of length zero is supported on the empty word, which acts as the identity.
+  have hsupp : c.support ⊆ {[]} := by
+    intro w hw
+    have h := Finset.le_sup (f := List.length) hw
+    rw [← hlen] at h
+    exact Finset.mem_singleton.mpr (List.length_eq_zero_iff.mp (Nat.eq_zero_of_le_zero h))
+  obtain ⟨z, rfl⟩ := Finsupp.support_subset_singleton'.mp hsupp
+  rw [Finsupp.sum_single_index (by simp)] at hc
+  change z • (1 : bruhatDiffAlgebra G) = bruhatDiffGenerator a at hc
+  have hz : z ≠ 0 := fun hz ↦ hne (by simpa [hz] using hc.symm)
+  have ⟨hgen, hid⟩ := bruhatDiffDegreeOne_sanity a
+  apply hid
+  have hmem := bruhatDiffDegreeOne.smul_mem z⁻¹ hgen
+  rwa [← hc, smul_smul, inv_mul_cancel₀ hz, one_smul] at hmem
 
 /-- Paper: Definition D.1.6.10, p. 768. The symbol evaluates the differential
 operator applied to a character at the group identity. -/
