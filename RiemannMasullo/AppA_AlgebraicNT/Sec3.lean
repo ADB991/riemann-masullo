@@ -347,17 +347,23 @@ theorem padicStandardCharacter_integral (x : ℚ_[p]) :
 
 /-- Paper: Example A.3.1.6, p. 557. The standard character exponentiates
 the rational representative of the coset modulo the p-adic integers.
-The representative uses the residue of the cleared integer modulo the clearing power. -/
+The representative uses the residue of the cleared integer modulo the clearing power.
+Deviation: the sign is opposite to the printed `exp(2πit)`. With the printed sign at the real
+place (Example A.3.1.5) and at the p-adic places, the product character of Example A.3.1.8 takes
+the value `exp(4πi/3)` on the rational number 1/3. It must be trivial on the rationals for
+Theorem 2.2.3.2 and Theorem 3.2.2.1, as in Tate's thesis, where the two kinds of place carry
+opposite signs. The real character keeps the printed sign. -/
 def padicStandardCharacter (x : ℚ_[p]) : Circle :=
   let n := (-x.valuation).toNat
   let a : ℤ_[p] := ⟨(p : ℚ_[p]) ^ n * x, padicStandardCharacter_integral p x⟩
-  Circle.exp (2 * Real.pi * ((PadicInt.toZModPow n a).val : ℝ) / (p : ℝ) ^ n)
+  Circle.exp (-(2 * Real.pi * ((PadicInt.toZModPow n a).val : ℝ) / (p : ℝ) ^ n))
 
 /-- Paper: Example A.3.1.6, p. 557. On a fraction with denominator a power of p,
-the p-adic character has the same phase as the real exponential of that fraction. -/
+the p-adic character has the phase opposite to the real exponential of that fraction.
+Deviation: the sign, as in `padicStandardCharacter`. -/
 theorem padicStandardCharacter_div_pow (a : ℤ) (n : ℕ) :
     padicStandardCharacter p ((a : ℚ_[p]) / (p : ℚ_[p]) ^ n) =
-      Circle.exp (2 * Real.pi * ((a : ℝ) / (p : ℝ) ^ n)) := by sorry
+      Circle.exp (-(2 * Real.pi * ((a : ℝ) / (p : ℝ) ^ n))) := by sorry
 
 local notation "ℤₚ" => Metric.closedBall (0 : ℚ_[p]) 1
 
@@ -414,6 +420,12 @@ theorem ratAdeleStandardCharacter_real (a : 𝔸[ℚ]) (ha : a.2 = 0) :
       Circle.exp (2 * Real.pi * extensionEmbeddingOfIsReal Rat.isReal_infinitePlace
         (a.1 Rat.infinitePlace)) := by sorry
 
+/-- Paper: Example A.3.1.8, p. 558. The global rational character is trivial on the
+diagonally embedded rational numbers. The paper uses this without stating it; it is what
+Poisson summation over the rationals needs, and it fails for the signs as printed. -/
+theorem ratAdeleStandardCharacter_algebraMap (q : ℚ) :
+    ratAdeleStandardCharacter (algebraMap ℚ 𝔸[ℚ] q) = 1 := by sorry
+
 /-- Paper: Example A.3.1.8, p. 558. The additive Tamagawa measure on the rational
 adeles is self-dual under the product of the standard local characters. -/
 theorem ratAdditiveTamagawaMeasure_selfDual :
@@ -425,6 +437,11 @@ Deviation: The displayed field trace is extended to the adele algebra as require
 def adeleStandardCharacter (a : 𝔸[F]) : Circle :=
   letI := (rationalAdeleEmbedding F).toAlgebra
   ratAdeleStandardCharacter (Algebra.trace 𝔸[ℚ] 𝔸[F] a)
+
+/-- Paper: Example A.3.1.9, p. 558. The standard adelic character is trivial on the
+diagonally embedded field, which is what Theorem 2.2.3.2 and Theorem 3.2.2.1 need. -/
+theorem adeleStandardCharacter_algebraMap (x : F) :
+    adeleStandardCharacter F (algebraMap F 𝔸[F] x) = 1 := by sorry
 
 /-- Paper: Example A.3.1.9, p. 558. The standard adelic character reduces to the
 rational adelic character for the rational field. -/
