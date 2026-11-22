@@ -17,6 +17,7 @@ public import RiemannMasullo.ForMathlib.NumberTheory.NumberField.Completion.Fini
 public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 import all RiemannMasullo.AppB_AnalyticNT.Sec2
+import RiemannMasullo.ForMathlib.Analysis.SpecialFunctions.Gamma.DigammaIntegral
 import RiemannMasullo.ForMathlib.Analysis.SpecialFunctions.Gamma.Digamma
 import all RiemannMasullo.Ch03_IdelicZeta.Sec2
 import Mathlib.Analysis.SpecialFunctions.FrullaniIntegral
@@ -697,6 +698,182 @@ theorem realHeckeArchimedean_mellinLogDeriv (w : InfinitePlace F) (hw : w.IsReal
   push_cast
   ring
 
+/-- Mellin inversion on the line of abscissa `a`, together with its first absolute moment. -/
+private theorem complexHeckeArchimedean_mellinLogDeriv_trace
+    (f : 𝓢(ℝ, ℂ)) (hf : ExponentialDecay f) (a : ℝ) :
+    let s := fun y : ℝ ↦ (a : ℂ) + y * Complex.I
+    let W := fun y ↦ logMellin f (s y)
+    Continuous W ∧ Integrable (fun y ↦ ‖W y‖ * (1 + |y|)) ∧
+      ∀ x : ℝ, (∫ y, W y * Complex.exp (-s y * x)) / (2 * (Real.pi : ℂ)) = f x := by
+  intro s W
+  obtain ⟨g, hg⟩ := exists_schwartz_verticalTrace_mellin_of_weighted_schwartz f
+    (a - 1) (a + 1) (by linarith) (fun σ _ ↦ exponentialDecay_weighted_schwartz f hf σ)
+    a ⟨by linarith, by linarith⟩
+  change (g : ℝ → ℂ) = W at hg
+  refine ⟨hg ▸ g.continuous, ?_, fun x ↦ ?_⟩
+  · rw [← hg]
+    apply (g.integrable.norm.add (g.integrable_pow_mul volume 1)).congr
+    filter_upwards with y
+    simp [Real.norm_eq_abs, add_mul, mul_comm]
+  · have hgInt : Complex.VerticalIntegrable (logMellin f) a := by
+      change Integrable W volume
+      rw [← hg]
+      exact g.integrable
+    have hi := mellinInv_mellin_eq a (fun t : ℝ ↦ f (Real.log t)) (Real.exp_pos x)
+      (mellinConvergent_of_exponentialDecay f hf a) hgInt
+      (f.continuous.continuousAt.comp (Real.continuousAt_log (Real.exp_pos x).ne'))
+    have hpow (y : ℝ) : ((Real.exp x : ℝ) : ℂ) ^ (-s y) = Complex.exp (-s y * x) := by
+      rw [Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr (Real.exp_pos x).ne'),
+        ← Complex.ofReal_log (Real.exp_pos x).le, Real.log_exp, mul_comm]
+    simp only [mellinInv, Complex.real_smul, Complex.ofReal_div, Complex.ofReal_one,
+      Complex.ofReal_mul, Complex.ofReal_ofNat, Real.log_exp, smul_eq_mul] at hi
+    change 1 / (2 * (Real.pi : ℂ)) * (∫ y, ((Real.exp x : ℝ) : ℂ) ^ (-s y) * W y) = f x at hi
+    simpa only [hpow, mul_comm (Complex.exp _) _, div_eq_inv_mul, one_mul, mul_one] using hi
+
+open Complex in
+/-- The logarithmic derivative of the translated complex gamma factor, including its prefactor. -/
+private theorem complexHeckeArchimedean_mellinLogDeriv_gamma
+    (β s : ℂ) (hs : 0 < (s + β).re) :
+    logDeriv (fun z ↦ Gammaℂ (z + β) / 2) s =
+      -((Real.log (2 * Real.pi) : ℂ) + Real.eulerMascheroniConstant) +
+        ∫ x in Ioi (0 : ℝ), gaussDigammaDifference 1 (s + β) x := by
+  let B : ℂ := (2 * Real.pi : ℝ)
+  have hB : B ≠ 0 := ofReal_ne_zero.mpr (by positivity)
+  have hlog : log B = (Real.log (2 * Real.pi) : ℂ) :=
+    (ofReal_log (by positivity : 0 ≤ 2 * Real.pi)).symm
+  have heq : (fun z ↦ Gammaℂ (z + β) / 2) =
+      (fun z ↦ B ^ (-(z + β)) * Gamma (z + β)) := by
+    funext z
+    simp only [Gammaℂ_def, B, ofReal_mul, ofReal_ofNat]
+    ring
+  have harg := (hasDerivAt_id' s).add_const β
+  have hP := harg.neg.const_cpow (Or.inl hB)
+  change HasDerivAt (fun z : ℂ ↦ B ^ (-(z + β))) (B ^ (-(s + β)) * log B * -1) s at hP
+  have hP0 : B ^ (-(s + β)) ≠ 0 := by simp [cpow_eq_zero_iff, hB]
+  have hreg (n : ℕ) : s + β ≠ -(n : ℂ) := by
+    intro he
+    simp [he] at hs
+    exact (Nat.cast_nonneg n).not_gt hs
+  have hG := (hasDerivAt_Gamma_of_re_pos hs).differentiableAt
+  rw [heq, logDeriv_fun_mul (f := fun z ↦ B ^ (-(z + β))) (g := fun z ↦ Gamma (z + β))
+    s hP0 (Gamma_ne_zero_of_re_pos hs) hP.differentiableAt (hG.comp s harg.differentiableAt),
+    harg.logDeriv_Gamma hreg, one_mul, logDeriv_apply, hP.deriv]
+  have hv := (integral_gaussDigammaDifference (w := s + β) (d := 1) one_pos (by simpa using hs)).2
+  simp only [ofReal_one, div_one, digamma_one] at hv
+  rw [hv, hlog]
+  field_simp
+  ring
+
+open Complex in
+/-- Evaluate one gamma contour using an ordinate weight whose inverse transform is `g`.
+The joint first-moment bound permits Fubini before the two singular terms are separated. -/
+private theorem complexHeckeArchimedean_mellinLogDeriv_leg
+    (a : ℝ) (ha : 0 < a) (β : ℂ) (hβ : 0 ≤ β.re) (W g : ℝ → ℂ)
+    (hW : Continuous W) (hM : Integrable (fun y ↦ ‖W y‖ * (1 + |y|)))
+    (hinv : ∀ x : ℝ, (∫ y : ℝ, W y * exp (-((a : ℂ) + y * I) * x)) /
+      (2 * (Real.pi : ℂ)) = g x) :
+    let s := fun y : ℝ ↦ (a : ℂ) + y * I
+    let L := fun y ↦ W y * logDeriv (fun z ↦ Gammaℂ (z + β) / 2) (s y)
+    let K := fun x : ℝ ↦ (g 0 * exp (-(x : ℂ)) - exp (-β * x) * g x) / (1 - exp (-(x : ℂ)))
+    Integrable L ∧ IntegrableOn K (Ioi 0) ∧
+      (∫ y, L y) / (2 * (Real.pi : ℂ)) =
+        -((Real.log (2 * Real.pi) : ℂ) + Real.eulerMascheroniConstant) * g 0 + ∫ x in Ioi 0, K x := by
+  intro s L K
+  let c := 2 * (Real.pi : ℂ)
+  let A := -((Real.log (2 * Real.pi) : ℂ) + Real.eulerMascheroniConstant)
+  let H := fun y x ↦ gaussDigammaDifference 1 (s y + β) x
+  have hJ : Integrable (fun p : ℝ × ℝ ↦ W p.1 * H p.1 p.2)
+      ((volume : Measure ℝ).prod (volume.restrict (Ioi 0))) := by
+    simpa only [H, s, Complex.re_add_im] using
+      integrable_mul_gaussDigammaDifference (τ := β.im) ha one_pos hβ hW.measurable hM
+  have hWi : Integrable W := hM.mono' hW.aestronglyMeasurable (Eventually.of_forall fun y ↦
+    le_mul_of_one_le_right (norm_nonneg _) (by linarith [abs_nonneg y]))
+  have hzero : (∫ y, W y) / c = g 0 := by simpa [c] using hinv 0
+  have hslice (x : ℝ) : (∫ y, W y * H y x) / c = K x := by
+    have hExp (y : ℝ) : exp (-(s y + β) * x) = exp (-β * x) * exp (-s y * x) := by
+      rw [← Complex.exp_add]; congr 1; ring
+    have hXi : Integrable (fun y ↦ W y * exp (-s y * x)) := by
+      refine (hWi.norm.mul_const (Real.exp (-a * x))).mono'
+        ((hW.mul (by dsimp [s]; fun_prop)).aestronglyMeasurable) (Eventually.of_forall fun y ↦ ?_)
+      simp [Complex.norm_exp, s, mul_re]
+    have hpoint (y : ℝ) : W y * H y x = (W y * exp (-(x : ℂ)) -
+        exp (-β * x) * (W y * exp (-s y * x))) / (1 - exp (-(x : ℂ))) := by
+      simp only [H, gaussDigammaDifference, ofReal_one, neg_one_mul, hExp, div_eq_mul_inv]
+      ring
+    simp_rw [hpoint]
+    rw [integral_div, integral_sub (hWi.mul_const _) (hXi.const_mul _), integral_mul_const,
+      integral_const_mul]
+    change _ = ((g 0) * _ - _ * g x) / _
+    rw [← hzero, ← hinv x]
+    dsimp only [c, s]
+    ring
+  have hK := (hJ.integral_prod_right.div_const c).congr (Eventually.of_forall hslice)
+  have hline (y : ℝ) : L y = W y * A + ∫ x in Ioi (0 : ℝ), W y * H y x := by
+    have hs : 0 < (s y + β).re := by simpa [s, mul_re] using add_pos_of_pos_of_nonneg ha hβ
+    simp only [L, complexHeckeArchimedean_mellinLogDeriv_gamma β (s y) hs, mul_add,
+      integral_const_mul, H, A]
+  refine ⟨?_, hK, ?_⟩
+  · simp_rw [show L = _ from funext hline]
+    exact (hWi.mul_const A).add hJ.integral_prod_left
+  · simp_rw [hline]
+    rw [integral_add (hWi.mul_const A) hJ.integral_prod_left, integral_mul_const, add_div,
+      mul_div_right_comm, hzero, mul_comm (g 0), integral_integral_swap hJ, ← integral_div]
+    change _ + (∫ x in Ioi (0 : ℝ), (∫ y, W y * H y x) / c) = _
+    simp_rw [hslice, A]
+
+/-- A norm twist shifts the radial exponent and preserves the angular weight. -/
+private theorem complexHeckeArchimedean_mellinLogDeriv_factor
+    (w : InfinitePlace F) (hw : w.IsComplex) (χ : PontryaginDual w.Completionˣ)
+    (z : ℂ) (r : ℤ) (h : ∀ x : ℂˣ, (χ (Units.map
+      (InfinitePlace.Completion.ringEquivComplexOfIsComplex hw).symm.toMonoidHom x) : ℂ) =
+        ((‖(x : ℂ)‖ ^ 2 : ℝ) : ℂ) ^ z * ((x : ℂ) / (‖(x : ℂ)‖ : ℂ)) ^ r) :
+    infiniteLocalEulerFactor w ∘ localChart(w, χ) =
+      fun s ↦ Complex.Gammaℂ (s + (z + (r.natAbs : ℂ) / 2)) / 2 := by
+  let e := (InfinitePlace.Completion.ringEquivComplexOfIsComplex hw).symm
+  have hn (x : ℂ) : ‖e x‖ = ‖x‖ :=
+    (InfinitePlace.Completion.isometryEquivComplexOfIsComplex hw).symm.isometry.norm_map_of_map_zero
+      (map_zero e) x
+  have hnreal := InfinitePlace.not_isReal_iff_isComplex.mpr hw
+  funext s
+  let hpar := complexLocalEulerParameters w hw (localChart(w, χ) s)
+  have hp : hpar.exists.choose = (s + z, r) := by
+    apply hpar.unique hpar.exists.choose_spec
+    intro x
+    change (χ (Units.map e.toMonoidHom x) : ℂ) * ((‖e (x : ℂ)‖ ^ w.mult : ℝ) : ℂ) ^ s = _
+    have hx : ((‖(x : ℂ)‖ ^ 2 : ℝ) : ℂ) ≠ 0 :=
+      Complex.ofReal_ne_zero.mpr (pow_ne_zero _ (norm_ne_zero_iff.mpr x.ne_zero))
+    rw [h x, hn, InfinitePlace.mult, ite_eq_right hnreal, Complex.cpow_add _ _ hx]
+    ac_rfl
+  simp only [Function.comp_apply, infiniteLocalEulerFactor, hnreal, ↓reduceDIte, hp, ← add_assoc]
+
+/-- Inverting the reflected Mellin weight adds the factor `exp (-x)` to the negative sample. -/
+private theorem complexHeckeArchimedean_mellinLogDeriv_reflect
+    (f : 𝓢(ℝ, ℂ)) (hf : ExponentialDecay f) (a : ℝ) :
+    let s := fun y : ℝ ↦ (a : ℂ) + y * Complex.I
+    let W := fun y ↦ logMellin f (1 - s y)
+    Continuous W ∧ Integrable (fun y ↦ ‖W y‖ * (1 + |y|)) ∧
+      ∀ x : ℝ, (∫ y, W y * Complex.exp (-s y * x)) / (2 * (Real.pi : ℂ)) =
+        Complex.exp (-(x : ℂ)) * f (-x) := by
+  intro s W
+  let u := fun y : ℝ ↦ ((1 - a : ℝ) : ℂ) + y * Complex.I
+  have hneg (y : ℝ) : 1 - s y = u (-y) := by dsimp [s, u]; push_cast; ring
+  obtain ⟨hc, hm, hi⟩ := complexHeckeArchimedean_mellinLogDeriv_trace f hf (1 - a)
+  change Continuous (fun y ↦ logMellin f (u y)) at hc
+  have heq : W = fun y ↦ logMellin f (u (-y)) := funext fun y ↦ congrArg (logMellin f) (hneg y)
+  rw [heq]
+  refine ⟨hc.comp continuous_neg, ?_, fun x ↦ ?_⟩
+  · simpa only [abs_neg] using hm.comp_neg
+  · have hphase (y : ℝ) : Complex.exp (-s y * x) =
+        Complex.exp (-(x : ℂ)) * Complex.exp (-u (-y) * ((-x : ℝ) : ℂ)) := by
+      rw [← Complex.exp_add, ← hneg]
+      congr 1
+      push_cast
+      ring
+    simp_rw [hphase, ← mul_left_comm (Complex.exp _) (logMellin f _)]
+    rw [integral_const_mul, mul_div_assoc, ← hi (-x)]
+    rw [integral_neg_eq_self (fun y : ℝ ↦ logMellin f (u y) *
+      Complex.exp (-u y * ((-x : ℝ) : ℂ)))]
+
 /-- Paper: Proposition B.4.2.1, p. 616. The two complex local contour terms
 equal the digamma integral and the complex gamma prefactor contribution.
 Deviation: The integral converges at both endpoints and includes absolute angular weight. -/
@@ -710,7 +887,93 @@ theorem complexHeckeArchimedean_mellinLogDeriv (w : InfinitePlace F) (hw : w.IsC
       logMellin f (1 - s) * logDeriv (infiniteLocalEulerFactor w ∘ localChart(w, χ⁻¹)) s
     Complex.VerticalIntegrable H a ∧ IntegrableOn K (Ioi 0) ∧
       verticalLineIntegral H a / twoPiI =
-        (∫ t in Ioi (0 : ℝ), K t) - 2 * (Real.log (2 * Real.pi) : ℂ) * f 0 := by sorry
+        (∫ t in Ioi (0 : ℝ), K t) - 2 * (Real.log (2 * Real.pi) : ℂ) * f 0 := by
+  intro p K H
+  let e := (InfinitePlace.Completion.ringEquivComplexOfIsComplex hw).symm
+  let i : ℂˣ →ₜ* w.Completionˣ := ⟨Units.map e.toMonoidHom,
+    (InfinitePlace.Completion.isometryEquivComplexOfIsComplex hw).symm.continuous.units_map _⟩
+  let c := ContinuousMonoidHom.comp circleToComplex χ
+  have hp := (complexLocalEulerParameters w hw c).exists.choose_spec
+  have hpRe : p.1.re = 0 := by
+    obtain ⟨q, ⟨hRe, hq⟩, _⟩ := existsUnique_complexUnits_character_parameters (c.comp i)
+      (fun x ↦ Circle.norm_coe (χ (i x)))
+    have h : p = q := (complexLocalEulerParameters w hw c).unique hp hq
+    simpa only [h] using hRe
+  let b := (p.2.natAbs : ℂ) / 2
+  let β := p.1 + b
+  let β' := -p.1 + b
+  have hb : 0 ≤ b.re := by
+    simp [b, Complex.div_ofNat_re]
+    positivity
+  have hβ : 0 ≤ β.re := by simpa [β, hpRe] using hb
+  have hβ' : 0 ≤ β'.re := by simpa [β', hpRe] using hb
+  have hD := complexHeckeArchimedean_mellinLogDeriv_factor w hw χ p.1 p.2 hp
+  have hR : infiniteLocalEulerFactor w ∘ localChart(w, χ⁻¹) =
+      fun s ↦ Complex.Gammaℂ (s + β') / 2 := by
+    have hinv (x : ℂˣ) : ((χ⁻¹) (i x) : ℂ) =
+        ((‖(x : ℂ)‖ ^ 2 : ℝ) : ℂ) ^ (-p.1) * ((x : ℂ) / (‖(x : ℂ)‖ : ℂ)) ^ (-p.2) := by
+      change ((χ (i x) : ℂ)⁻¹) = _
+      change ∀ x : ℂˣ, (χ (i x) : ℂ) = _ at hp
+      rw [hp x, mul_inv, Complex.cpow_neg, zpow_neg]
+    have hinvFactor := complexHeckeArchimedean_mellinLogDeriv_factor w hw χ⁻¹ (-p.1) (-p.2) hinv
+    rw [Int.natAbs_neg] at hinvFactor
+    exact hinvFactor
+  let s := fun y : ℝ ↦ (a : ℂ) + y * Complex.I
+  let directWeight := fun y ↦ logMellin f (s y)
+  let reflectedWeight := fun y ↦ logMellin f (1 - s y)
+  let reflectedTest := fun x : ℝ ↦ Complex.exp (-(x : ℂ)) * f (-x)
+  let directLine := fun y ↦ directWeight y * logDeriv (fun z ↦ Complex.Gammaℂ (z + β) / 2) (s y)
+  let reflectedLine := fun y ↦ reflectedWeight y * logDeriv (fun z ↦ Complex.Gammaℂ (z + β') / 2) (s y)
+  let decay := fun x : ℝ ↦ Complex.exp (-(x : ℂ))
+  let directKernel := fun x : ℝ ↦ (f 0 * decay x - Complex.exp (-β * x) * f x) / (1 - decay x)
+  let reflectedKernel := fun x : ℝ ↦
+    (reflectedTest 0 * decay x - Complex.exp (-β' * x) * reflectedTest x) / (1 - decay x)
+  obtain ⟨hc, hm, hi⟩ := complexHeckeArchimedean_mellinLogDeriv_trace f _hf a
+  obtain ⟨hc', hm', hi'⟩ := complexHeckeArchimedean_mellinLogDeriv_reflect f _hf a
+  obtain ⟨hDirectLine, hDirectKernel, directEval⟩ :=
+    complexHeckeArchimedean_mellinLogDeriv_leg a (by linarith) β hβ directWeight f hc hm hi
+  obtain ⟨hReflectedLine, hReflectedKernel, reflectedEval⟩ :=
+    complexHeckeArchimedean_mellinLogDeriv_leg a (by linarith) β' hβ' reflectedWeight reflectedTest hc' hm' hi'
+  change Integrable directLine at hDirectLine
+  change Integrable reflectedLine at hReflectedLine
+  change IntegrableOn directKernel (Ioi 0) at hDirectKernel
+  change IntegrableOn reflectedKernel (Ioi 0) at hReflectedKernel
+  change (∫ y, directLine y) / _ = _ * f 0 + ∫ x in Ioi 0, directKernel x at directEval
+  change (∫ y, reflectedLine y) / _ = _ * reflectedTest 0 + ∫ x in Ioi 0, reflectedKernel x at reflectedEval
+  have line_eq (y : ℝ) : H (s y) = directLine y + reflectedLine y := by simp only [H, hD, hR]; rfl
+  have hzero : reflectedTest 0 = f 0 := by simp [reflectedTest]
+  -- The reference value of the subtracted Gauss integral is ψ(1) = -γ.
+  let gaussTerm := fun x : ℝ ↦ (2 * f 0) * (gaussDigammaKernel x : ℂ)
+  have kernel_eq (x : ℝ) : K x = gaussTerm x + (directKernel x + reflectedKernel x) := by
+    have hphase : Complex.exp (-β' * (x : ℂ)) * Complex.exp (-(x : ℂ)) =
+        Complex.exp (-(1 - p.1 + b) * (x : ℂ)) := by
+      rw [← Complex.exp_add]; congr 1; dsimp [β']; ring
+    simp only [K, heckeArchimedeanDigammaKernel, Complex.ofReal_one, one_mul, gaussTerm,
+      directKernel, reflectedKernel, hzero, reflectedTest, ← mul_assoc (Complex.exp (-β' * (x : ℂ))), hphase, gaussDigammaKernel, decay]
+    push_cast
+    simp only [β, b]
+    ring
+  have hGaussInt : IntegrableOn gaussTerm (Ioi 0) := integrableOn_gaussDigammaKernel.ofReal.const_mul _
+  have hGauss : (∫ x in Ioi (0 : ℝ), gaussTerm x) =
+      (2 * f 0) * (-(Real.eulerMascheroniConstant : ℂ)) := by
+    simp [gaussTerm, integral_const_mul, integral_complex_ofReal, integral_gaussDigammaKernel]
+  have hH : Complex.VerticalIntegrable H a := by
+    change Integrable (fun y ↦ H (s y))
+    simp_rw [line_eq]
+    exact hDirectLine.add hReflectedLine
+  refine ⟨hH, ?_, ?_⟩
+  · rw [show K = _ from funext kernel_eq]
+    exact hGaussInt.add (hDirectKernel.add hReflectedKernel)
+  · change (Complex.I * ∫ y, H (s y)) / twoPiI = _
+    simp_rw [line_eq, kernel_eq]
+    rw [integral_add hDirectLine hReflectedLine,
+      integral_add (f := gaussTerm) (g := fun x ↦ directKernel x + reflectedKernel x)
+        hGaussInt (hDirectKernel.add hReflectedKernel),
+      integral_add hDirectKernel hReflectedKernel, hGauss]
+    have hnorm (v : ℂ) : (Complex.I * v) / twoPiI = v / (2 * (Real.pi : ℂ)) := by
+      rw [mul_comm Complex.I, mul_div_mul_right _ _ Complex.I_ne_zero]
+    rw [hnorm, add_div, directEval, reflectedEval, hzero]
+    ring
 
 -- TODO(paper-gap): (B.4.2.10) needs dt/(2π). With upward ds/(2πi),
 -- (B.4.2.11) gives +log(q) χ̄(π)^m q^(-m) φ(q^(-m)).
