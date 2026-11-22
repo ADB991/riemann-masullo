@@ -46,7 +46,7 @@ or an abstract private lemma avoids it.
 
 ## runs
 
-- 2026-11-22 ADB991-claude-20261122-f988: Ch06_LocalGlobal/Sec1.lean. Proved #4266, #4278 (PR from claude/sweep-ch06-sec1-f988). Released #4274 #4276 #4281 #4282 #4283 #4284 #4288 with notes; full Lean draft of the averaging/Laurent proofs in drafts/Ch06-Sec1-sweep-f988-draft.lean (elaboration problems, see setup notes).
+- 2026-11-22 ADB991-claude-20261122-f988: Ch06_LocalGlobal/Sec1.lean. Proved #4266, #4278 (PR #5357, branch claude/sweep-ch06-sec1-f988). Released #4274 #4276 #4281 #4282 #4283 #4284 #4288 with notes; full Lean draft of the averaging/Laurent proofs in drafts/Ch06-Sec1-sweep-f988-draft.lean (elaboration problems, see setup notes).
 
 - 2026-11-22 session ADB991-claude-20261122-7c3e: Ch06_LocalGlobal/Sec2.lean. Proved #4311 (PR #5351). Released #4306 #4308 #4316 (archimedean integrals over N∞: need decay bounds that exist only as private lemmas in Ch02 Sec2a/Sec2b and a concrete form of sNormOneIdeleTamagawaMeasure). Claim closed.
 
