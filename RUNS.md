@@ -47,8 +47,6 @@ or an abstract private lemma avoids it.
 
 ## open
 
-- RiemannMasullo/Ch04_PeriodicSchauderBases/Sec2.lean: #1948 (proved, full lake build running); session ADB991-claude-20261122-ffe6; branch claude/sweep-ch04-sec2-ffe6 (pushed); PR none yet; last touched 2026-11-22T18:35Z
-
 - RiemannMasullo/AppB_AnalyticNT/Sec4b.lean: #3895 #3891 #3892; session ADB991-claude-20261122-0825; branch claude/sweep-appb-sec4b-0825 (not pushed yet); PR none; last touched 2026-11-22T17:55Z
 
 - RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean: #5328 #5329 #5332 (in PR); session ADB991-claude-20261122-b7e4; branch claude/sweep-ch09-sec3-printed-b7e4; PR https://github.com/mccorvie/riemann-masullo/pull/5438; last touched 2026-11-22T18:20Z
@@ -61,6 +59,8 @@ or an abstract private lemma avoids it.
 - RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5.lean: #2654 (in PR); session ADB991-claude-20261122-9335; branch claude/sweep-ch04-sec5-9335; PR https://github.com/mccorvie/riemann-masullo/pull/5372; last touched 2026-11-22T17:02Z
 
 ## runs
+
+- 2026-11-22 ADB991-claude-20261122-ffe6: Ch04_PeriodicSchauderBases/Sec2.lean, proved #1948 (cyclicPeriodizationCLM_apply, one line from cyclicPeriodization_hasSum; file now sorry-free). PR https://github.com/mccorvie/riemann-masullo/pull/5485 (branch claude/sweep-ch04-sec2-ffe6). Full lake build 35 min. No releases. Claim closed.
 
 - 2026-11-22 ADB991-claude-20261122-a7c2: Ch10_TraceSpectral/Sec1.lean, proved #4877 #4879 #4883 #4884 #4885 #4897 #4898 #4902 (PR #5451, branch claude/sweep-ch10-sec1-a7c2). Released the other 19 with notes (#4880 needs an S-local analogue of ideleClassTamagawaMeasure_eq_smul_canonical; #4900 sketched).
 
