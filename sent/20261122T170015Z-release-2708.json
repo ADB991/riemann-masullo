@@ -1,0 +1,14 @@
+{
+ "request_file": "20261122T170015Z-release-2708.json",
+ "processed_at": "2026-11-22T17:00:37Z",
+ "request": {
+  "type": "comment",
+  "issue": 2708,
+  "body": "Releasing\nSession: ADB991-claude-20261122-9335\n\nNot proved. ker ⊇ range is the telescoping sum. For ker ⊆ range one needs, for f in the interval decay space with Σₙ f(γⁿx)=0, that g(x)=Σ_{n≥0} f(γⁿx) lies in the same space; the missing piece is the seminorm estimate for one-sided orbit sums (no lemma in the library yet). For compactly supported f it reduces to `cyclicPrimitive_vanishes_outside` plus smoothness (finite sums locally).\n\nContext from this sweep: `modulatedPeriodization_surjective` (#2654) is now proved (PR from branch `claude/sweep-ch04-sec5-9335`), by the paper's cutoff route: a telescoping smooth profile ρ of log|·|_G with Σₙ ρ(t+nL)=1, and private lemmas showing ρ(log|x|)·φ(q x) is Bruhat smooth (product rule, pullback along a closed quotient, smoothness of profiles of the module), hence compactly supported smooth, hence in the decay space."
+ },
+ "status": 201,
+ "ok": true,
+ "html_url": "https://github.com/mccorvie/riemann-masullo/issues/2708#issuecomment-7082508689",
+ "id": 7082508689,
+ "created_at": "2026-11-22T17:00:37Z"
+}

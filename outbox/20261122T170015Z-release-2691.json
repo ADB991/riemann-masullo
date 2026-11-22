@@ -1,5 +1,0 @@
-{
- "type": "comment",
- "issue": 2691,
- "body": "Releasing\nSession: ADB991-claude-20261122-9335\n\nNot proved. Surjectivity onto S(G/(Γ⊔k)) can now follow the route of #2654 with a k-invariant cutoff supported in the window (the private helpers `modulatedPeriodization_surjective_*` in the PR give smoothness of cutoff·pullback). What is missing is the continuity of the inverse, i.e. that the induced bijection W/N → S(G/(Γ⊔k)) is open (an open-mapping argument for the Fréchet stage W, or a continuous cutoff section).\n\nContext from this sweep: `modulatedPeriodization_surjective` (#2654) is now proved (PR from branch `claude/sweep-ch04-sec5-9335`), by the paper's cutoff route: a telescoping smooth profile ρ of log|·|_G with Σₙ ρ(t+nL)=1, and private lemmas showing ρ(log|x|)·φ(q x) is Bruhat smooth (product rule, pullback along a closed quotient, smoothness of profiles of the module), hence compactly supported smooth, hence in the decay space."
-}

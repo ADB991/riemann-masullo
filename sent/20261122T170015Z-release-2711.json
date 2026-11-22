@@ -1,0 +1,14 @@
+{
+ "request_file": "20261122T170015Z-release-2711.json",
+ "processed_at": "2026-11-22T17:00:38Z",
+ "request": {
+  "type": "comment",
+  "issue": 2711,
+  "body": "Releasing\nSession: ADB991-claude-20261122-9335\n\nNot proved. Same missing step as #2708, on ordinary Schwartz–Bruhat functions: g(x)=Σ_{n≥0} f(γⁿx) must be shown Schwartz–Bruhat when Σ_{n∈ℤ} f(γⁿx)=0. The compactly supported case is finite and elementary; the general case needs Schwartz bounds for one-sided orbit sums at the stage level (or a density + closed-range argument, which in turn needs this statement).\n\nContext from this sweep: `modulatedPeriodization_surjective` (#2654) is now proved (PR from branch `claude/sweep-ch04-sec5-9335`), by the paper's cutoff route: a telescoping smooth profile ρ of log|·|_G with Σₙ ρ(t+nL)=1, and private lemmas showing ρ(log|x|)·φ(q x) is Bruhat smooth (product rule, pullback along a closed quotient, smoothness of profiles of the module), hence compactly supported smooth, hence in the decay space."
+ },
+ "status": 201,
+ "ok": true,
+ "html_url": "https://github.com/mccorvie/riemann-masullo/issues/2711#issuecomment-7082508875",
+ "id": 7082508875,
+ "created_at": "2026-11-22T17:00:38Z"
+}

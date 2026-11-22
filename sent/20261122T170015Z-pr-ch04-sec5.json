@@ -1,0 +1,17 @@
+{
+ "request_file": "20261122T170015Z-pr-ch04-sec5.json",
+ "processed_at": "2026-11-22T17:00:32Z",
+ "request": {
+  "type": "pr",
+  "head": "claude/sweep-ch04-sec5-9335",
+  "title": "Prove modulatedPeriodization_surjective (Ch04 Sec5 sweep)",
+  "body": "Sweep of `RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5.lean` (session ADB991-claude-20261122-9335).\n\nCloses #2654\n\n**Proved:** `modulatedPeriodization_surjective` (Proposition 4.5.1.1(1), pp. 197–199), by the paper's cutoff argument (p. 199): with L = log|γ|, a smooth profile ρ(t) = H(t+L) − H(t) built from `Real.smoothTransition` satisfies Σₙ ρ(t+nL) = 1 and has compact support; for φ ∈ S(G/γ^ℤ), f(x) = ρ(log|x|)·φ(q x) is Bruhat smooth with compact support, hence lies in the decay space (`bruhatCompactSupport_le_modulatedExponentialDecay`), and its orbit sum is φ.\n\nOnly proofs and private lemmas, all directly above the theorem:\n- `modulatedPeriodization_surjective_mul`: Bruhat Cᵖ is closed under products (same argument as `IsBruhatContDiff.add`).\n- `modulatedPeriodization_surjective_comp_mk`: Bruhat Cᵖ pulls back along the quotient by a closed subgroup (via `exists_good_subgroup_image_in_kernel`, `bruhatStructuralPair_quotient_map`, `BruhatStructuralPair.exists_quotient_hom`, `bruhatContDiff_descend_of_le`, `contDiff_comp_elementaryHom`).\n- `modulatedPeriodization_surjective_log_compact`, `modulatedPeriodization_surjective_logProfile`: compact subgroups lie in ker log|·|, and ρ ∘ log|·| is Bruhat smooth.\n- `modulatedPeriodization_surjective_cutoff`, `_profile`, `_window`: the cutoff product, the telescoping profile, compactness of log-windows.\n\nNew imports: `Mathlib.Analysis.SpecialFunctions.SmoothTransition`, and `import all` of `AppD_SchwartzBruhat.Sec1b` and `Sec1c` for their private descent lemmas (Sec4 already uses `import all` the same way).\n\n**Checks run:** `lake build` (full, 18852 jobs) passes; `scripts/lint.sh` ok; `scripts/signatures.sh --compare` on the module's signatures before/after (generated with `lake env lean --run scripts/Signatures.lean RiemannMasullo.Ch04_PeriodicSchauderBases.Sec5`) reports no changed statement. `lake build` of the module took about 110 s, against 106 s before.\n\n`#print axioms RiemannMasullo.modulatedPeriodization_surjective`: `[propext, sorryAx, Classical.choice, Quot.sound]`. The `sorryAx` comes from the statement: `#print axioms RiemannMasullo.modulatedPeriodizationCLM` already shows it (as does `schwartzBruhat_isBruhatSmooth`). Downstream, `modulatedPeriodization_isOpenMap`, `modulatedIsotypicPeriodization_isClosed_range`, `modulatedPeriodization_isClosed_isotype_image` and `modulatedIntervalPeriodization_factorization` used this theorem and no longer rest on its `sorry`.\n\nThe other open proofs of the file (#2667 #2688 #2691 #2693 #2694 #2696 #2708 #2711) were claimed and are released with notes on each issue.\n\nPrepared autonomously by Claude (Anthropic) running as a scheduled agent on behalf of @ADB991; ADB991 had not reviewed it before submission.\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "draft": false
+ },
+ "status": 201,
+ "ok": true,
+ "html_url": "https://github.com/mccorvie/riemann-masullo/pull/5372",
+ "id": 5441241773,
+ "number": 5372,
+ "created_at": "2026-11-22T17:00:33Z"
+}

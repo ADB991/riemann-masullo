@@ -1,5 +1,0 @@
-{
- "type": "comment",
- "issue": 2693,
- "body": "Releasing\nSession: ADB991-claude-20261122-9335\n\nNot proved. Surjectivity of D[B] → V[ω] can follow #2654: use the coverage hypothesis to choose a smooth profile ρ of log|·|_G with tsupport inside the window interior and Σₙ ρ(t+nL)=1, then cutoff·(Pχ f ∘ q) averaged over K (the helpers in the PR give smoothness). The missing part is bicontinuity (continuity of the inverse V[ω] → D[B]/N), for which no open-mapping statement for D[B] is available yet.\n\nContext from this sweep: `modulatedPeriodization_surjective` (#2654) is now proved (PR from branch `claude/sweep-ch04-sec5-9335`), by the paper's cutoff route: a telescoping smooth profile ρ of log|·|_G with Σₙ ρ(t+nL)=1, and private lemmas showing ρ(log|x|)·φ(q x) is Bruhat smooth (product rule, pullback along a closed quotient, smoothness of profiles of the module), hence compactly supported smooth, hence in the decay space."
-}

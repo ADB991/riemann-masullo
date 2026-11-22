@@ -1,5 +1,0 @@
-{
- "type": "comment",
- "issue": 2688,
- "body": "Releasing\nSession: ADB991-claude-20261122-9335\n\nNot attempted in depth. The algebraic identification of the fixed-support k-stage with `bruhatCompactSupportStage` for the pair (⊤, k) is routine; the content is the topology: continuity from the test stage to the decay space is essentially `continuous_fixedSupport_to_decay` (private, AppD §3b); the converse needs the stage Schwartz seminorms on G/k to be bounded by decay-space seminorms on window-supported k-invariant functions.\n\nContext from this sweep: `modulatedPeriodization_surjective` (#2654) is now proved (PR from branch `claude/sweep-ch04-sec5-9335`), by the paper's cutoff route: a telescoping smooth profile ρ of log|·|_G with Σₙ ρ(t+nL)=1, and private lemmas showing ρ(log|x|)·φ(q x) is Bruhat smooth (product rule, pullback along a closed quotient, smoothness of profiles of the module), hence compactly supported smooth, hence in the decay space."
-}
