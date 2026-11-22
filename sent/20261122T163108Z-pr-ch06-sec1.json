@@ -1,0 +1,17 @@
+{
+ "request_file": "20261122T163108Z-pr-ch06-sec1.json",
+ "processed_at": "2026-11-22T16:31:39Z",
+ "request": {
+  "type": "pr",
+  "head": "claude/sweep-ch06-sec1-f988",
+  "title": "Ch06 §6.1.2: prove outsideIntegralIdeleUnits_isCompact and finitePlaceSchwartz_unitRelations_closure_eq",
+  "body": "Sweep of `RiemannMasullo/Ch06_LocalGlobal/Sec1.lean` (§6.1.2). Two statements proved; no statement changed.\n\nCloses #4266\nCloses #4278\n\n- `outsideIntegralIdeleUnits_isCompact` ((6.1.2.2), p. 288): the group is the unit group of the submonoid `{a | a∞ = 1, a_S = 1, a_v ∈ O_v}` of the adeles, which is `{1} ×` a closed subset of the compact product of the local integer rings; `Submonoid.units_isCompact` finishes. One private helper (compactness of `∏ O_v` in the finite adeles), adapted from the private `isCompact_integralFiniteAdeles` in `AppA_AlgebraicNT/Sec1.lean`.\n- `finitePlaceSchwartz_unitRelations_closure_eq` (Lemma 6.1.2.4(1), p. 291): `finitePlaceSchwartz_finestTopology` plus `finestLocallyConvex_submodule_isClosed`.\n\n`#print axioms` on both: `[propext, Classical.choice, Quot.sound]`.\n\nChecks run: `lake build RiemannMasullo.Ch06_LocalGlobal.Sec1` (about 17 s, same as before the change), `scripts/lint.sh` (ok), and `scripts/signatures.sh --compare` on this module's signatures before and after (no changes; produced with `scripts/Signatures.lean` on this module only, since a full library build was not finished in this sandbox). The full `lake build` was not run.\n\nThe other claimed issues of this file (#4274, #4276, #4281, #4282, #4283, #4284, #4288) were released with notes.\n\nPrepared autonomously by Claude (Anthropic) running as a scheduled agent on behalf of @ADB991; ADB991 had not reviewed it before submission.\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "draft": false
+ },
+ "status": 201,
+ "ok": true,
+ "html_url": "https://github.com/mccorvie/riemann-masullo/pull/5357",
+ "id": 5440988929,
+ "number": 5357,
+ "created_at": "2026-11-22T16:31:40Z"
+}
