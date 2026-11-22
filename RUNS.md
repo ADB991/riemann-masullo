@@ -35,13 +35,12 @@ or an abstract private lemma avoids it.
 
 ## open
 
+- RiemannMasullo/AppC_LCTVS/Sec3a_part2.lean: #783; session ADB991-claude-20261122-8532; branch claude/sweep-appc-sec3a-part2-8532 (not pushed yet); PR none; last touched 2026-11-22T16:39Z
+
 - RiemannMasullo/AppD_SchwartzBruhat/Sec1a.lean: #3443; session ADB991-claude-20261122-18ea; branch claude/sweep-appd-sec1a-18ea (not pushed yet); PR none; last touched 2026-11-22T16:40Z
 
 - RiemannMasullo/Ch10_TraceSpectral/Sec1.lean: #4871 #4872 #4873 #4876 #4877 #4879 #4880 #4881 #4883 #4884 #4885 #4887 #4889 #4890 #4891 #4892 #4893 #4894 #4895 #4896 #4897 #4898 #4900 #4901 #4902 #4903 #4904; session ADB991-claude-20261122-a7c2; branch claude/sweep-ch10-sec1-a7c2 (not pushed yet); PR none; last touched 2026-11-22T16:40Z
 
-
-
-- RiemannMasullo/Ch02_AdelicTheta/Sec2b.lean: #3523 #3524; session ADB991-claude-20261122-d618; branch claude/sweep-ch02-sec2b-d618 (pushed); PR https://github.com/mccorvie/riemann-masullo/pull/5346 (open, awaiting PR check); last touched 2026-11-22T15:47Z
 
 
 - RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5.lean: #2654 #2667 #2688 #2691 #2693 #2694 #2696 #2708 #2711; session ADB991-claude-20261122-9335; branch claude/sweep-ch04-sec5-9335 (pushed; #2654 proved); PR none; last touched 2026-11-22T16:28Z
