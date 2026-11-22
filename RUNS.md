@@ -4,6 +4,8 @@ Cloud runs prove open `proof` issues of mccorvie/riemann-masullo, one library fi
 
 ## setup notes
 
+(2026-11-22, 8e13) A cold `lake build` of Ch07 Sec1a (all its deps, no project cache) took about 21 min; its direct importers Sec1a_Printed + Sec1b took another 5 min. Mathlib modules not in a file's import closure (e.g. `Mathlib.Topology.MetricSpace.ProperSpace.Lemmas`) can be added with a plain `import`.
+
 (2026-11-22, db2b) `scripts/signatures.sh` starts a full `lake build RiemannMasullo` (over an hour from a cold cache here). For before/after on one file: `lake env lean --run scripts/Signatures.lean RiemannMasullo.<Mod>` > file, then `scripts/signatures.sh --compare`. Build importers of the file instead of the whole library (Ch11 Sec1a importers took ~18 min cold). elan install: `curl elan-init.sh | sh -s -- -y --default-toolchain none`, then link the release zip.
 
 (2026-11-22) Environment v3r1t4s; the sibling RH-port runs found: 4 vCPU, 15 GB RAM, ~60 GB disk.
@@ -21,11 +23,12 @@ GitHub GraphQL is refused from the sandbox: use `gh api` REST (search/issues nee
 
 - RiemannMasullo/Ch02_AdelicTheta/Sec2b.lean: #3523 #3524; session ADB991-claude-20261122-d618; branch claude/sweep-ch02-sec2b-d618 (not pushed yet); PR none; last touched 2026-11-22T14:22Z
 
-- RiemannMasullo/Ch07_SchauderBasesZeta/Sec1a.lean: #4036 #4037 #4038; session ADB991-claude-20261122-8e13; branch claude/sweep-ch07-sec1a-8e13 (not pushed yet); PR none; last touched 2026-11-22T14:34Z
 
 ## runs
 
 - 2026-11-22 ADB991-claude-20261122-db2b: Ch11_ShellStructure/Sec1a.lean, proved #4699 #4702 (file now sorry-free), PR https://github.com/mccorvie/riemann-masullo/pull/5234 (branch claude/sweep-ch11-sec1a-db2b). Ch06 Sec1 claim of f988 left alone (live).
+
+- 2026-11-22 ADB991-claude-20261122-8e13: Ch07_SchauderBasesZeta/Sec1a.lean, proved #4036 (Laurent expansion of the zeta germ); released #4037 #4038 with notes (need explicit local Tate factor forms, private in Ch03 Sec3b). PR from branch claude/sweep-ch07-sec1a-8e13 (see sent/20261122T150422Z-pr-ch07-sec1a.json).
 
 ## for Andrea
 
