@@ -78,7 +78,9 @@ Build as little as possible. While you work, build only your module
 (`lake build RiemannMasullo.<Chapter>.<File>`), or check a scratch copy with
 `lake lean .agent/Scratch.lean`. Never use `lake env lean`: it ignores the options in
 `lakefile.toml`, and without them some files take half an hour instead of half a minute. Run
-the full `lake build` once, at the end.
+one check at a time and wait for it; if it has not finished after ten minutes, stop it and make
+the scratch file smaller. Do not leave checks running in the background. Run the full
+`lake build` once, at the end.
 
 If you were given several declarations of one file, prove them one at a time and leave the file
 building after each, so that what is finished can be handed in whatever happens to the rest.

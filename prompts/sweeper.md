@@ -42,6 +42,13 @@ that serve several of the remaining proofs at once.
 - Leave alone any declaration your issue marks as claimed by someone else.
 - Keep the build fast: time the module before and after (`time lake build …`); a proof that
   takes minutes to elaborate is not acceptable. Do not raise `maxHeartbeats`.
+- Check a scratch copy with `lake lean .agent/Scratch.lean`, never with `lake env lean`: the
+  latter ignores the options in `lakefile.toml`, and a file of this library can then take half
+  an hour instead of half a minute. Run one check at a time and wait for it. If a check has not
+  finished after ten minutes, stop it and make the scratch file smaller (only the declaration
+  you are working on, with its section's variables); do not start another beside it and do not
+  leave one running in the background. A check still running after thirty minutes is stopped
+  from outside.
 - A partial result is welcome: three of five proved, with a clear report on the other two, is a
   good hand-in. Do not hold back finished proofs because others are not done.
 
