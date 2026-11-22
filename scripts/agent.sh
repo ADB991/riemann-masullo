@@ -274,8 +274,11 @@ This worktree also holds the statements of earlier sections that are not on \`ma
     # the declarations of every module except those the pull request itself adds or changes.
     mkdir -p "$main/.agent/base"
     own=$(git -C "$wt" diff --name-only "$(git -C "$wt" merge-base "$up/main" HEAD)" HEAD -- 'RiemannMasullo/*.lean' || true)
-    ( cd "$wt" && lake build RiemannMasullo >/dev/null 2>"$wt/.agent/base-build.txt" &&
+    # Only those other modules are built here: the pull request's own files may be what the
+    # revision has to repair (a section whose prerequisites were corrected in review).
+    ( cd "$wt" &&
       mods=$(find RiemannMasullo -name '*.lean' | sort | grep -vxF -f <(printf '%s\n' $own /dev/null) | sed 's#/#.#g; s#\.lean$##') &&
+      lake build $mods >"$wt/.agent/base-build.txt" 2>&1 &&
       lake env lean --run scripts/Signatures.lean $mods ) >"$main/.agent/base/$role-$n.txt" 2>>"$wt/.agent/base-build.txt" ||
       { echo "could not build the starting point; see $wt/.agent/base-build.txt" >&2; exit 1; }
   fi
