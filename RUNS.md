@@ -16,6 +16,8 @@ GitHub GraphQL is refused from the sandbox: use `gh api` REST (search/issues nee
 
 - RiemannMasullo/Ch11_ShellStructure/Sec1a.lean: #4699 #4702; session ADB991-claude-20261122-db2b; branch claude/sweep-ch11-sec1a-db2b (not pushed yet); PR none; last touched 2026-11-22T13:32Z
 
+- RiemannMasullo/Ch06_LocalGlobal/Sec2.lean: #4311 #4306 #4308 #4316; session ADB991-claude-20261122-7c3e; branch claude/sweep-ch06-sec2-7c3e (not pushed yet); PR none; last touched 2026-11-22T13:50Z
+
 ## runs
 
 ## for Andrea
