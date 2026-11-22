@@ -273,6 +273,11 @@ on work that does not appear there.
     11.3.2.1 at the prime 2.
 - **dga471** proved four of this project's statements on [Prove2Me](https://prove2.me), and
   the proofs were brought in from there.
+- **Maarten Derickx** ([@koffie](https://github.com/koffie)) found why some trivial proofs never
+  finished: type synonyms declared as abbreviations, whose instance terms grow exponentially
+  when they are nested. He measured every one in the library and proposed the redesign (#5398)
+  and the rules for new definitions (#5362), which are adapted from
+  [Tau Ceti](https://github.com/TauCetiProject/TauCetiReview)'s review rubric.
 - Proofs were adapted from [`CBirkbeck/AINTLIB`](https://github.com/CBirkbeck/AINTLIB) and
   [`Rogerhu12/hecke-seven-eighths`](https://github.com/Rogerhu12/hecke-seven-eighths). The
   scouts' surveys of what already exists in Lean
