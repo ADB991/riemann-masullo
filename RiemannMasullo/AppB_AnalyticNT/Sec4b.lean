@@ -6,6 +6,8 @@ import RiemannMasullo.ForMathlib.Analysis.Normed.Field.ProperSpace
 public import RiemannMasullo.AppB_AnalyticNT.Sec3
 public import RiemannMasullo.AppB_AnalyticNT.Sec4a
 public import RiemannMasullo.Ch03_IdelicZeta.Sec3b
+import all RiemannMasullo.Ch03_IdelicZeta.Sec3b
+import RiemannMasullo.ForMathlib.Analysis.Fourier.Log
 import all RiemannMasullo.AppD_SchwartzBruhat.Sec1b
 import all RiemannMasullo.AppD_SchwartzBruhat.Sec1c
 public import RiemannMasullo.AppD_SchwartzBruhat.Sec2a
@@ -960,6 +962,21 @@ theorem finiteLogFourier_unique (v : Primes(F)) (J : v.adicCompletion F → ℂ)
 
 local notation "eulerLogConstant" => (Real.log (2 * Real.pi) + Real.eulerMascheroniConstant)
 
+/-- Express an additive Schwartz–Bruhat test in the real coordinate of the completion. -/
+private theorem realLogFourier_finitePart_realTest (w : InfinitePlace F) (hw : w.IsReal)
+    (f : 𝒮ₐ(w.Completion)) :
+    ∃ u : 𝓢(ℝ, ℂ), ∀ x : w.Completion,
+      addTest(f) x = u (InfinitePlace.Completion.ringEquivRealOfIsReal hw x) := by
+  let e := InfinitePlace.Completion.ringEquivRealOfIsReal hw
+  let j := InfinitePlace.Completion.isometryEquivRealOfIsReal hw
+  let c : Multiplicative w.Completion ≃ₜ* Multiplicative ℝ :=
+    { toMulEquiv := e.toAddEquiv.toMultiplicative
+      continuous_toFun := j.continuous
+      continuous_invFun := j.symm.continuous }
+  obtain ⟨E, hE⟩ := schwartzBruhat_realCoordinate_equiv c
+  obtain ⟨u, rfl⟩ := E.surjective f
+  exact ⟨u, fun x ↦ hE u (Multiplicative.ofAdd x)⟩
+
 /-- Paper: Proposition B.4.3.2(1), p. 619. The real Fourier pairing equals
 minus half the finite part and minus the logarithmic constant times evaluation at zero.
 Deviation: Divides the printed distribution by two. -/
@@ -971,8 +988,31 @@ theorem realLogFourier_finitePart (w : InfinitePlace F) (_hw : w.IsReal)
         {x : w.Completion | ε ≤ ‖x‖} ν∞(w)) ∧
       Tendsto (fun ε : ℝ ↦ (∫ x in {x : w.Completion | ε ≤ ‖x‖},
         addTest(f) x / ((‖x‖ : ℝ) : ℂ) ∂ν∞(w)) + 2 * addTest(f) 0 * (Real.log ε : ℂ))
-        (𝓝[>] 0) (𝓝 (-2 * ((∫ y, K y ∂ν∞(w)) + (eulerLogConstant : ℂ) * addTest(f) 0))) :=
-  by sorry
+        (𝓝[>] 0) (𝓝 (-2 * ((∫ y, K y ∂ν∞(w)) + (eulerLogConstant : ℂ) * addTest(f) 0))) := by
+  intro K
+  let : BorelSpace w.Completion := ⟨rfl⟩
+  let e := InfinitePlace.Completion.ringEquivRealOfIsReal _hw
+  let j := InfinitePlace.Completion.isometryEquivRealOfIsReal _hw
+  let m := j.symm.toHomeomorph.toMeasurableEquiv
+  have hμ : ν∞(w) = (volume : Measure ℝ).map m := dite_eq_left _hw
+  have hem (t : ℝ) : e (m t) = t := e.apply_symm_apply t
+  have hnorm (t : ℝ) : ‖m t‖ = |t| := by
+    change ‖j.symm t‖ = ‖t‖
+    rw [← dist_zero_right, ← dist_zero_right t, ← j.symm.dist_eq t 0,
+      show j.symm 0 = 0 from map_zero e.symm]
+  obtain ⟨u, hf⟩ := realLogFourier_finitePart_realTest w _hw f
+  change ∀ x, addTest(f) x = u (e x) at hf
+  have hK (t : ℝ) : K (m t) = (Real.log |t| : ℂ) * FourierTransform.fourier (u : ℝ → ℂ) t := by
+    change (Real.log (‖m t‖ ^ w.mult) : ℂ) * tamagawaFourier ν∞(w) ψ∞(w) addTest(f) (m t) = _
+    rw [_hw.mult_eq_one, pow_one, hnorm, funext hf, realModelFourier w _hw, hem]
+  obtain ⟨hlog, hcut, hlim⟩ := real_log_fourier_cutoff u
+  -- Transport the cutoff sets along the isometry, then double the real-line limit.
+  simp only [hμ, integrable_map_equiv, integrableOn_map_equiv, setIntegral_map_equiv,
+    integral_map_equiv, Function.comp_def, preimage_ofPred_eq, hK, hnorm, hf, hem, map_zero]
+  refine ⟨hlog, hcut, ?_⟩
+  have scale (x y z : ℂ) : 2 * (1 / 2 * x + y * z) = x + 2 * z * y := by ring
+  have scale_limit (x y : ℂ) : 2 * (-x - y) = -2 * (x + y) := by ring
+  simpa only [scale, scale_limit, Complex.ofReal_add] using hlim.const_mul (2 : ℂ)
 
 /-- Paper: Proposition B.4.3.2(2), p. 619. The complex Fourier pairing
 equals minus the finite part divided by 2π, with the squared module in the cutoff.
