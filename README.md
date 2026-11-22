@@ -74,18 +74,18 @@ have learned about doing this quickly.
 
 ## Status
 
-**Active: proving waves 1 and 2, stating the rest of wave 2.** As of 21 November 2026, about
-4,700 theorems and 820 definitions are stated in Lean and about 3,950 of the theorems are
-proved. Some thirty people have had pull requests merged, about 1,360 pull requests in all.
+**Active: proving waves 1 and 2, stating wave 3.** As of 22 November 2026, about 6,800
+theorems and 1,290 definitions are stated in Lean and about 6,100 of the theorems are proved.
+Some thirty people have had pull requests merged, about 1,580 pull requests in all.
 
 - **Wave 1** (Appendices A, C and D, Chapters 2–4 and 9) is fully stated, and most of it is
   proved. The remaining proofs are being closed out file by file.
-- **Wave 2** (Chapters 5–7 and Appendix B) is being stated section by section, each statement
-  reviewed against the paper before it is merged. Appendix B.1–B.6, §5.1–5.3, §6.1–6.2 and §7.1
-  are on `main` with their proofs open; §5.4–5.5, §6.3 and §7.2–7.5 follow in dependency order.
-- **Wave 3** (Chapters 10–12, the trace formula, then the two pages of Chapter 13) is seeded as
-  sixteen section issues, and the first three sections are being stated. Chapter 8 is not
-  needed for these statements.
+- **Wave 2** (Chapters 5–7 and Appendix B) is fully stated, each statement reviewed against the
+  paper before it was merged. Its proofs are open.
+- **Wave 3** (Chapters 10–12, the trace formula, then the two pages of Chapter 13) is being
+  stated section by section in the same way. §10.1–10.2, §11.1, the opening of §11.2, the
+  general part of §12.1 and §12.2 are on `main` with their proofs open; the rest follows in
+  dependency order. Chapter 8 is not needed for these statements.
 
 Every open `sorry` is an issue that anyone can take. The
 [progress map](https://claude.ai/artifact/CtQyX8qfYAF822bgHJHHE3) has the current numbers, and
@@ -93,21 +93,27 @@ the roadmap below the order of work.
 
 ### What the formalization has found
 
-[`ERRATA.md`](ERRATA.md) has about 350 entries: some 105 statements that are false as printed,
-220 that are imprecise, inconsistent or wrongly justified, 20 placeholders or missing pieces,
+[`ERRATA.md`](ERRATA.md) has about 520 entries: some 170 statements that are false as printed,
+310 that are imprecise, inconsistent or wrongly justified, 25 placeholders or missing pieces,
 and 9 reports from readers about parts not yet formalized. Those in the appendices' and early
 chapters' accounts of standard material are repaired where they occur: the Lean states the
 corrected form and says so.
 
 The second wave has reached the paper's own constructions in Chapters 5–7, and the findings
-there weigh more. Most still come with a repair. Six steps have none so far, and later results
-use them; `ERRATA.md` lists them first. The main one is the structure theorem for the spaces of
-adelic θ-functions (Theorem 5.2.1.1): its printed proof does not work. One of its two central
-claims, that each finite stage embeds in the global space, has since been proved in Lean by a
-different route. The other, strictness, is neither proved nor refuted, and the rest of §5.2 is
-proved from it. The
-explicit formulas of §B.4, which Chapter 12 quotes, need their local terms and normalizations
-recomputed. None of the entries so far is about the trace formula itself.
+there weigh more. Most still come with a repair. Eighteen steps have none so far, and later
+results use them; `ERRATA.md` lists them first. The main one in Chapter 5 is the structure
+theorem for the spaces of adelic θ-functions (Theorem 5.2.1.1): its printed proof does not
+work. One of its two central claims, that each finite stage embeds in the global space, has
+since been proved in Lean by a different route. The other, strictness, is neither proved nor
+refuted, and the rest of §5.2 is proved from it. The explicit formulas of §B.4, which
+Chapter 12 quotes, need their local terms and normalizations recomputed.
+
+The third wave has reached the trace formula. Twelve of the eighteen steps are in Chapters
+10–12 or in the later sections of Chapter 7: the bases and nuclear presentations from which the
+spectral and orbital traces are computed (§7.3–7.4, §10.2, §11.2) are not established by the
+printed arguments, and the section that should compare the global trace with the S-local one
+(§12.3) consists of its heading and a note to include it. These are the assessments of the
+agents that checked the entries against the pages, not a specialist's.
 
 ### Concerns about the main theorem
 
