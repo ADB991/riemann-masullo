@@ -480,12 +480,55 @@ theorem finiteStandardThetaAverage_integrable (v : V) (χ : PontryaginDual (L(v)
   exact finiteStandardThetaAverage_integrable_of_locallyConstant (μ(v)) test htest.1 htest.2 hzero
     (fun g : (L(v))ˣ ↦ (χ g : ℂ)) hχ x
 
+/-- On a group with a left-invariant measure, convolving against a character
+factors as the character times the value at the identity. -/
+private theorem exists_finiteStandardThetaAverage_factor {G : Type*} [Group G]
+    [MeasurableSpace G] [MeasurableMul G] (ν : Measure G) [ν.IsMulLeftInvariant]
+    (φ : G → ℂ) (c : G →* Circle) (x : G) :
+    (∫ g, φ (g⁻¹ * x) * (c g : ℂ) ∂ν) = (c x : ℂ) * ∫ g, φ g⁻¹ * (c g : ℂ) ∂ν := by
+  rw [← integral_mul_left_eq_self (fun g ↦ φ (g⁻¹ * x) * (c g : ℂ)) x, ← integral_const_mul]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
+  simp only [mul_inv_rev, inv_mul_cancel_right, map_mul, Circle.coe_mul]
+  ring
+
 /-- Paper: (6.2.2.4), p. 299.
 The finite-place convolution formula specifies a continuous linear map on
 locally constant, compactly supported functions on the punctured field. -/
 theorem exists_finiteStandardThetaAverage (v : V) (χ : PontryaginDual (L(v))ˣ) :
     ∃ A : ℬ₀(v) →L[ℂ] C((L(v))ˣ, ℂ), ∀ f x,
-      A f x = ∫ g : (L(v))ˣ, f.val (Multiplicative.ofAdd (g⁻¹ * x).val) * (χ g : ℂ) ∂μ(v) := by sorry
+      A f x = ∫ g : (L(v))ˣ, f.val (Multiplicative.ofAdd (g⁻¹ * x).val) * (χ g : ℂ) ∂μ(v) := by
+  let : BorelSpace (L(v))ˣ := ⟨rfl⟩
+  let : (μ(v)).IsHaarMeasure := finiteLocalMultiplicativeTamagawaMeasure_isHaarMeasure v
+  have hint (f : ℬ₀(v)) : Integrable
+      (fun g : (L(v))ˣ ↦ f.val (Multiplicative.ofAdd (g⁻¹).val) * (χ g : ℂ)) (μ(v)) := by
+    simpa only [mul_one] using finiteStandardThetaAverage_integrable v χ f 1
+  let c₀ : ℬ₀(v) →ₗ[ℂ] ℂ :=
+    { toFun := fun f ↦ ∫ g : (L(v))ˣ, f.val (Multiplicative.ofAdd (g⁻¹).val) * (χ g : ℂ) ∂μ(v)
+      map_add' := fun f h ↦ by
+        rw [← integral_add (hint f) (hint h)]
+        refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
+        change ((f.val : _ → ℂ) + h.val) _ * _ = _
+        rw [Pi.add_apply, add_mul]
+      map_smul' := fun a f ↦ by
+        rw [RingHom.id_apply, smul_eq_mul, ← integral_const_mul]
+        refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
+        change (a • (f.val : _ → ℂ)) _ * _ = _
+        rw [Pi.smul_apply, smul_eq_mul, mul_assoc] }
+  obtain ⟨P, hP⟩ := LinearMap.exists_leftInverse_of_injective
+    (finitePuncturedThetaTestSpace v).subtype (Submodule.ker_subtype _)
+  have hc₁ : Continuous (c₀.comp P) :=
+    (congrArg (fun t ↦ @Continuous ℬ(L(v)) ℂ t _ (fun f ↦ c₀.comp P f))
+      (finitePlaceSchwartz_finestTopology F v)).mpr
+      (continuous_of_finestLocallyConvex ℬ(L(v)) (c₀.comp P))
+  have hc₀ : Continuous c₀ := by
+    refine (hc₁.comp continuous_subtype_val).congr fun f ↦ ?_
+    change c₀ (P ((finitePuncturedThetaTestSpace v).subtype f)) = c₀ f
+    rw [← LinearMap.comp_apply P, hP, LinearMap.id_apply]
+  let χC : C((L(v))ˣ, ℂ) := ⟨fun g ↦ (χ g : ℂ), continuous_subtype_val.comp χ.continuous⟩
+  refine ⟨(ContinuousLinearMap.mk c₀ hc₀).smulRight χC, fun f x ↦ ?_⟩
+  rw [exists_finiteStandardThetaAverage_factor (μ(v))
+    (fun g : (L(v))ˣ ↦ f.val (Multiplicative.ofAdd g.val)) χ.toMonoidHom x, mul_comm]
+  rfl
 
 /-- Paper: (6.2.2.4), p. 299.
 The finite operator convolves a compactly supported punctured-field test with the local
