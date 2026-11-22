@@ -480,12 +480,66 @@ theorem finiteStandardThetaAverage_integrable (v : V) (χ : PontryaginDual (L(v)
   exact finiteStandardThetaAverage_integrable_of_locallyConstant (μ(v)) test htest.1 htest.2 hzero
     (fun g : (L(v))ˣ ↦ (χ g : ℂ)) hχ x
 
+/-- On a group with a left-invariant measure, convolving against a character
+factors as the character times the value at the identity. -/
+private theorem exists_finiteStandardThetaAverage_factor {G : Type*} [Group G]
+    [MeasurableSpace G] [MeasurableMul G] (ν : Measure G) [ν.IsMulLeftInvariant]
+    (φ : G → ℂ) (c : G →* Circle) (x : G) :
+    (∫ g, φ (g⁻¹ * x) * (c g : ℂ) ∂ν) = (c x : ℂ) * ∫ g, φ g⁻¹ * (c g : ℂ) ∂ν := by
+  rw [← integral_mul_left_eq_self (fun g ↦ φ (g⁻¹ * x) * (c g : ℂ)) x, ← integral_const_mul]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
+  simp only [mul_inv_rev, inv_mul_cancel_right, map_mul, Circle.coe_mul]
+  ring
+
+/-- Convolution against a character, on a subspace of a space where every linear functional
+is continuous, is a continuous linear map into the continuous functions: it is the character
+times the value of a linear functional. -/
+private theorem exists_finiteStandardThetaAverage_abstract {B G : Type*} [AddCommGroup B]
+    [Module ℂ B] [TopologicalSpace B] (p : Submodule ℂ B)
+    (hB : ∀ L : B →ₗ[ℂ] ℂ, Continuous L) [Group G] [TopologicalSpace G]
+    {_ : MeasurableSpace G} [MeasurableMul G] (ν : Measure G) [ν.IsMulLeftInvariant]
+    (χ : G →* Circle) (hχ : Continuous χ) (ev : p →ₗ[ℂ] G → ℂ)
+    (hint : ∀ f, Integrable (fun g ↦ ev f g⁻¹ * (χ g : ℂ)) ν) :
+    ∃ A : p →L[ℂ] C(G, ℂ), ∀ f x, A f x = ∫ g, ev f (g⁻¹ * x) * (χ g : ℂ) ∂ν := by
+  let c₀ : p →ₗ[ℂ] ℂ :=
+    { toFun := fun f ↦ ∫ g, ev f g⁻¹ * (χ g : ℂ) ∂ν
+      map_add' := fun f h ↦ by
+        simp only [map_add, Pi.add_apply, add_mul]
+        exact integral_add (hint f) (hint h)
+      map_smul' := fun a f ↦ by
+        simp only [map_smul, Pi.smul_apply, smul_eq_mul, mul_assoc, RingHom.id_apply]
+        exact integral_const_mul a _ }
+  obtain ⟨P, hP⟩ := LinearMap.exists_leftInverse_of_injective p.subtype p.ker_subtype
+  have hc₀ : Continuous c₀ :=
+    ((hB (c₀.comp P)).comp continuous_subtype_val).congr fun f ↦
+      congrArg c₀ (LinearMap.congr_fun hP f)
+  let χC : C(G, ℂ) := ⟨fun g ↦ (χ g : ℂ), continuous_subtype_val.comp hχ⟩
+  refine ⟨(ContinuousLinearMap.mk c₀ hc₀).smulRight χC, fun f x ↦ ?_⟩
+  rw [exists_finiteStandardThetaAverage_factor ν (ev f) χ x, mul_comm]
+  rfl
+
 /-- Paper: (6.2.2.4), p. 299.
 The finite-place convolution formula specifies a continuous linear map on
 locally constant, compactly supported functions on the punctured field. -/
 theorem exists_finiteStandardThetaAverage (v : V) (χ : PontryaginDual (L(v))ˣ) :
     ∃ A : ℬ₀(v) →L[ℂ] C((L(v))ˣ, ℂ), ∀ f x,
-      A f x = ∫ g : (L(v))ˣ, f.val (Multiplicative.ofAdd (g⁻¹ * x).val) * (χ g : ℂ) ∂μ(v) := by sorry
+      A f x = ∫ g : (L(v))ˣ, f.val (Multiplicative.ofAdd (g⁻¹ * x).val) * (χ g : ℂ) ∂μ(v) := by
+  let : BorelSpace (L(v))ˣ := ⟨rfl⟩
+  let : (μ(v)).IsHaarMeasure := finiteLocalMultiplicativeTamagawaMeasure_isHaarMeasure v
+  let ev : ℬ₀(v) →ₗ[ℂ] (L(v))ˣ → ℂ :=
+    (LinearMap.funLeft ℂ ℂ fun y : (L(v))ˣ ↦ Multiplicative.ofAdd y.val).comp
+      (((schwartzBruhatSubmodule (Multiplicative (L(v)))).subtype : ℬ(L(v)) →ₗ[ℂ] _).comp
+        (finitePuncturedThetaTestSpace v).subtype)
+  have hB (L : ℬ(L(v)) →ₗ[ℂ] ℂ) : Continuous L :=
+    (congrArg (fun t ↦ @Continuous ℬ(L(v)) ℂ t _ L)
+      (finitePlaceSchwartz_finestTopology F v)).mpr
+      (continuous_of_finestLocallyConvex ℬ(L(v)) L)
+  have hint (f : ℬ₀(v)) : Integrable (fun g ↦ ev f g⁻¹ * (χ g : ℂ)) (μ(v)) :=
+    (finiteStandardThetaAverage_integrable v χ f 1).congr
+      (Filter.Eventually.of_forall fun g ↦ congrArg (fun y : (L(v))ˣ ↦ ev f y * (χ g : ℂ))
+        (mul_one g⁻¹))
+  exact exists_finiteStandardThetaAverage_abstract (finitePuncturedThetaTestSpace v) hB (μ(v))
+    χ.toMonoidHom χ.continuous ev hint
 
 /-- Paper: (6.2.2.4), p. 299.
 The finite operator convolves a compactly supported punctured-field test with the local
