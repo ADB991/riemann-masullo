@@ -5,6 +5,8 @@ public import Mathlib.Analysis.Complex.MeanValue
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import RiemannMasullo.Ch03_IdelicZeta.Sec2
 import Mathlib.Topology.MetricSpace.UniformConvergence
+import Mathlib.Analysis.Complex.Tietze
+import Mathlib.Analysis.Convex.Measure
 
 /-!
 # §B.5 Recurrence and equidistribution
@@ -391,6 +393,129 @@ theorem kroneckerWeyl_riemannIntegrable_forward [NeZero N] (τ : Fin N → ℝ)
     Tendsto (fun T : ℝ ↦ T⁻¹ • ∫ t in 0..T, u (torusFlowInClosure τ t))
       atTop (𝓝 (∫ x, u x ∂μ)) := by sorry
 
+section KroneckerWeyl
+
+open Real UnitAddTorus
+
+/-- On the orbit closure, an exponential monomial integrates against a Haar probability
+measure to one when it is trivial along the flow, and to zero otherwise. -/
+private theorem integral_mFourier_torusFlowClosure (τ : Fin N → ℝ)
+    (μ : Measure (torusFlowClosure τ)) [μ.IsAddHaarMeasure] [IsProbabilityMeasure μ]
+    (n : Fin N → ℤ) :
+    ∫ x, mFourier n (x : UnitAddTorus (Fin N)) ∂μ =
+      if (∑ i, (n i : ℝ) * τ i) = 0 then 1 else 0 := by
+  set c := ∑ i, (n i : ℝ) * τ i
+  split_ifs with hc
+  · have hone : ∀ x ∈ (torusFlowClosure τ : Set (UnitAddTorus (Fin N))), mFourier n x = 1 := by
+      have hsub : range (torusFlow τ) ⊆ {x | mFourier n x = 1} := by
+        rintro _ ⟨t, rfl⟩
+        change mFourier n (torusFlow τ t) = 1
+        rw [mFourier_torusFlow]
+        simp [show (∑ i, (n i : ℝ) * τ i) = 0 from hc]
+      have := closure_minimal hsub (isClosed_eq (mFourier n).continuous continuous_const)
+      intro x hx
+      rw [torusFlowClosure, AddSubgroup.topologicalClosure_coe] at hx
+      exact this (by simpa using hx)
+    simp [fun x : torusFlowClosure τ ↦ hone x x.2]
+  · let h₀ : torusFlowClosure τ := torusFlowInClosure τ (1 / (2 * c))
+    have hw : mFourier n (h₀ : UnitAddTorus (Fin N)) = -1 := by
+      change mFourier n (torusFlow τ (1 / (2 * c))) = -1
+      rw [mFourier_torusFlow, show 2 * (π : ℂ) * Complex.I * (c : ℂ) * ((1 / (2 * c) : ℝ) : ℂ) =
+        π * Complex.I by
+          push_cast; field_simp [hc]]
+      exact Complex.exp_pi_mul_I
+    have h1 := integral_add_right_eq_self (μ := μ)
+      (fun x : torusFlowClosure τ ↦ mFourier n (x : UnitAddTorus (Fin N))) h₀
+    simp only [AddSubgroup.coe_add, mFourier_add_apply, hw, integral_mul_const] at h1
+    linear_combination (-1 / 2 : ℂ) * h1
+
+/-- Uniformly bounded linear time averages on the torus that converge to the orbit-closure
+integral on every exponential monomial converge to it on every continuous function. -/
+private theorem tendsto_of_mFourier (τ : Fin N → ℝ)
+    (μ : Measure (torusFlowClosure τ)) [IsProbabilityMeasure μ]
+    (A : ℝ → C(UnitAddTorus (Fin N), ℂ) → ℂ)
+    (hadd : ∀ T φ ψ, A T (φ + ψ) = A T φ + A T ψ) (hsmul : ∀ T (a : ℂ) φ, A T (a • φ) = a * A T φ)
+    (hnorm : ∀ T φ, ‖A T φ‖ ≤ ‖φ‖)
+    (hF : ∀ n, Tendsto (fun T ↦ A T (mFourier n)) atTop
+      (𝓝 (∫ x, mFourier n (x : UnitAddTorus (Fin N)) ∂μ)))
+    (φ : C(UnitAddTorus (Fin N), ℂ)) :
+    Tendsto (fun T ↦ A T φ) atTop (𝓝 (∫ x, φ (x : UnitAddTorus (Fin N)) ∂μ)) := by
+  have : CompactSpace (torusFlowClosure τ) := isCompact_iff_compactSpace.mp
+    (AddSubgroup.isClosed_topologicalClosure _).isCompact
+  have hInt (φ : C(UnitAddTorus (Fin N), ℂ)) :
+      Integrable (fun x : torusFlowClosure τ ↦ φ (x : UnitAddTorus (Fin N))) μ :=
+    integrableOn_univ.mp
+      ((φ.continuous.comp continuous_subtype_val).continuousOn.integrableOn_compact isCompact_univ)
+  have hsub (T : ℝ) (φ ψ : C(UnitAddTorus (Fin N), ℂ)) : A T φ - A T ψ = A T (φ - ψ) := by
+    rw [sub_eq_add_neg, sub_eq_add_neg, hadd, ← neg_one_smul ℂ ψ, hsmul]
+    ring
+  have hLip (T : ℝ) : LipschitzWith 1 (A T) := LipschitzWith.of_dist_le_mul fun φ ψ ↦ by
+    rw [dist_eq_norm, dist_eq_norm, hsub, NNReal.coe_one, one_mul]
+    exact hnorm T _
+  have hIcont : Continuous fun φ : C(UnitAddTorus (Fin N), ℂ) ↦
+      ∫ x, φ (x : UnitAddTorus (Fin N)) ∂μ := by
+    refine (LipschitzWith.of_dist_le_mul fun φ ψ ↦ ?_ : LipschitzWith 1 _).continuous
+    rw [dist_eq_norm, dist_eq_norm, ← integral_sub (hInt φ) (hInt ψ), NNReal.coe_one, one_mul]
+    calc ‖∫ x, (φ (x : UnitAddTorus (Fin N)) - ψ x) ∂μ‖ ≤ ‖φ - ψ‖ * (μ univ).toReal :=
+          norm_integral_le_of_norm_le_const (Eventually.of_forall fun x ↦
+            (φ - ψ).norm_coe_le_norm (x : UnitAddTorus (Fin N)))
+      _ = ‖φ - ψ‖ := by simp
+  let V : Set C(UnitAddTorus (Fin N), ℂ) :=
+    {φ | Tendsto (fun T ↦ A T φ) atTop (𝓝 (∫ x, φ (x : UnitAddTorus (Fin N)) ∂μ))}
+  have hVclosed : IsClosed V :=
+    ((LipschitzWith.uniformEquicontinuous A 1 hLip).equicontinuous).isClosed_setOfPred_tendsto
+      hIcont
+  have hzero (T : ℝ) : A T 0 = 0 := by simpa using hsmul T 0 0
+  have hspan : ((Submodule.span ℂ (range (mFourier (d := Fin N))) :
+      Set C(UnitAddTorus (Fin N), ℂ))) ⊆ V := by
+    intro φ hφ
+    induction hφ using Submodule.span_induction with
+    | mem x hx => obtain ⟨n, rfl⟩ := hx; exact hF n
+    | zero => simp [V, hzero]
+    | add φ ψ _ _ hφ hψ =>
+      change Tendsto _ _ _
+      simp only [hadd, ContinuousMap.add_apply, integral_add (hInt φ) (hInt ψ)]
+      exact hφ.add hψ
+    | smul a φ _ hφ =>
+      change Tendsto _ _ _
+      simp only [hsmul, ContinuousMap.smul_apply, smul_eq_mul, integral_const_mul]
+      exact hφ.const_mul a
+  have hmem : φ ∈ (Submodule.span ℂ (range (mFourier (d := Fin N)))).topologicalClosure := by
+    rw [span_mFourier_closure_eq_top]; trivial
+  exact closure_minimal hspan hVclosed hmem
+
+/-- The symmetric time averages of a nonconstant imaginary exponential tend to zero. -/
+private theorem tendsto_symmAverage_exp {c : ℝ} (hc : c ≠ 0) :
+    Tendsto (fun T : ℝ ↦ (2 * T : ℂ)⁻¹ * ∫ t in -T..T, Complex.exp (2 * π * Complex.I * c * t))
+      atTop (𝓝 0) := by
+  have ha : (2 * π * Complex.I * c : ℂ) ≠ 0 := by
+    simp [hc, Real.pi_ne_zero, Complex.I_ne_zero]
+  have hb (T : ℝ) : ‖Complex.exp (2 * π * Complex.I * c * T)‖ = 1 := by
+    rw [show (2 * π * Complex.I * c * T : ℂ) = ((2 * π * c * T : ℝ) : ℂ) * Complex.I by
+      push_cast; ring, Complex.norm_exp_ofReal_mul_I]
+  have hint (T : ℝ) : ‖∫ t in -T..T, Complex.exp (2 * π * Complex.I * c * t)‖ ≤
+      2 / ‖(2 * π * Complex.I * c : ℂ)‖ := by
+    rw [integral_exp_mul_complex ha, norm_div]
+    gcongr
+    calc _ ≤ ‖Complex.exp (2 * π * Complex.I * c * T)‖ +
+          ‖Complex.exp (2 * π * Complex.I * c * ((-T : ℝ) : ℂ))‖ := norm_sub_le _ _
+      _ = 2 := by rw [hb, hb]; norm_num
+  rw [tendsto_zero_iff_norm_tendsto_zero]
+  refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_
+    (by simpa using (tendsto_inv_atTop_zero.const_mul (1 / ‖(2 * π * Complex.I * c : ℂ)‖)))
+  refine (eventually_gt_atTop 0).mono fun T hT ↦ ?_
+  rw [norm_mul, norm_inv, show (2 * T : ℂ) = ((2 * T : ℝ) : ℂ) by push_cast; ring,
+    Complex.norm_real, Real.norm_of_nonneg (by linarith)]
+  calc (2 * T)⁻¹ * ‖∫ t in -T..T, Complex.exp (2 * π * Complex.I * c * t)‖
+      ≤ (2 * T)⁻¹ * (2 / ‖(2 * π * Complex.I * c : ℂ)‖) := by gcongr; exact hint T
+    _ = |c|⁻¹ * (π⁻¹ * 2⁻¹) * T⁻¹ := by
+      have hna : ‖(2 * π * Complex.I * c : ℂ)‖ = 2 * π * |c| := by
+        simp [abs_of_pos Real.pi_pos]
+      rw [hna]
+      field_simp
+
+end KroneckerWeyl
+
 /-- Paper: Theorem B.5.2.1(2), p. 627.
 Symmetric time averages of a continuous observable converge to its Haar probability integral.
 Deviation: This is the continuous case singled out in the paper. -/
@@ -398,7 +523,52 @@ theorem kroneckerWeyl_continuous_symmetric [NeZero N] (τ : Fin N → ℝ)
     (μ : Measure (torusFlowClosure τ)) [μ.IsAddHaarMeasure] [IsProbabilityMeasure μ]
     (u : C(torusFlowClosure τ, ℂ)) :
     Tendsto (fun T : ℝ ↦ (2 * T)⁻¹ • ∫ t in -T..T, u (torusFlowInClosure τ t))
-      atTop (𝓝 (∫ x, u x ∂μ)) := by sorry
+      atTop (𝓝 (∫ x, u x ∂μ)) := by
+  classical
+  have hce : Topology.IsClosedEmbedding ((↑) : torusFlowClosure τ → UnitAddTorus (Fin N)) :=
+    (AddSubgroup.isClosed_topologicalClosure _).isClosedEmbedding_subtypeVal
+  obtain ⟨φ, hφ⟩ := u.exists_extension' hce
+  have hu (x : torusFlowClosure τ) : u x = φ x := (congrFun hφ x).symm
+  have hII (φ : C(UnitAddTorus (Fin N), ℂ)) (a b : ℝ) :
+      IntervalIntegrable (fun t ↦ φ (torusFlow τ t)) volume a b :=
+    (φ.continuous.comp (torusFlow τ).continuous).intervalIntegrable _ _
+  let A : ℝ → C(UnitAddTorus (Fin N), ℂ) → ℂ :=
+    fun T φ ↦ (2 * T : ℂ)⁻¹ * ∫ t in -T..T, φ (torusFlow τ t)
+  have key := tendsto_of_mFourier τ μ A
+    (fun T φ ψ ↦ by
+      simp only [A, ContinuousMap.add_apply, intervalIntegral.integral_add (hII φ (-T) T)
+        (hII ψ (-T) T), mul_add])
+    (fun T a φ ↦ by
+      simp only [A, ContinuousMap.smul_apply, smul_eq_mul, intervalIntegral.integral_const_mul]
+      ring)
+    (fun T φ ↦ by
+      rcases eq_or_ne T 0 with rfl | hT
+      · simp [A]
+      simp only [A]
+      rw [show (2 * T : ℂ) = ((2 * T : ℝ) : ℂ) by push_cast; ring, norm_mul, norm_inv,
+        Complex.norm_real, Real.norm_eq_abs]
+      calc |2 * T|⁻¹ * ‖∫ t in -T..T, φ (torusFlow τ t)‖ ≤ |2 * T|⁻¹ * (‖φ‖ * |T - -T|) := by
+            gcongr
+            exact intervalIntegral.norm_integral_le_of_norm_le_const fun t _ ↦
+              φ.norm_coe_le_norm _
+        _ = ‖φ‖ := by
+          rw [show T - -T = 2 * T by ring]
+          field_simp [abs_ne_zero.mpr (mul_ne_zero two_ne_zero hT)])
+    (fun n ↦ by
+      rw [integral_mFourier_torusFlowClosure]
+      split_ifs with hc
+      · refine tendsto_const_nhds.congr' ((eventually_ne_atTop 0).mono fun T hT ↦ ?_)
+        have hT' : (T : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hT
+        simp [A, mFourier_torusFlow, hc]
+        field_simp
+        ring
+      · simp only [A, mFourier_torusFlow]
+        exact tendsto_symmAverage_exp hc) φ
+  simp only [hu]
+  convert key using 2 with T
+  simp only [A, Complex.real_smul]
+  push_cast
+  rfl
 
 /-- Paper: Theorem B.5.2.1(2), p. 627.
 Forward time averages of a continuous observable converge to its Haar probability integral.
@@ -407,7 +577,44 @@ theorem kroneckerWeyl_continuous_forward [NeZero N] (τ : Fin N → ℝ)
     (μ : Measure (torusFlowClosure τ)) [μ.IsAddHaarMeasure] [IsProbabilityMeasure μ]
     (u : C(torusFlowClosure τ, ℂ)) :
     Tendsto (fun T : ℝ ↦ T⁻¹ • ∫ t in 0..T, u (torusFlowInClosure τ t))
-      atTop (𝓝 (∫ x, u x ∂μ)) := by sorry
+      atTop (𝓝 (∫ x, u x ∂μ)) := by
+  classical
+  have hce : Topology.IsClosedEmbedding ((↑) : torusFlowClosure τ → UnitAddTorus (Fin N)) :=
+    (AddSubgroup.isClosed_topologicalClosure _).isClosedEmbedding_subtypeVal
+  obtain ⟨φ, hφ⟩ := u.exists_extension' hce
+  have hu (x : torusFlowClosure τ) : u x = φ x := (congrFun hφ x).symm
+  have hII (φ : C(UnitAddTorus (Fin N), ℂ)) (a b : ℝ) :
+      IntervalIntegrable (fun t ↦ φ (torusFlow τ t)) volume a b :=
+    (φ.continuous.comp (torusFlow τ).continuous).intervalIntegrable _ _
+  let A : ℝ → C(UnitAddTorus (Fin N), ℂ) → ℂ :=
+    fun T φ ↦ (T : ℂ)⁻¹ * ∫ t in (0 : ℝ)..T, φ (torusFlow τ t)
+  have key := tendsto_of_mFourier τ μ A
+    (fun T φ ψ ↦ by
+      simp only [A, ContinuousMap.add_apply, intervalIntegral.integral_add (hII φ 0 T)
+        (hII ψ 0 T), mul_add])
+    (fun T a φ ↦ by
+      simp only [A, ContinuousMap.smul_apply, smul_eq_mul, intervalIntegral.integral_const_mul]
+      ring)
+    (fun T φ ↦ by
+      rcases eq_or_ne T 0 with rfl | hT
+      · simp [A]
+      simp only [A, norm_mul, norm_inv, Complex.norm_real, Real.norm_eq_abs]
+      calc |T|⁻¹ * ‖∫ t in (0 : ℝ)..T, φ (torusFlow τ t)‖ ≤ |T|⁻¹ * (‖φ‖ * |T - 0|) := by
+            gcongr
+            exact intervalIntegral.norm_integral_le_of_norm_le_const fun t _ ↦
+              φ.norm_coe_le_norm _
+        _ = ‖φ‖ := by rw [sub_zero]; field_simp [abs_ne_zero.mpr hT])
+    (fun n ↦ by
+      rw [integral_mFourier_torusFlowClosure]
+      split_ifs with hc
+      · refine tendsto_const_nhds.congr' ((eventually_ne_atTop 0).mono fun T hT ↦ ?_)
+        simp [A, mFourier_torusFlow, hc, hT]
+      · simp only [A, mFourier_torusFlow]
+        exact tendsto_average_exp hc) φ
+  simp only [hu]
+  convert key using 2 with T
+  simp only [A, Complex.real_smul, Complex.ofReal_inv]
+  rfl
 
 /-- Paper: Lemma B.5.2.2, p. 627.
 The indicator of an open set with null boundary can be sandwiched between continuous
@@ -476,13 +683,98 @@ theorem exists_continuous_sandwich_indicator {X : Type*} [TopologicalSpace X] [T
 -- Away from the coordinate seams the cube projection is a local homeomorphism, so the
 -- torus frontier lies in the image of the relative frontier together with the null seams.
 
+/-- Inside the window, a preimage of the image frontier lies on either the relative frontier or the window boundary. -/
+private theorem preimage_frontier_image_inter_subset {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] {q : X → Y} (hq : IsOpenMap q)
+    (hcont : Continuous q) {C D : Set X} (hinj : InjOn q C) (hDC : interior D ⊆ C)
+    (U : Set C) :
+    q ⁻¹' frontier (q '' (Subtype.val '' U)) ∩ D ⊆ Subtype.val '' frontier U ∪ frontier D := by
+  let S : Set X := Subtype.val '' U
+  have hSC : S ⊆ C := by
+    rintro x ⟨y, _, rfl⟩
+    exact y.property
+  have hlocal : (q ⁻¹' (q '' S)) ∩ interior D = S ∩ interior D := calc
+    _ = ((q ⁻¹' (q '' S)) ∩ C) ∩ interior D := by
+      rw [inter_assoc, inter_eq_self_of_subset_right hDC]
+    _ = _ := congrArg (· ∩ interior D) (hinj.preimage_image_inter hSC)
+  have hfront : frontier (q ⁻¹' (q '' S)) ∩ interior D = frontier S ∩ interior D := by
+    rw [← frontier_inter_open_inter (s := q ⁻¹' (q '' S)) isOpen_interior,
+      hlocal, frontier_inter_open_inter isOpen_interior]
+  intro x hx
+  by_cases hi : x ∈ interior D
+  · left
+    have hxS : x ∈ frontier S ∩ interior D := by
+      rw [← hfront, ← hq.preimage_frontier_eq_frontier_preimage hcont]
+      exact ⟨hx.1, hi⟩
+    rw [frontier_eq_closure_inter_closure] at hxS
+    refine ⟨⟨x, hDC hi⟩, ?_, rfl⟩
+    rw [frontier_eq_closure_inter_closure]
+    constructor
+    · rw [Topology.IsEmbedding.subtypeVal.closure_eq_preimage_closure_image]
+      exact hxS.1.1
+    · rw [Topology.IsEmbedding.subtypeVal.closure_eq_preimage_closure_image]
+      refine closure_mono ?_ (isOpen_interior.closure_inter ⟨hxS.1.2, hi⟩)
+      intro y hy
+      refine ⟨⟨y, hDC hy.2⟩, ?_, rfl⟩
+      intro hyU
+      exact hy.1 ⟨_, hyU, rfl⟩
+  · exact Or.inr ⟨subset_closure hx.2, hi⟩
+
+/-- Torus volume is measured on the preimage in a product of right-closed fundamental intervals. -/
+private theorem volume_torusQuotient_preimage_Ioc (a : Fin N → ℝ)
+    (V : Set (UnitAddTorus (Fin N))) (hV : MeasurableSet V) :
+    volume V = volume ((torusQuotient N ⁻¹' V) ∩ univ.pi (fun i ↦ Ioc (a i) (a i + 1))) := by
+  let I : Fin N → Set ℝ := fun i ↦ Ioc (a i) (a i + 1)
+  have hmp : MeasurePreserving (torusQuotient N) (Measure.pi fun i ↦ volume.restrict (I i))
+      (volume : Measure (UnitAddTorus (Fin N))) :=
+    measurePreserving_pi (fun i : Fin N ↦ (volume : Measure ℝ).restrict (I i))
+      (fun _ : Fin N ↦ (volume : Measure UnitAddCircle))
+      (f := fun _ ↦ ((↑) : ℝ → UnitAddCircle))
+      (fun i ↦ AddCircle.measurePreserving_mk 1 (a i))
+  have hmap : (volume.restrict (univ.pi I)).map (torusQuotient N) = volume := by
+    rw [show (volume : Measure (Fin N → ℝ)) = Measure.pi (fun _ ↦ volume) from rfl,
+      Measure.restrict_pi_pi]
+    exact hmp.map_eq
+  rw [← hmap, Measure.map_apply hmp.measurable hV, Measure.restrict_apply (hV.preimage hmp.measurable)]
+
 /-- Paper: Remark B.5.2.3(1), p. 628.
 A subset of the half-open cube with a null relative frontier has a torus image with null
 frontier. The restricted Lebesgue measure identifies relative null sets via their images
 in the ambient real vector space. -/
 theorem volume_frontier_torusQuotient_image [NeZero N] (U : Set (unitHalfOpenCube N))
     (hU : volume (Subtype.val '' frontier U) = 0) :
-    volume (frontier (torusQuotient N '' (Subtype.val '' U))) = 0 := by sorry
+    volume (frontier (torusQuotient N '' (Subtype.val '' U))) = 0 := by
+  let q : (Fin N → ℝ) → UnitAddTorus (Fin N) := torusQuotient N
+  have hqcont : Continuous q := (torusQuotient N).continuous
+  let C := unitHalfOpenCube N
+  let D : Set (Fin N → ℝ) := univ.pi fun _ ↦ Icc (0 : ℝ) 1
+  have hq : IsOpenMap q := by
+    change IsOpenMap (Pi.map (fun _ : Fin N ↦ ((↑) : ℝ → AddCircle (1 : ℝ))))
+    exact (IsOpenQuotientMap.piMap fun _ : Fin N ↦
+      QuotientAddGroup.isOpenQuotientMap_mk (N := AddSubgroup.zmultiples (1 : ℝ))).isOpenMap
+  have hinj : InjOn q C := by
+    intro x hx y hy hxy
+    funext i
+    exact AddCircle.injOn_coe_Ico (p := (1 : ℝ)) 0
+      (by simpa only [zero_add] using hx i) (by simpa only [zero_add] using hy i)
+      (congrFun hxy i)
+  have hDC : interior D ⊆ C := by
+    rw [show interior D = univ.pi (fun _ : Fin N ↦ Ioo (0 : ℝ) 1) by
+      simp only [D, interior_pi_set finite_univ, interior_Icc]]
+    intro x hx i
+    exact ⟨(hx i (mem_univ i)).1.le, (hx i (mem_univ i)).2⟩
+  have hD : volume (frontier D) = 0 :=
+    Convex.addHaar_frontier volume (convex_pi (fun _ _ ↦ convex_Icc _ _) : Convex ℝ D)
+  let a : Fin N → ℝ := 0
+  let B : Set (Fin N → ℝ) := univ.pi fun i ↦ Ioc (a i) (a i + 1)
+  have hBD : B ⊆ D := by
+    intro x hx i _
+    have hi : x i ∈ Ioc (0 : ℝ) 1 := by simpa [a] using hx i (mem_univ i)
+    exact ⟨hi.1.le, hi.2⟩
+  rw [volume_torusQuotient_preimage_Ioc a _ isClosed_frontier.measurableSet]
+  refine measure_mono_null ?_ (measure_union_null hU hD)
+  intro x hx
+  exact preimage_frontier_image_inter_subset hq hqcont hinj hDC U ⟨hx.1, hBD hx.2⟩
 
 /-- Paper: Remark B.5.2.3(2), p. 628.
 For a Jordan-measurable subset of the cube, its torus image and the interior of that
