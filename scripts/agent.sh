@@ -234,6 +234,10 @@ ${review:-(none)}"
         fi
       ) 8>"$main/.agent/seed.lock" || true
     fi
+    # A worktree for an existing pull request starts from the seed's build too, when there is
+    # one: the main checkout is pulled all the time and rarely built, and a revision that began
+    # from its build spent forty minutes recompiling the library before the agent started.
+    [ -z "$pr" ] || [ ! -e "$seed/.lake/built-at" ] || from="$seed/.lake/build"
     if [ ! -e "$wt/.lake/build" ] && [ -d "$from" ]; then
       cp -a --reflink=auto "$from" "$wt/.lake/build" 2>/dev/null || rm -rf "$wt/.lake/build"
     fi
