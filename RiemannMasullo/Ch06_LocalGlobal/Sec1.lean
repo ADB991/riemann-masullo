@@ -152,10 +152,96 @@ theorem mem_relativeIntegralIdeleUnits_iff (g : (SAdeleRing F T)ˣ) :
     · refine Units.ext (Prod.ext h1.symm (funext fun w ↦ ?_))
       exact he _ _ w.2
 
+open scoped RestrictedProduct in
+/-- The local integer rings form a compact subset of the finite adeles. -/
+private theorem outsideIntegralIdeleUnits_isCompact_integral :
+    IsCompact {a : FiniteAdeleRing (𝓞 F) F | ∀ v, a v ∈ HeightOneSpectrum.adicCompletionIntegers F v} := by
+  let K := fun v : Places ↦ v.adicCompletion F
+  let O := fun v : Places ↦ (v.adicCompletionIntegers F : Set (K v))
+  have (v : Places) : CompactSpace (v.adicCompletionIntegers F) :=
+    compactSpace_adicCompletionIntegers v
+  let j : (∀ v : Places, v.adicCompletionIntegers F) → Πʳ v, [K v, O v]_[Filter.principal Set.univ] :=
+    fun x ↦ ⟨fun v ↦ x v, Filter.Eventually.of_forall fun v ↦ (x v).property⟩
+  let i := RestrictedProduct.inclusion K O
+    (show Filter.cofinite ≤ Filter.principal (Set.univ : Set Places) by simp)
+  have hj : Continuous j := RestrictedProduct.continuous_rng_of_principal.mpr
+    (continuous_pi fun v ↦ continuous_subtype_val.comp (continuous_apply v))
+  have hc := isCompact_range ((RestrictedProduct.continuous_inclusion _).comp hj :
+    Continuous (i ∘ j))
+  have h : Set.range (i ∘ j) =
+      {a : FiniteAdeleRing (𝓞 F) F | ∀ v, a v ∈ v.adicCompletionIntegers F} := by
+    apply Set.ext
+    intro a
+    exact ⟨fun ⟨x, hx⟩ v ↦ hx ▸ (x v).property,
+      fun ha ↦ ⟨fun v ↦ ⟨a v, ha v⟩, rfl⟩⟩
+  rwa [← h]
+
 /-- Paper: (6.1.2.2), p. 288.
 The group of integral idelic units outside S is compact in the global ideles. -/
 theorem outsideIntegralIdeleUnits_isCompact :
-    IsCompact (outsideIntegralIdeleUnits F S : Set (IdeleGroup (𝓞 F) F)) := by sorry
+    IsCompact (outsideIntegralIdeleUnits F S : Set (IdeleGroup (𝓞 F) F)) := by
+  classical
+  let K : Submonoid (AdeleRing (𝓞 F) F) :=
+    { carrier := {a | a.1 = 1 ∧ (∀ w ∈ S, a.2 w = 1) ∧ ∀ w, a.2 w ∈ O(w)}
+      mul_mem' := fun {a b} ha hb ↦ ⟨by rw [Prod.fst_mul, ha.1, hb.1, one_mul],
+        fun w hw ↦ by
+          change a.2 w * b.2 w = 1
+          rw [ha.2.1 w hw, hb.2.1 w hw, one_mul],
+        fun w ↦ by
+          change a.2 w * b.2 w ∈ O(w)
+          exact mul_mem (ha.2.2 w) (hb.2.2 w)⟩
+      one_mem' := ⟨rfl, fun _ _ ↦ rfl, fun w ↦ one_mem (O(w))⟩ }
+  have hK : IsCompact (K : Set (AdeleRing (𝓞 F) F)) := by
+    have hcl : IsClosed {a : FiniteAdeleRing (𝓞 F) F | ∀ w ∈ S, a w = 1} := by
+      simp only [Set.setOf_forall]
+      exact isClosed_iInter fun w ↦ isClosed_iInter fun _ ↦
+        isClosed_eq (RestrictedProduct.continuous_eval w) continuous_const
+    have h1 := (isCompact_singleton (x := (1 : InfiniteAdeleRing F))).prod
+      (outsideIntegralIdeleUnits_isCompact_integral.inter_right hcl)
+    have he : (K : Set (AdeleRing (𝓞 F) F)) = ({1} : Set (InfiniteAdeleRing F)) ×ˢ
+        ({a : FiniteAdeleRing (𝓞 F) F | ∀ v, a v ∈ HeightOneSpectrum.adicCompletionIntegers F v} ∩
+          {a : FiniteAdeleRing (𝓞 F) F | ∀ w ∈ S, a w = 1}) := by
+      ext a
+      change (a.1 = 1 ∧ (∀ w ∈ S, a.2 w = 1) ∧ ∀ w, a.2 w ∈ O(w)) ↔
+        a.1 = 1 ∧ ((∀ v, a.2 v ∈ O(v)) ∧ ∀ w ∈ S, a.2 w = 1)
+      tauto
+    exact he ▸ h1
+  have hinv (g : IdeleGroup (𝓞 F) F) : (g⁻¹).val * g.val = 1 := Units.inv_mul g
+  have heq : (outsideIntegralIdeleUnits F S : Set (IdeleGroup (𝓞 F) F)) = K.units := by
+    ext g
+    rw [SetLike.mem_coe, mem_outsideIntegralIdeleUnits_iff, SetLike.mem_coe,
+      Submonoid.mem_units_iff]
+    have h1 := congrArg Prod.fst (hinv g)
+    have h2 := fun w ↦ congrFun (congrArg (fun a : AdeleRing (𝓞 F) F ↦ ⇑a.2) (hinv g)) w
+    change (g⁻¹).val.1 * g.val.1 = 1 at h1
+    change ∀ w, (g⁻¹).val.2 w * g.val.2 w = 1 at h2
+    constructor
+    · rintro ⟨ha, hS, hO⟩
+      refine ⟨⟨ha, hS, fun w ↦ ?_⟩, ⟨?_, fun w hw ↦ ?_, fun w ↦ ?_⟩⟩
+      · by_cases hw : w ∈ S
+        · rw [hS w hw]; exact one_mem _
+        · exact (hO w hw).1
+      · rwa [ha, mul_one] at h1
+      · have := h2 w
+        rwa [hS w hw, mul_one] at this
+      · by_cases hw : w ∈ S
+        · have := h2 w
+          rw [hS w hw, mul_one] at this
+          change (g⁻¹).val.2 w ∈ O(w)
+          rw [this]; exact one_mem _
+        · exact (hO w hw).2
+    · rintro ⟨⟨ha, hS, hO⟩, ⟨_, _, hO'⟩⟩
+      exact ⟨ha, hS, fun w _ ↦ ⟨hO w, hO' w⟩⟩
+  rw [heq]
+  have : T2Space (FiniteAdeleRing (𝓞 F) F) :=
+    T2Space.of_injective_continuous
+      (f := fun a : FiniteAdeleRing (𝓞 F) F ↦ (⇑a : ∀ v : Places, v.adicCompletion F))
+      (fun _ _ h ↦ Subtype.ext h) (continuous_pi fun v ↦ RestrictedProduct.continuous_eval v)
+  have : T2Space (InfiniteAdeleRing F) :=
+    inferInstanceAs (T2Space (∀ v : InfinitePlace F, v.Completion))
+  have : T2Space (AdeleRing (𝓞 F) F) :=
+    inferInstanceAs (T2Space (InfiniteAdeleRing F × FiniteAdeleRing (𝓞 F) F))
+  exact Submonoid.units_isCompact hK
 
 /-- Paper: (6.1.2.1), p. 288.
 The group of integer units inserted at the additional finite places is compact in the T-ideles. -/
@@ -465,7 +551,12 @@ Consequently the algebraic and continuous coinvariant quotients use the same rel
 Deviation: The closure equality states both conclusions on the relation submodule. -/
 theorem finitePlaceSchwartz_unitRelations_closure_eq (w : Places) :
     (Representation.Coinvariants.ker (ρ(w))).topologicalClosure =
-      Representation.Coinvariants.ker (ρ(w)) := by sorry
+      Representation.Coinvariants.ker (ρ(w)) := by
+  apply IsClosed.submodule_topologicalClosure_eq
+  exact (congrArg (fun t ↦ @IsClosed ℬᵥ(w) t (Representation.Coinvariants.ker (ρ(w)) : Set ℬᵥ(w)))
+    (finitePlaceSchwartz_finestTopology (F := F) w)).mpr
+    (finestLocallyConvex_submodule_isClosed (E := schwartzBruhatSubmodule (Multiplicative (L(w))))
+      (Representation.Coinvariants.ker (ρ(w))))
 
 /-- Paper: (6.1.2.14), p. 292.
 Averaging a local test function evaluates it along the multiplicative orbit and integrates
