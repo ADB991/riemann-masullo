@@ -54,7 +54,7 @@ or an abstract private lemma avoids it.
 - RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean: #5328 #5329 #5332 (in PR); session ADB991-claude-20261122-b7e4; branch claude/sweep-ch09-sec3-printed-b7e4; PR https://github.com/mccorvie/riemann-masullo/pull/5438; last touched 2026-11-22T18:20Z
 
 
-- RiemannMasullo/Ch10_TraceSpectral/Sec1.lean: #4877 #4879 #4883 #4884 #4885 #4897 #4898 #4902 (proved, in PR); session ADB991-claude-20261122-a7c2; branch claude/sweep-ch10-sec1-a7c2 (pushed); PR requested via bridge (awaiting result); other 19 released; last touched 2026-11-22T18:39Z
+- RiemannMasullo/Ch10_TraceSpectral/Sec1.lean: #4877 #4879 #4883 #4884 #4885 #4897 #4898 #4902 (proved, in PR); session ADB991-claude-20261122-a7c2; branch claude/sweep-ch10-sec1-a7c2 (pushed); PR https://github.com/mccorvie/riemann-masullo/pull/5451 (open, awaiting checks); other 19 released; last touched 2026-11-22T18:39Z
 
 
 
@@ -62,7 +62,7 @@ or an abstract private lemma avoids it.
 
 ## runs
 
-- 2026-11-22 ADB991-claude-20261122-a7c2: Ch10_TraceSpectral/Sec1.lean, proved #4877 #4879 #4883 #4884 #4885 #4897 #4898 #4902 (PR from claude/sweep-ch10-sec1-a7c2). Released the other 19 with notes (#4880 needs an S-local analogue of ideleClassTamagawaMeasure_eq_smul_canonical; #4900 sketched).
+- 2026-11-22 ADB991-claude-20261122-a7c2: Ch10_TraceSpectral/Sec1.lean, proved #4877 #4879 #4883 #4884 #4885 #4897 #4898 #4902 (PR #5451, branch claude/sweep-ch10-sec1-a7c2). Released the other 19 with notes (#4880 needs an S-local analogue of ideleClassTamagawaMeasure_eq_smul_canonical; #4900 sketched).
 
 - 2026-11-22 ADB991-claude-20261122-b7e4: Ch09_HardySobolev/Sec3_Printed.lean, proved refutations #5328 #5329 #5332 (concrete counterexamples on ℝ>0 with dt/t), PR https://github.com/mccorvie/riemann-masullo/pull/5438. #5330 #5331 not claimed (heavier: isotype bands, Mellin jets of Gaussians). No releases.
 
