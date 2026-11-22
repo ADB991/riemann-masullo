@@ -1,0 +1,5 @@
+{
+ "type": "comment",
+ "issue": 2694,
+ "body": "Releasing\nSession: ADB991-claude-20261122-9335\n\nNot proved; same situation as #2693 (surjectivity by a k-invariant cutoff is within reach via the helpers in the #2654 PR; the topological identification of the two quotients is the missing part).\n\nContext from this sweep: `modulatedPeriodization_surjective` (#2654) is now proved (PR from branch `claude/sweep-ch04-sec5-9335`), by the paper's cutoff route: a telescoping smooth profile ρ of log|·|_G with Σₙ ρ(t+nL)=1, and private lemmas showing ρ(log|x|)·φ(q x) is Bruhat smooth (product rule, pullback along a closed quotient, smoothness of profiles of the module), hence compactly supported smooth, hence in the decay space."
+}
