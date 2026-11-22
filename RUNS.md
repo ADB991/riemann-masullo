@@ -28,7 +28,7 @@ GitHub GraphQL is refused from the sandbox: use `gh api` REST (search/issues nee
 
 - 2026-11-22 ADB991-claude-20261122-db2b: Ch11_ShellStructure/Sec1a.lean, proved #4699 #4702 (file now sorry-free), PR https://github.com/mccorvie/riemann-masullo/pull/5234 (branch claude/sweep-ch11-sec1a-db2b). Ch06 Sec1 claim of f988 left alone (live).
 
-- 2026-11-22 ADB991-claude-20261122-8e13: Ch07_SchauderBasesZeta/Sec1a.lean, proved #4036 (Laurent expansion of the zeta germ); released #4037 #4038 with notes (need explicit local Tate factor forms, private in Ch03 Sec3b). PR from branch claude/sweep-ch07-sec1a-8e13 (see sent/20261122T150422Z-pr-ch07-sec1a.json).
+- 2026-11-22 ADB991-claude-20261122-8e13: Ch07_SchauderBasesZeta/Sec1a.lean, proved #4036 (Laurent expansion of the zeta germ); released #4037 #4038 with notes (need explicit local Tate factor forms, private in Ch03 Sec3b). PR from branch claude/sweep-ch07-sec1a-8e13 https://github.com/mccorvie/riemann-masullo/pull/5313.
 
 ## for Andrea
 
