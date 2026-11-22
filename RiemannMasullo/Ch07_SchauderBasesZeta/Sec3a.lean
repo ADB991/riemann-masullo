@@ -137,7 +137,8 @@ The finite principal-value image is closed in the homogeneous theta space.
 Deviation: Uses the finite-place selection of part (1). -/
 theorem sLocalOrbitalPrincipalValue_isClosed {T : Finset V} (hT : T ⊆ S) (_hTne : T.Nonempty)
     (_hS : IsSaturatedPlaceSet S) (_hPic : PicTrivial) (ω : PontryaginDual J₁) :
-    IsClosed (PV(T, hT, ω) : Set (Θₛ(ω))) := by sorry
+    IsClosed (PV(T, hT, ω) : Set (Θₛ(ω))) := by
+  exact (sLocalHomogeneousThetaPrincipalValue_isClosedEmbedding (F := F) (S := S) hT ω).isClosed_range
 
 /-- Paper: Theorem 7.3.1.2(2), p. 341.
 The annihilator of the finite principal-value image is the closed span of the selected
