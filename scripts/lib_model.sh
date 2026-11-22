@@ -5,16 +5,18 @@
 # 1. A local, uncommitted file <main>/.agent/model-map redirects a model that this machine has
 #    stopped using by default, for command lines that do not name a CLI. One pair per line: the
 #    name asked for, the name to run.
-#        gpt-6.2-sol    claude-opus-5-5
-#        gpt-6.2-astra  claude-fable-5-2
+#        claude-opus-5-5   gpt-6.2-sol
+#        claude-fable-5-2  gpt-6.2-astra
+#        default           gpt-6.2-sol
 #    Naming the CLI (--cli codex --model gpt-6.2-astra) is a deliberate choice and is not
 #    redirected.
 # 2. If --cli was not given, it follows from the model's name; with no model either, Claude
 #    Code is used when it is installed, and Codex otherwise.
 resolve_model() {
   local map="$1/.agent/model-map" to
-  if [ -z "${cli:-}" ] && [ -n "${model:-}" ] && [ -f "$map" ]; then
-    to=$(awk -v m="$model" '$1 == m { print $2; exit }' "$map")
+  if [ -z "${cli:-}" ] && [ -f "$map" ]; then
+    # A line "default <model>" names the model for command lines that give none.
+    to=$(awk -v m="${model:-default}" '$1 == m { print $2; exit }' "$map")
     [ -z "$to" ] || model=$to
   fi
   if [ -z "${cli:-}" ]; then
