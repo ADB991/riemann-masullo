@@ -30,11 +30,13 @@ on a trimmed scratch copy (file header + the needed declarations; `lake lean .ag
 this library `obtain ⟨..⟩ :=` on an existential over ℬ-subtypes can make elaboration run away; `.elim fun .. ↦ ?_`
 or an abstract private lemma avoids it.
 
+(2026-11-22, f988) Fresh container: project oleans are NOT cached; building Ch06 deps (161 modules) took ~1.5 h on 4 cores. Background bash commands default to a 10 min limit: pass a long timeout. `lake lean` of a scratch copy with `#exit` inserted is a fast way to bisect (~15 s per run for Ch06/Sec1).
+(2026-11-22, f988) Lean pitfalls around `SchwartzBruhat` (ℬ) types: `obtain ⟨A, hA⟩` on an ∃ over a linear map out of ℬ can hang forever (use `choose`); `rw` leaving a goal about ℬ values can hang (use `rewrite`/explicit Eq.trans); `have` of class instances (T2Space, PolynormableSpace) in context made `Add ℬ` synthesis time out; to use `finitePlaceSchwartz_finestTopology` pass `FinestLocallyConvex (schwartzBruhatSubmodule _)`, not `FinestLocallyConvex ℬ`, via `(congrArg (fun t ↦ @P _ t ..) h).mpr`.
+
 ## open
 
 - RiemannMasullo/Ch10_TraceSpectral/Sec1.lean: #4871 #4872 #4873 #4876 #4877 #4879 #4880 #4881 #4883 #4884 #4885 #4887 #4889 #4890 #4891 #4892 #4893 #4894 #4895 #4896 #4897 #4898 #4900 #4901 #4902 #4903 #4904; session ADB991-claude-20261122-a7c2; branch claude/sweep-ch10-sec1-a7c2 (not pushed yet); PR none; last touched 2026-11-22T16:40Z
 
-- RiemannMasullo/Ch06_LocalGlobal/Sec1.lean: #4266 #4274 #4276 #4278 #4281 #4282 #4283 #4284 #4288; session ADB991-claude-20261122-f988; branch claude/sweep-ch06-sec1-f988 (not pushed yet); PR none; last touched 2026-11-22T13:09Z
 
 
 - RiemannMasullo/Ch02_AdelicTheta/Sec2b.lean: #3523 #3524; session ADB991-claude-20261122-d618; branch claude/sweep-ch02-sec2b-d618 (pushed); PR https://github.com/mccorvie/riemann-masullo/pull/5346 (open, awaiting PR check); last touched 2026-11-22T15:47Z
@@ -43,6 +45,8 @@ or an abstract private lemma avoids it.
 - RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5.lean: #2654 #2667 #2688 #2691 #2693 #2694 #2696 #2708 #2711; session ADB991-claude-20261122-9335; branch claude/sweep-ch04-sec5-9335 (pushed; #2654 proved); PR none; last touched 2026-11-22T16:28Z
 
 ## runs
+
+- 2026-11-22 ADB991-claude-20261122-f988: Ch06_LocalGlobal/Sec1.lean. Proved #4266, #4278 (PR from claude/sweep-ch06-sec1-f988). Released #4274 #4276 #4281 #4282 #4283 #4284 #4288 with notes; full Lean draft of the averaging/Laurent proofs in drafts/Ch06-Sec1-sweep-f988-draft.lean (elaboration problems, see setup notes).
 
 - 2026-11-22 session ADB991-claude-20261122-7c3e: Ch06_LocalGlobal/Sec2.lean. Proved #4311 (PR #5351). Released #4306 #4308 #4316 (archimedean integrals over N∞: need decay bounds that exist only as private lemmas in Ch02 Sec2a/Sec2b and a concrete form of sNormOneIdeleTamagawaMeasure). Claim closed.
 
