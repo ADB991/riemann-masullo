@@ -6,6 +6,7 @@ import RiemannMasullo.ForMathlib.MeasureTheory.Measure.Count
 public import RiemannMasullo.ForMathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import RiemannMasullo.ForMathlib.Analysis.LocallyConvex.Bounded
 import RiemannMasullo.ForMathlib.Analysis.LocallyConvex.Completion
 import RiemannMasullo.ForMathlib.Analysis.LocallyConvex.Montel
@@ -254,9 +255,125 @@ theorem modulatedPeriodization_deriv_tendstoUniformlyOn (f : E)
   exact Eq.mp (congrArg₂ U (hv.iterate_right r f) (hp.iterate_right r f))
     (modulatedPeriodization_tendstoUniformlyOn m γ hm hms hγ (D^[r] f) C hC)
 
+omit hSC in
+include hm hγ in
+/-- Paper: Proposition 4.5.1.1(1), p. 199 (proof of surjectivity). The product of a
+smooth compactly supported profile of the logarithm of the module with the pullback
+of a Schwartz–Bruhat function on the cyclic quotient is Bruhat smooth on G.
+This is the step of the printed proof asserting that u₀ · (φ ∘ π) is smooth, for
+the cutoff u₀ = ρ ∘ log |·|_G. Compact support of the product is proved
+separately in `modulatedPeriodization_surjective`. -/
+theorem modulatedPeriodization_cutoff_isBruhatSmooth {ρ : ℝ → ℂ}
+    (hρ : ContDiff ℝ ((⊤ : ℕ∞) : WithTop ℕ∞) ρ) (hρc : HasCompactSupport ρ) (φ : S) :
+    IsBruhatSmooth (fun x : G ↦ ρ (Real.log ((m x).val : ℝ)) * φ (q x)) := by sorry
+
+/-- A telescoping smooth profile: its translates by one period sum to one. -/
+private theorem modulatedPeriodization_surjective_profile {T : ℝ} (hL : 0 < T) :
+    ∃ ρ : ℝ → ℝ, ContDiff ℝ ((⊤ : ℕ∞) : WithTop ℕ∞) ρ ∧ HasCompactSupport ρ ∧
+      ∀ t, HasSum (fun n : ℤ ↦ ρ (t + n * T)) 1 := by
+  let H (t : ℝ) := Real.smoothTransition (t / T)
+  have H0 {t : ℝ} (ht : t ≤ 0) : H t = 0 :=
+    Real.smoothTransition.zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg ht hL.le)
+  have H1 {t : ℝ} (ht : T ≤ t) : H t = 1 :=
+    Real.smoothTransition.one_of_one_le ((one_le_div hL).mpr ht)
+  refine ⟨fun t ↦ H (t + T) - H t, ?_, ?_, fun t ↦ ?_⟩
+  · have hH : ContDiff ℝ ((⊤ : ℕ∞) : WithTop ℕ∞) H := Real.smoothTransition.contDiff.comp (contDiff_id.div_const T)
+    exact (hH.comp (contDiff_id.add contDiff_const)).sub hH
+  · refine HasCompactSupport.intro (isCompact_Icc (a := -T) (b := T)) fun t ht ↦ ?_
+    rcases le_or_gt t T with h | h
+    · have h' : t < -T := by
+        by_contra h''
+        exact ht ⟨not_lt.mp h'', h⟩
+      simp only [H0 (show t + T ≤ 0 by linarith), H0 (show t ≤ 0 by linarith), sub_zero]
+    · simp only [H1 (show T ≤ t + T by linarith), H1 h.le, sub_self]
+  · let N : ℤ := ⌊-t / T⌋
+    have hN : (N : ℝ) * T ≤ -t := (le_div_iff₀ hL).mp (Int.floor_le _)
+    have hN' : -t < ((N : ℝ) + 1) * T := (div_lt_iff₀ hL).mp (Int.lt_floor_add_one _)
+    have hlow (n : ℤ) (hn : n ≤ N) : H (t + n * T) = 0 := H0 (by
+      have : (n : ℝ) * T ≤ N * T := mul_le_mul_of_nonneg_right (by exact_mod_cast hn) hL.le
+      linarith)
+    have hhigh (n : ℤ) (hn : N + 2 ≤ n) : H (t + n * T) = 1 := H1 (by
+      have : ((N : ℝ) + 2) * T ≤ n * T :=
+        mul_le_mul_of_nonneg_right (by exact_mod_cast hn) hL.le
+      nlinarith)
+    have hterm (n : ℤ) : H (t + n * T + T) - H (t + n * T) =
+        H (t + ((n + 1 : ℤ) : ℝ) * T) - H (t + n * T) := by
+      push_cast; ring_nf
+    let g : ℤ → ℝ := fun n ↦ H (t + n * T + T) - H (t + n * T)
+    have hs : HasSum g (∑ n ∈ ({N, N + 1} : Finset ℤ), g n) :=
+      hasSum_sum_of_ne_finset_zero (fun n hn ↦ by
+        simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hn
+        change H _ - H _ = 0
+        rw [hterm]
+        rcases lt_or_gt_of_ne hn.1 with h | h
+        · rw [hlow n h.le, hlow (n + 1) (by omega), sub_self]
+        · rw [hhigh n (by omega), hhigh (n + 1) (by omega), sub_self])
+    convert hs using 1
+    simp only [g]
+    rw [Finset.sum_pair (by omega), hterm, hterm]
+    have e1 := hlow N le_rfl
+    have e2 := hhigh (N + 1 + 1) (by omega)
+    push_cast at e2 ⊢
+    rw [show (N : ℝ) + 1 + 1 = N + 2 by ring] at e2 ⊢
+    linarith
+
+omit hSC in
+include hm in
+/-- A window in the logarithm of the module pulls back to a compact set. -/
+private theorem modulatedPeriodization_surjective_window {C : Set ℝ} (hC : IsCompact C) :
+    IsCompact {x : G | Real.log ((m x).val : ℝ) ∈ C} := by
+  let e := (Nonneg.unitsHomeomorphPos ℝ).trans Real.expOrderIso.symm.toHomeomorph
+  have he (t : ℝ≥0ˣ) : (e t : ℝ) = Real.log ((t.val : ℝ≥0) : ℝ) := by
+    exact Real.log_of_pos (NNReal.coe_pos.mpr (Units.zero_lt t)) |>.symm
+  have hc : IsCompact (e ⁻¹' C) := e.isProperMap.isCompact_preimage hC
+  have : {x : G | Real.log ((m x).val : ℝ) ∈ C} = m ⁻¹' (e ⁻¹' C) := by
+    ext x
+    change Real.log _ ∈ C ↔ e (m x) ∈ C
+    rw [he]
+  rw [this]
+  exact hm.1.isCompact_preimage hc
+
 /-- Paper: Proposition 4.5.1.1(1), pp. 197–198. Every Schwartz–Bruhat function
 on the compact cyclic quotient is a periodization. -/
-theorem modulatedPeriodization_surjective : Surjective P := by sorry
+theorem modulatedPeriodization_surjective : Surjective P := by
+  intro φ
+  have hL : 0 < Real.log ((m γ).val : ℝ) := Real.log_pos (by exact_mod_cast hγ)
+  have hT := modulatedPeriodization_surjective_profile hL
+  let ρ := Classical.choose hT
+  have hρs : ContDiff ℝ ((⊤ : ℕ∞) : WithTop ℕ∞) ρ := (Classical.choose_spec hT).1
+  have hρc : HasCompactSupport ρ := (Classical.choose_spec hT).2.1
+  have hρsum : ∀ t, HasSum (fun n : ℤ ↦ ρ (t + n * Real.log ((m γ).val : ℝ))) 1 :=
+    (Classical.choose_spec hT).2.2
+  let ρc : ℝ → ℂ := fun t ↦ (ρ t : ℂ)
+  have hρs' : ContDiff ℝ ((⊤ : ℕ∞) : WithTop ℕ∞) ρc := Complex.ofRealCLM.contDiff.comp hρs
+  have hcs : HasCompactSupport ρc := hρc.comp_left Complex.ofReal_zero
+  let f₀ : G → ℂ := fun x ↦ ρc (Real.log ((m x).val : ℝ)) * φ (q x)
+  have hsupp : HasCompactSupport f₀ := by
+    refine HasCompactSupport.intro (modulatedPeriodization_surjective_window m hm hcs) fun x hx ↦ ?_
+    have h0 : ρc (Real.log ((m x).val : ℝ)) = 0 := image_eq_zero_of_notMem_tsupport hx
+    simp only [f₀, h0, zero_mul]
+  have hmem : f₀ ∈ bruhatCompactSupportSubmodule G :=
+    ⟨(mem_bruhatSmoothSubmodule_iff f₀).mpr (modulatedPeriodization_cutoff_isBruhatSmooth m γ hm hγ hρs' hcs φ), hsupp⟩
+  let f : E := ⟨f₀, bruhatCompactSupport_le_modulatedExponentialDecay m univ hm hms hmem⟩
+  refine ⟨f, Subtype.ext (funext fun z ↦ QuotientGroup.induction_on z fun x ↦ ?_)⟩
+  have hpos (u : ℝ≥0ˣ) : 0 < ((u.val : ℝ≥0) : ℝ) := NNReal.coe_pos.mpr (Units.zero_lt u)
+  have hℓ (n : ℤ) : Real.log ((m (γ ^ n * x)).val : ℝ) =
+      Real.log ((m x).val : ℝ) + n * Real.log ((m γ).val : ℝ) := by
+    rw [map_mul m, map_zpow m, Units.val_mul, Units.val_zpow_eq_zpow_val, NNReal.coe_mul,
+      NNReal.coe_zpow, Real.log_mul (zpow_ne_zero _ (hpos (m γ)).ne') (hpos (m x)).ne',
+      Real.log_zpow]
+    ring
+  have hqx (n : ℤ) : q (γ ^ n * x) = q x := by
+    rw [QuotientGroup.mk'_apply, QuotientGroup.mk'_apply, QuotientGroup.mk_mul,
+      (QuotientGroup.eq_one_iff _).mpr (Subgroup.zpow_mem_zpowers γ n), one_mul]
+  have h2 : HasSum (fun n : ℤ ↦ f.val (γ ^ n * x)) (φ (q x)) := by
+    have h := (Complex.hasSum_ofReal.mpr (hρsum (Real.log ((m x).val : ℝ)))).mul_right (φ (q x))
+    rw [Complex.ofReal_one, one_mul] at h
+    refine h.congr_fun fun n ↦ ?_
+    change ρc _ * φ (q (γ ^ n * x)) = _
+    rw [hℓ, hqx]
+  exact (modulatedPeriodization_hasSum m γ hm hms hγ f x).unique h2
+
 
 -- TODO(paper-gap): Remarks 4.5.1.2 and 4.5.1.4 use arbitrary I for
 -- periodization. For I = (1,2), a smooth log-profile equal to one near
