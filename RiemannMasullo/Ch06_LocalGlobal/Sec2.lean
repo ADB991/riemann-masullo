@@ -491,17 +491,32 @@ private theorem exists_finiteStandardThetaAverage_factor {G : Type*} [Group G]
   simp only [mul_inv_rev, inv_mul_cancel_right, map_mul, Circle.coe_mul]
   ring
 
-/-- A linear family of integrable functions integrates to a linear functional. -/
-private theorem exists_finiteStandardThetaAverage_functional {E G : Type*} [AddCommGroup E]
-    [Module ℂ E] [MeasurableSpace G] (ν : Measure G) (φ : E → G → ℂ)
-    (hadd : ∀ f h g, φ (f + h) g = φ f g + φ h g)
-    (hsmul : ∀ (a : ℂ) f g, φ (a • f) g = a * φ f g) (hint : ∀ f, Integrable (φ f) ν) :
-    ∃ c : E →ₗ[ℂ] ℂ, ∀ f, c f = ∫ g, φ f g ∂ν := by
-  refine ⟨LinearMap.mk ⟨fun f ↦ (∫ g, φ f g ∂ν), fun f h ↦ ?_⟩ fun a f ↦ ?_, fun _ ↦ rfl⟩
-  · simp only [hadd]
-    exact integral_add (hint f) (hint h)
-  · simp only [hsmul, RingHom.id_apply, smul_eq_mul]
-    exact integral_const_mul a _
+/-- Convolution against a character, on a subspace of a space where every linear functional
+is continuous, is a continuous linear map into the continuous functions: it is the character
+times the value of a linear functional. -/
+private theorem exists_finiteStandardThetaAverage_abstract {B G : Type*} [AddCommGroup B]
+    [Module ℂ B] [TopologicalSpace B] (p : Submodule ℂ B)
+    (hB : ∀ L : B →ₗ[ℂ] ℂ, Continuous L) [Group G] [TopologicalSpace G]
+    {_ : MeasurableSpace G} [MeasurableMul G] (ν : Measure G) [ν.IsMulLeftInvariant]
+    (χ : G →* Circle) (hχ : Continuous χ) (ev : p →ₗ[ℂ] G → ℂ)
+    (hint : ∀ f, Integrable (fun g ↦ ev f g⁻¹ * (χ g : ℂ)) ν) :
+    ∃ A : p →L[ℂ] C(G, ℂ), ∀ f x, A f x = ∫ g, ev f (g⁻¹ * x) * (χ g : ℂ) ∂ν := by
+  let c₀ : p →ₗ[ℂ] ℂ :=
+    { toFun := fun f ↦ ∫ g, ev f g⁻¹ * (χ g : ℂ) ∂ν
+      map_add' := fun f h ↦ by
+        simp only [map_add, Pi.add_apply, add_mul]
+        exact integral_add (hint f) (hint h)
+      map_smul' := fun a f ↦ by
+        simp only [map_smul, Pi.smul_apply, smul_eq_mul, mul_assoc, RingHom.id_apply]
+        exact integral_const_mul a _ }
+  obtain ⟨P, hP⟩ := LinearMap.exists_leftInverse_of_injective p.subtype p.ker_subtype
+  have hc₀ : Continuous c₀ :=
+    ((hB (c₀.comp P)).comp continuous_subtype_val).congr fun f ↦
+      congrArg c₀ (LinearMap.congr_fun hP f)
+  let χC : C(G, ℂ) := ⟨fun g ↦ (χ g : ℂ), continuous_subtype_val.comp hχ⟩
+  refine ⟨(ContinuousLinearMap.mk c₀ hc₀).smulRight χC, fun f x ↦ ?_⟩
+  rw [exists_finiteStandardThetaAverage_factor ν (ev f) χ x, mul_comm]
+  rfl
 
 /-- Paper: (6.2.2.4), p. 299.
 The finite-place convolution formula specifies a continuous linear map on
@@ -511,31 +526,20 @@ theorem exists_finiteStandardThetaAverage (v : V) (χ : PontryaginDual (L(v))ˣ)
       A f x = ∫ g : (L(v))ˣ, f.val (Multiplicative.ofAdd (g⁻¹ * x).val) * (χ g : ℂ) ∂μ(v) := by
   let : BorelSpace (L(v))ˣ := ⟨rfl⟩
   let : (μ(v)).IsHaarMeasure := finiteLocalMultiplicativeTamagawaMeasure_isHaarMeasure v
-  have hint (f : ℬ₀(v)) : Integrable
-      (fun g : (L(v))ˣ ↦ f.val (Multiplicative.ofAdd (g⁻¹).val) * (χ g : ℂ)) (μ(v)) := by
-    refine (finiteStandardThetaAverage_integrable v χ f 1).congr
-      (Filter.Eventually.of_forall fun g ↦ ?_)
-    simp only [mul_one]
-  obtain ⟨c₀, hc₀def⟩ := exists_finiteStandardThetaAverage_functional (μ(v))
-    (fun (f : ℬ₀(v)) (g : (L(v))ˣ) ↦ f.val (Multiplicative.ofAdd (g⁻¹).val) * (χ g : ℂ))
-    (fun _ _ _ ↦ add_mul _ _ _) (fun _ _ _ ↦ mul_assoc _ _ _) hint
-  obtain ⟨P, hP⟩ := LinearMap.exists_leftInverse_of_injective
-    (finitePuncturedThetaTestSpace v).subtype (Submodule.ker_subtype _)
-  have hc₁ : Continuous (c₀.comp P) :=
-    (congrArg (fun t ↦ @Continuous ℬ(L(v)) ℂ t _ (fun f ↦ c₀.comp P f))
+  let ev : ℬ₀(v) →ₗ[ℂ] (L(v))ˣ → ℂ :=
+    (LinearMap.funLeft ℂ ℂ fun y : (L(v))ˣ ↦ Multiplicative.ofAdd y.val).comp
+      (((schwartzBruhatSubmodule (Multiplicative (L(v)))).subtype : ℬ(L(v)) →ₗ[ℂ] _).comp
+        (finitePuncturedThetaTestSpace v).subtype)
+  have hB (L : ℬ(L(v)) →ₗ[ℂ] ℂ) : Continuous L :=
+    (congrArg (fun t ↦ @Continuous ℬ(L(v)) ℂ t _ L)
       (finitePlaceSchwartz_finestTopology F v)).mpr
-      (continuous_of_finestLocallyConvex ℬ(L(v)) (c₀.comp P))
-  have hc₀ : Continuous c₀ := by
-    refine (hc₁.comp continuous_subtype_val).congr fun f ↦ ?_
-    change c₀ (P ((finitePuncturedThetaTestSpace v).subtype f)) = c₀ f
-    rw [← LinearMap.comp_apply P, hP, LinearMap.id_apply]
-  let χC : C((L(v))ˣ, ℂ) := ⟨fun g ↦ (χ g : ℂ), continuous_subtype_val.comp χ.continuous⟩
-  refine ⟨(ContinuousLinearMap.mk c₀ hc₀).smulRight χC, fun f x ↦ ?_⟩
-  refine Eq.trans ?_ (exists_finiteStandardThetaAverage_factor (μ(v))
-    (fun g : (L(v))ˣ ↦ f.val (Multiplicative.ofAdd g.val)) χ.toMonoidHom x).symm
-  change c₀ f * (χ x : ℂ) = _
-  rw [hc₀def]
-  exact mul_comm _ _
+      (continuous_of_finestLocallyConvex ℬ(L(v)) L)
+  have hint (f : ℬ₀(v)) : Integrable (fun g ↦ ev f g⁻¹ * (χ g : ℂ)) (μ(v)) :=
+    (finiteStandardThetaAverage_integrable v χ f 1).congr
+      (Filter.Eventually.of_forall fun g ↦ congrArg (fun y : (L(v))ˣ ↦ ev f y * (χ g : ℂ))
+        (mul_one g⁻¹))
+  exact exists_finiteStandardThetaAverage_abstract (finitePuncturedThetaTestSpace v) hB (μ(v))
+    χ.toMonoidHom χ.continuous ev hint
 
 /-- Paper: (6.2.2.4), p. 299.
 The finite operator convolves a compactly supported punctured-field test with the local
