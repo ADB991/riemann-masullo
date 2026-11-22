@@ -35,6 +35,8 @@ or an abstract private lemma avoids it.
 
 ## open
 
+- RiemannMasullo/AppD_SchwartzBruhat/Sec1a.lean: #3443; session ADB991-claude-20261122-18ea; branch claude/sweep-appd-sec1a-18ea (not pushed yet); PR none; last touched 2026-11-22T16:40Z
+
 - RiemannMasullo/Ch10_TraceSpectral/Sec1.lean: #4871 #4872 #4873 #4876 #4877 #4879 #4880 #4881 #4883 #4884 #4885 #4887 #4889 #4890 #4891 #4892 #4893 #4894 #4895 #4896 #4897 #4898 #4900 #4901 #4902 #4903 #4904; session ADB991-claude-20261122-a7c2; branch claude/sweep-ch10-sec1-a7c2 (not pushed yet); PR none; last touched 2026-11-22T16:40Z
 
 
