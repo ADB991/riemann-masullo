@@ -132,7 +132,28 @@ theorem sLocalNormOneCharacter_eq_sIdeleRestriction
     (ω : PontryaginDual C₁) (c : unramifiedOutside F S)
     (hc : ∀ x : C₁, c.val x.val = (ω x : ℂ)) (y : J₁(S)) :
     (sLocalNormOneCharacter (F := F) S ω ⟨c, hc⟩ y : ℂ) = sIdeleRestriction F S c y.val := by
-  sorry
+  obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective y.val
+  -- Insert ones off S to lift this representative to both norm-one groups.
+  let a := sIdeleInsertion F S g
+  have ha : a ∈ Set.range (integralIdeleInsertion F S) := by
+    apply (mem_range_integralIdeleInsertion F S a).2
+    intro v hv
+    have hi : a⁻¹ = sIdeleInsertion F S g⁻¹ := (map_inv _ _).symm
+    change a.val.2 v ∈ _ ∧ (a⁻¹).val.2 v ∈ _
+    rw [hi, (sIdeleInsertion_apply F S g).2.2 v hv, (sIdeleInsertion_apply F S g⁻¹).2.2 v hv]
+    exact ⟨one_mem _, one_mem _⟩
+  obtain ⟨u, hu⟩ := ha
+  have hp : Units.map (adeleProjection F S).toMonoidHom a = g :=
+    Units.ext (Prod.ext (sIdeleInsertion_apply F S g).1
+      (funext (sIdeleInsertion_apply F S g).2.1))
+  have hn : ideleNorm F a = 1 := by
+    rw [ideleNorm_sIdeleInsertion, ← sIdeleQuotientNorm_mk, hg]
+    exact y.property
+  let x : C₁ := ⟨QuotientGroup.mk a, hn⟩
+  have hdesc := ((normOneCharacterUnramifiedOutside_iff (F := F) (S := S) ω).mp
+    ⟨c, hc⟩).exists.choose_spec u x y (by rw [hu]) (by rw [hu, hp, hg])
+  rw [← hg, sIdeleRestriction_mk]
+  exact (congrArg (fun t : Circle ↦ (t : ℂ)) hdesc).trans (hc x).symm
 
 /-- Paper: Theorem 5.2.3.1, p. 233.
 Unramifiedness outside S implies unramifiedness outside every larger set of places. -/
