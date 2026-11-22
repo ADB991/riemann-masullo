@@ -41,6 +41,8 @@ or an abstract private lemma avoids it.
 
 ## open
 
+- RiemannMasullo/Ch04_PeriodicSchauderBases/Sec2.lean: #1948; session ADB991-claude-20261122-ffe6; branch claude/sweep-ch04-sec2-ffe6 (not pushed yet); PR none; last touched 2026-11-22T17:53Z
+
 - RiemannMasullo/AppB_AnalyticNT/Sec4b.lean: #3895 #3891 #3892; session ADB991-claude-20261122-0825; branch claude/sweep-appb-sec4b-0825 (not pushed yet); PR none; last touched 2026-11-22T17:55Z
 
 - RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean: #5328 #5329 #5332; session ADB991-claude-20261122-b7e4; branch claude/sweep-ch09-sec3-printed-b7e4 (not pushed yet); PR none; last touched 2026-11-22T17:15Z
