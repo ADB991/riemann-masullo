@@ -35,11 +35,11 @@ or an abstract private lemma avoids it.
 (2026-11-22, f988) Fresh container: project oleans are NOT cached; building Ch06 deps (161 modules) took ~1.5 h on 4 cores. Background bash commands default to a 10 min limit: pass a long timeout. `lake lean` of a scratch copy with `#exit` inserted is a fast way to bisect (~15 s per run for Ch06/Sec1).
 (2026-11-22, f988) Lean pitfalls around `SchwartzBruhat` (ℬ) types: `obtain ⟨A, hA⟩` on an ∃ over a linear map out of ℬ can hang forever (use `choose`); `rw` leaving a goal about ℬ values can hang (use `rewrite`/explicit Eq.trans); `have` of class instances (T2Space, PolynormableSpace) in context made `Add ℬ` synthesis time out; to use `finitePlaceSchwartz_finestTopology` pass `FinestLocallyConvex (schwartzBruhatSubmodule _)`, not `FinestLocallyConvex ℬ`, via `(congrArg (fun t ↦ @P _ t ..) h).mpr`.
 
+(2026-11-22, 8532) Fresh container: `lake exe cache get` also brought the project's AppC oleans, so `lake build` of AppC Sec3a_part2 took 3 min. A full `lake build` afterwards took 44 min (Ch05/Ch06/Ch07 modules are slow). Iterating directly on the module with `lake build <module>` took about 30 s per round. `xxd` is missing (use `od`). Before/after signatures: commit, `git checkout origin/main -- <file>`, build, run Signatures.lean, then `git checkout HEAD -- <file>`.
+
 ## open
 
 - RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean: #5328 #5329 #5332; session ADB991-claude-20261122-b7e4; branch claude/sweep-ch09-sec3-printed-b7e4 (not pushed yet); PR none; last touched 2026-11-22T17:15Z
-
-- RiemannMasullo/AppC_LCTVS/Sec3a_part2.lean: #783; session ADB991-claude-20261122-8532; branch claude/sweep-appc-sec3a-part2-8532 (not pushed yet); PR none; last touched 2026-11-22T16:39Z
 
 - RiemannMasullo/AppD_SchwartzBruhat/Sec1a.lean: #3443; session ADB991-claude-20261122-18ea; branch claude/sweep-appd-sec1a-18ea (not pushed yet); PR none; last touched 2026-11-22T16:40Z
 
@@ -50,6 +50,8 @@ or an abstract private lemma avoids it.
 - RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5.lean: #2654 (in PR); session ADB991-claude-20261122-9335; branch claude/sweep-ch04-sec5-9335; PR https://github.com/mccorvie/riemann-masullo/pull/5372; last touched 2026-11-22T17:02Z
 
 ## runs
+
+- 2026-11-22 ADB991-claude-20261122-8532: AppC_LCTVS/Sec3a_part2.lean, proved #783 (Proposition C.3.6.4(3): the injective completion of E'⊗F is isometric to the compact operators on Hilbert spaces; the file is now sorry-free). PR https://github.com/mccorvie/riemann-masullo/pull/5391 (branch claude/sweep-appc-sec3a-part2-8532). No releases. Also dropped the finished d618 claim (PR #5346 merged).
 
 - 2026-11-22 ADB991-claude-20261122-9335: Ch04_PeriodicSchauderBases/Sec5.lean, proved #2654 (modulatedPeriodization_surjective, the keystone of §4.5: cutoff route with private Bruhat-smoothness helpers: product rule, pullback along closed quotient, profiles of log|.|), PR https://github.com/mccorvie/riemann-masullo/pull/5372. Released #2667 #2688 #2691 #2693 #2694 #2696 #2708 #2711 with notes (missing: Schwartz estimates for one-sided orbit sums; topological identifications of supported stages).
 
