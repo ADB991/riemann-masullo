@@ -43,6 +43,8 @@ or an abstract private lemma avoids it.
 
 (2026-11-22, ffe6) Fresh container: `lake exe cache get` (1 min) did not bring Ch04 oleans; cold `lake build` of Ch04 Sec2 took ~19 min total. Background Bash jobs are killed at 10 min unless `timeout` is passed explicitly. `lake env lean --run scripts/Signatures.lean <Mod>` takes 15 s once the module is built.
 
+(2026-11-22, a7c2) Cold `lake build` of Ch10 Sec1 (all deps) took 31 min; the module itself ~75 s; full `lake build` after that 16 min. Scratch files that copy a module's `local instance`s collide with the instance names exported by the imported module: rename them. In Ch10 Sec1, unification through ℬ-subtypes / weighted-Lp subspaces is very slow (`obtain` on `mem_adelePolarSubspace`, `rw [map_smul]` on a LinearIsometryEquiv of Lp subspaces): abstract private lemmas over generic groups/spaces fix it. Test those on a tiny scratch that imports only the lower module (e.g. Ch02 Sec2b), ~8 s.
+
 ## open
 
 - RiemannMasullo/Ch04_PeriodicSchauderBases/Sec2.lean: #1948 (proved, full lake build running); session ADB991-claude-20261122-ffe6; branch claude/sweep-ch04-sec2-ffe6 (pushed); PR none yet; last touched 2026-11-22T18:35Z
@@ -52,13 +54,15 @@ or an abstract private lemma avoids it.
 - RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean: #5328 #5329 #5332 (in PR); session ADB991-claude-20261122-b7e4; branch claude/sweep-ch09-sec3-printed-b7e4; PR https://github.com/mccorvie/riemann-masullo/pull/5438; last touched 2026-11-22T18:20Z
 
 
-- RiemannMasullo/Ch10_TraceSpectral/Sec1.lean: #4871 #4872 #4873 #4876 #4877 #4879 #4880 #4881 #4883 #4884 #4885 #4887 #4889 #4890 #4891 #4892 #4893 #4894 #4895 #4896 #4897 #4898 #4900 #4901 #4902 #4903 #4904; session ADB991-claude-20261122-a7c2; branch claude/sweep-ch10-sec1-a7c2 (not pushed yet); PR none; last touched 2026-11-22T16:40Z
+- RiemannMasullo/Ch10_TraceSpectral/Sec1.lean: #4877 #4879 #4883 #4884 #4885 #4897 #4898 #4902 (proved, in PR); session ADB991-claude-20261122-a7c2; branch claude/sweep-ch10-sec1-a7c2 (pushed); PR requested via bridge (awaiting result); other 19 released; last touched 2026-11-22T18:39Z
 
 
 
 - RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5.lean: #2654 (in PR); session ADB991-claude-20261122-9335; branch claude/sweep-ch04-sec5-9335; PR https://github.com/mccorvie/riemann-masullo/pull/5372; last touched 2026-11-22T17:02Z
 
 ## runs
+
+- 2026-11-22 ADB991-claude-20261122-a7c2: Ch10_TraceSpectral/Sec1.lean, proved #4877 #4879 #4883 #4884 #4885 #4897 #4898 #4902 (PR from claude/sweep-ch10-sec1-a7c2). Released the other 19 with notes (#4880 needs an S-local analogue of ideleClassTamagawaMeasure_eq_smul_canonical; #4900 sketched).
 
 - 2026-11-22 ADB991-claude-20261122-b7e4: Ch09_HardySobolev/Sec3_Printed.lean, proved refutations #5328 #5329 #5332 (concrete counterexamples on ℝ>0 with dt/t), PR https://github.com/mccorvie/riemann-masullo/pull/5438. #5330 #5331 not claimed (heavier: isotype bands, Mellin jets of Gaussians). No releases.
 
