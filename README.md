@@ -251,7 +251,7 @@ on work that does not appear there.
   [`ATTRIBUTION.md`](RiemannMasullo/External/ATTRIBUTION.md) records, and a survey of his
   repository pointed the way to further proofs and to witnesses over ℚ for refutations of
   printed claims.
-- Three independent readings of the paper located gaps, some of them before the formalization
+- Four independent readings of the paper located gaps, some of them before the formalization
   reached those pages. [`ERRATA.md`](ERRATA.md) names them where an entry agrees with one or
   started from one, and agents that work on those pages are given them as leads to test.
   - **Isaac Yonemoto**'s dependency audit,
@@ -262,6 +262,9 @@ on work that does not appear there.
     by **Ben Golub** and Refine Technologies.
   - The companion [*Further repairs, attempted closures, and the remaining estimate*](https://anayebi.github.io/human_grh_unresolved.pdf),
     published by **Aran Nayebi**.
+  - **Dev Goyal**'s audit, [`dvgyl/masullo-grh-proof-audit`](https://github.com/dvgyl/masullo-grh-proof-audit):
+    a preprint, a detailed report and exact-arithmetic checks, with explicit counterexamples to
+    theorems and proof steps of Chapters 6–12.
 - **dga471** proved four of this project's statements on [Prove2Me](https://prove2.me), and
   the proofs were brought in from there.
 - Proofs were adapted from [`CBirkbeck/AINTLIB`](https://github.com/CBirkbeck/AINTLIB) and
