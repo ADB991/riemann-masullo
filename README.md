@@ -124,7 +124,10 @@ discussed in the Lean Zulip thread
 where the details were not posted at first. They did not come from this formalization, which
 had not then reached that part of the paper; what it has found there since is described above,
 and written accounts of several of those readings are listed under
-[Acknowledgments](#acknowledgments). The draft is also unfinished by its author's own account:
+[Acknowledgments](#acknowledgments). John Baez's post
+[*Masullo on the Riemann Hypothesis*](https://johncarlosbaez.wordpress.com/2026/11/22/masullo-on-the-riemann-hypothesis/)
+sketches the strategy of the paper for a general reader and describes two of the reported
+problems. The draft is also unfinished by its author's own account:
 Chapter 13, which should deduce GRH from the trace formula, does not yet state its main theorem.
 
 This is what the three aims above are for: when the formalization reaches a part that does not
@@ -251,7 +254,7 @@ on work that does not appear there.
   [`ATTRIBUTION.md`](RiemannMasullo/External/ATTRIBUTION.md) records, and a survey of his
   repository pointed the way to further proofs and to witnesses over ℚ for refutations of
   printed claims.
-- Four independent readings of the paper located gaps, some of them before the formalization
+- Five independent readings of the paper located gaps, some of them before the formalization
   reached those pages. [`ERRATA.md`](ERRATA.md) names them where an entry agrees with one or
   started from one, and agents that work on those pages are given them as leads to test.
   - **Isaac Yonemoto**'s dependency audit,
@@ -265,6 +268,9 @@ on work that does not appear there.
   - **Dev Goyal**'s audit, [`dvgyl/masullo-grh-proof-audit`](https://github.com/dvgyl/masullo-grh-proof-audit):
     a preprint, a detailed report and exact-arithmetic checks, with explicit counterexamples to
     theorems and proof steps of Chapters 6–12.
+  - **Eric Naslund**'s review, [`enaslund/rh-verification`](https://github.com/enaslund/rh-verification):
+    three reports on the trace argument of Chapters 11–12, among them a test of Theorem
+    11.3.2.1 at the prime 2.
 - **dga471** proved four of this project's statements on [Prove2Me](https://prove2.me), and
   the proofs were brought in from there.
 - Proofs were adapted from [`CBirkbeck/AINTLIB`](https://github.com/CBirkbeck/AINTLIB) and
