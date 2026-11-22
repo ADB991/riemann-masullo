@@ -228,8 +228,10 @@ ${review:-(none)}"
   if [ -n "$on" ] && [ -z "$pr" ]; then
     for b in ${on//,/ }; do
       git fetch -q origin "$b"
-      git -C "$wt" merge -q --no-edit "origin/$b" ||
-        { echo "could not merge origin/$b into the worktree" >&2; exit 1; }
+      # -X ours: where the branch carries an older copy of a file that main has since received
+      # in its reviewed form, main's copy wins; the branch's new files come in as they are.
+      git -C "$wt" merge -q --no-edit -X ours "origin/$b" ||
+        { git -C "$wt" merge --abort 2>/dev/null; echo "could not merge origin/$b into the worktree" >&2; exit 1; }
     done
     prompt="$prompt
 
