@@ -13,6 +13,15 @@ elan's own toolchain download fails; install Lean v4.36.0 from the GitHub releas
 (`lean-4.36.0-linux.zip`, `unzip`) and `elan toolchain link`. `zstd` is not installed.
 mathlib4.lean-cache.cloud, releases.lean-lang.org and alpo.ge are on the allowlist.
 GitHub GraphQL is refused from the sandbox: use `gh api` REST (search/issues needs `is:issue`).
+(2026-11-22, d618) `scripts/signatures.sh` runs a full `lake build` first (~25 min on 4 cores from a
+fresh cache), which outruns a 30-min background job if started with other work; run it with a 2 h
+timeout, or for a one-file change compare just that module:
+`lake env lean --run scripts/Signatures.lean RiemannMasullo.<Ch>.<File>` before/after, then `--compare`.
+Never wrap it in `git stash ... stash pop` in one job: a killed job leaves the work in the stash.
+Full `lake build` after the cache: 1431 s. Elan is at ~/.elan/bin (add to PATH).
+Lean tip: if applying a lemma from another file times out at `isDefEq`/`whnf` on a hypothesis,
+apply it in steps with `have` (`have h₀ := lem (F := F) B; have h₁ := h₀ hB N; obtain … := h₁`);
+a one-shot application, or one inside `obtain`, unifies before instance args are synthesized.
 
 ## open
 
@@ -21,12 +30,14 @@ GitHub GraphQL is refused from the sandbox: use `gh api` REST (search/issues nee
 
 - RiemannMasullo/Ch06_LocalGlobal/Sec2.lean: #4311 (proved, final checks running); #4306 #4308 #4316 released; session ADB991-claude-20261122-7c3e; branch claude/sweep-ch06-sec2-7c3e (pushed); PR none yet; last touched 20261122T153006Z
 
-- RiemannMasullo/Ch02_AdelicTheta/Sec2b.lean: #3523 #3524; session ADB991-claude-20261122-d618; branch claude/sweep-ch02-sec2b-d618 (pushed, both proved; module builds, lint ok, signatures unchanged; full lake build running); PR none yet; last touched 2026-11-22T15:22Z
+- RiemannMasullo/Ch02_AdelicTheta/Sec2b.lean: #3523 #3524; session ADB991-claude-20261122-d618; branch claude/sweep-ch02-sec2b-d618 (pushed); PR https://github.com/mccorvie/riemann-masullo/pull/5346 (open, awaiting PR check); last touched 2026-11-22T15:47Z
 
 
 - RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5.lean: #2654 #2667 #2688 #2691 #2693 #2694 #2696 #2708 #2711; session ADB991-claude-20261122-9335; branch claude/sweep-ch04-sec5-9335 (not pushed yet); PR none; last touched 2026-11-22T15:25Z
 
 ## runs
+
+- 2026-11-22 d618: Ch02_AdelicTheta/Sec2b.lean, proved #3523 #3524 (Theorem 2.2.5.4(5)-(6), last two sorries of the file); PR #5346. No releases.
 
 - 2026-11-22 ADB991-claude-20261122-db2b: Ch11_ShellStructure/Sec1a.lean, proved #4699 #4702 (file now sorry-free), PR https://github.com/mccorvie/riemann-masullo/pull/5234 (branch claude/sweep-ch11-sec1a-db2b). Ch06 Sec1 claim of f988 left alone (live).
 
