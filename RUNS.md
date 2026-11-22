@@ -4,6 +4,8 @@ Cloud runs prove open `proof` issues of mccorvie/riemann-masullo, one library fi
 
 ## setup notes
 
+(2026-11-22, 18ea) This container: `lake exe cache get` also brought project oleans; building AppD Sec1a took 2.5 min, full `lake build` 70 min. Single-module signature compare: write `origin/main` version of the file, rebuild module, run Signatures.lean, `git checkout` the file back (work committed first).
+
 (2026-11-22, 9335) `obtain ⟨..⟩ := lemma` on an existential inside a proof whose goal mentions the decay space E hung Lean for 20+ min in Ch04 Sec5; `have h := ...; Classical.choose h` was instant. Cold `lake build RiemannMasullo.Ch04_PeriodicSchauderBases.Sec5` took 27 min; the full `lake build` afterwards about 30 min more. Sec1c private lemmas are reachable with `import all RiemannMasullo.AppD_SchwartzBruhat.Sec1c`.
 
 (2026-11-22, 8e13) A cold `lake build` of Ch07 Sec1a (all its deps, no project cache) took about 21 min; its direct importers Sec1a_Printed + Sec1b took another 5 min. Mathlib modules not in a file's import closure (e.g. `Mathlib.Topology.MetricSpace.ProperSpace.Lemmas`) can be added with a plain `import`.
@@ -43,7 +45,6 @@ or an abstract private lemma avoids it.
 
 - RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean: #5328 #5329 #5332; session ADB991-claude-20261122-b7e4; branch claude/sweep-ch09-sec3-printed-b7e4 (not pushed yet); PR none; last touched 2026-11-22T17:15Z
 
-- RiemannMasullo/AppD_SchwartzBruhat/Sec1a.lean: #3443; session ADB991-claude-20261122-18ea; branch claude/sweep-appd-sec1a-18ea (not pushed yet); PR none; last touched 2026-11-22T16:40Z
 
 - RiemannMasullo/Ch10_TraceSpectral/Sec1.lean: #4871 #4872 #4873 #4876 #4877 #4879 #4880 #4881 #4883 #4884 #4885 #4887 #4889 #4890 #4891 #4892 #4893 #4894 #4895 #4896 #4897 #4898 #4900 #4901 #4902 #4903 #4904; session ADB991-claude-20261122-a7c2; branch claude/sweep-ch10-sec1-a7c2 (not pushed yet); PR none; last touched 2026-11-22T16:40Z
 
@@ -52,6 +53,8 @@ or an abstract private lemma avoids it.
 - RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5.lean: #2654 (in PR); session ADB991-claude-20261122-9335; branch claude/sweep-ch04-sec5-9335; PR https://github.com/mccorvie/riemann-masullo/pull/5372; last touched 2026-11-22T17:02Z
 
 ## runs
+
+- 2026-11-22 ADB991-claude-20261122-18ea: AppD_SchwartzBruhat/Sec1a.lean, proved #3443 (elementarySchwartz_barrelled, one line from the private elementarySchwartz_frechet_montel); PR https://github.com/mccorvie/riemann-masullo/pull/5425 (branch claude/sweep-appd-sec1a-18ea). #3436 (tensor embedding, needs nuclearity/π=ε) not taken. Claim closed.
 
 - 2026-11-22 ADB991-claude-20261122-8532: AppC_LCTVS/Sec3a_part2.lean, proved #783 (Proposition C.3.6.4(3): the injective completion of E'⊗F is isometric to the compact operators on Hilbert spaces; the file is now sorry-free). PR https://github.com/mccorvie/riemann-masullo/pull/5391 (branch claude/sweep-appc-sec3a-part2-8532). No releases. Also dropped the finished d618 claim (PR #5346 merged).
 
