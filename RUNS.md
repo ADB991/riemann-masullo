@@ -45,7 +45,7 @@ or an abstract private lemma avoids it.
 
 - RiemannMasullo/AppB_AnalyticNT/Sec4b.lean: #3895 #3891 #3892; session ADB991-claude-20261122-0825; branch claude/sweep-appb-sec4b-0825 (not pushed yet); PR none; last touched 2026-11-22T17:55Z
 
-- RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean: #5328 #5329 #5332; session ADB991-claude-20261122-b7e4; branch claude/sweep-ch09-sec3-printed-b7e4 (not pushed yet); PR none; last touched 2026-11-22T17:15Z
+- RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean: #5328 #5329 #5332 (all three proved, waiting for full lake build before PR); session ADB991-claude-20261122-b7e4; branch claude/sweep-ch09-sec3-printed-b7e4 (pushed); PR none yet; last touched 2026-11-22T18:08Z
 
 
 - RiemannMasullo/Ch10_TraceSpectral/Sec1.lean: #4871 #4872 #4873 #4876 #4877 #4879 #4880 #4881 #4883 #4884 #4885 #4887 #4889 #4890 #4891 #4892 #4893 #4894 #4895 #4896 #4897 #4898 #4900 #4901 #4902 #4903 #4904; session ADB991-claude-20261122-a7c2; branch claude/sweep-ch10-sec1-a7c2 (not pushed yet); PR none; last touched 2026-11-22T16:40Z
