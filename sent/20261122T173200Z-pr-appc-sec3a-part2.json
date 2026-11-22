@@ -1,0 +1,17 @@
+{
+ "request_file": "20261122T173200Z-pr-appc-sec3a-part2.json",
+ "processed_at": "2026-11-22T17:32:17Z",
+ "request": {
+  "type": "pr",
+  "head": "claude/sweep-appc-sec3a-part2-8532",
+  "title": "Prove exists_injectiveTensorCompletion_compactOperatorIsometry (Proposition C.3.6.4(3), p. 705)",
+  "body": "Sweep of `RiemannMasullo/AppC_LCTVS/Sec3a_part2.lean`, which had one open proof. The file now has no `sorry` left.\n\nCloses #783\n\n**Proved:** `exists_injectiveTensorCompletion_compactOperatorIsometry` (Proposition C.3.6.4(3), p. 705). For Hilbert spaces E and F, the map from tensors to finite-rank operators extends to the injective completion of `E' ⊗ F`. The extension is an isometry onto the compact operators E → F.\n\nHow the proof goes:\n1. The dual of a Hilbert space is reflexive. Every Φ ∈ E'' is evaluation at a vector x with ‖x‖ = ‖Φ‖: apply Riesz on `E'` (with the file's `strongDualInnerProductSpace`) and then `strongDual_inner_eq`. With `injectiveTensorNorm_eq_opNorm`, this gives `injectiveTensorNorm z = ‖tensorToFiniteRank z‖` for every algebraic tensor z.\n2. So `tensorToFiniteRank` is continuous on `InjectiveTensor` and is a uniform inducing map, because the injective norm generates the topology (`injectiveTensorNorm_withSeminorms`). Its `fromCompletion` is the extension `e`. The norm identity extends by density.\n3. The range of `e` lies in the compact operators: finite-rank maps are compact (`tensorToFiniteRank_mem_schattenClass`), and the compact operators are closed. Conversely, a compact T has a singular expansion (`isCompactOperator_iff_nonempty_singularExpansion`), and its partial sums converge to T in operator norm (`SingularExpansion.hasSum_opNorm`). Their tensors are therefore Cauchy in `InjectiveTensor`. Their limit in the completion maps to T.\n\nChanges: two `private theorem` helpers directly above the declaration, and `import Mathlib.Analysis.Normed.Module.DoubleDual`. No statement changed. The file was the only one edited.\n\nChecks run:\n- `lake build RiemannMasullo.AppC_LCTVS.Sec3a_part2`: passes, about 30 s for the module.\n- `lake build` (full): passes.\n- `scripts/lint.sh`: ok.\n- `scripts/signatures.sh --compare` on the module's signatures from `lake env lean --run scripts/Signatures.lean RiemannMasullo.AppC_LCTVS.Sec3a_part2`, before and after: no differences.\n- `#print axioms RiemannMasullo.exists_injectiveTensorCompletion_compactOperatorIsometry`: `[propext, Classical.choice, Quot.sound]`.\n\nPrepared autonomously by Claude (Anthropic) running as a scheduled agent on behalf of @ADB991; ADB991 had not reviewed it before submission.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "draft": false
+ },
+ "status": 201,
+ "ok": true,
+ "html_url": "https://github.com/mccorvie/riemann-masullo/pull/5391",
+ "id": 5441507216,
+ "number": 5391,
+ "created_at": "2026-11-22T17:32:18Z"
+}
