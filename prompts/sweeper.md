@@ -27,15 +27,18 @@ that serve several of the remaining proofs at once.
 ## Rules
 
 - **Do not change the statement of any existing declaration**, in this file or elsewhere. If a
-  statement is false, vacuous or does not say what the paper says, leave its `sorry`, and put
-  the exact problem, a counterexample if you have one, and the corrected statement you propose
-  in `.agent/REPORT.md`. That is a real result.
+  statement is false, vacuous or does not say what the paper says, leave its `sorry` and report
+  it in `.agent/REPORT.md` as `prompts/prover.md` describes under "A problem found": the paper
+  item and page, exactly what fails, and concrete evidence, best of all a Lean proof of the
+  negation in the section's `_Printed.lean` file. That is a real result. A statement that is
+  only hard is not a finding: say what you tried.
 - **Add no `sorry`.** You may add helper lemmas (put them directly above their first use, as
   `private` unless they are of general use; a lemma Mathlib ought to have goes in
   `RiemannMasullo/ForMathlib/` at the path Mathlib would use), but every helper you hand in must
   be proved. If a proof does not come together, take your attempt out and leave the original
   `sorry` exactly as it was.
-- Touch only this file and new files under `RiemannMasullo/ForMathlib/`.
+- Touch only this file, new files under `RiemannMasullo/ForMathlib/`, and the section's
+  `_Printed.lean` file if you prove a statement false.
 - Leave alone any declaration your issue marks as claimed by someone else.
 - Keep the build fast: time the module before and after (`time lake build …`); a proof that
   takes minutes to elaborate is not acceptable. Do not raise `maxHeartbeats`.

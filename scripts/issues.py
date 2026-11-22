@@ -29,7 +29,8 @@ def list_issues(state, label):
     issues makes this script open duplicates."""
     out = run(["gh", "api", "--paginate",
                f"repos/{{owner}}/{{repo}}/issues?state={state}&labels={label}&per_page=100",
-               "--jq", ".[] | select(.pull_request | not) | {number, state, title, body} | tojson"])
+               "--jq", ".[] | select(.pull_request | not) "
+                        "| {number, state, title, body, labels: [.labels[].name]} | tojson"])
     if out.returncode:
         sys.exit(out.stderr)
     return [json.loads(line) for line in out.stdout.splitlines() if line.strip()]
@@ -110,6 +111,41 @@ def disagreements(current, new, stale):
     return bad
 
 
+def statement_of(block):
+    """The declaration in an issue's Lean block without its docstring, spacing aside: what must
+    not change under someone who is working on the issue."""
+    lines = block.splitlines()
+    start = next((k for k, text in enumerate(lines) if DECL.match(text)), 0)
+    return " ".join(" ".join(lines[start:]).split())
+
+
+def is_gap(block):
+    """A recorded gap: the docstring has a line starting `Gap:` (see AGENTS.md). Its issue is
+    labelled `gap` and stays out of the provers' queue."""
+    return bool(re.search(r"^\s*Gap:", block, re.M))
+
+
+def issue_body(s, url, full_sha, key):
+    gap = ("**This is a recorded gap**: the project has not been able to prove or refute it, and "
+           "the work above it goes on assuming it. It is not in the provers' queue, but a proof, "
+           "a refutation or a smaller gap is very welcome.\n\n" if is_gap(s["block"]) else "")
+    return (f"[`{s['path']}`, line {s['line']}]({url}/blob/{full_sha}/{s['path']}#L{s['line']})\n\n"
+            f"```lean\n{s['block']}\n```\n\n" + gap +
+            "Try to prove this statement as written. A different proof from the paper's is welcome, "
+            "and a proof that is too large can be split into smaller, precise lemmas "
+            f"([prover guide]({url}/blob/main/prompts/prover.md)). **Do not change the statement.**\n\n"
+            "If you find a counterexample, a mismatch between the Lean and the manuscript, or a "
+            "specific gap in the printed argument, report it here instead: give the paper item and "
+            "page, and say exactly what fails, with a concrete counterexample or the failing step "
+            "(best of all, a Lean proof of the negation). That is a successful contribution in its "
+            "own right, and you need not propose a repair. If you can neither prove nor refute the "
+            "statement, leave a short note here on what you tried and where you got stuck.\n\n"
+            "**To take this issue**, comment `Claiming`, then follow "
+            f"[CONTRIBUTING.md]({url}/blob/main/CONTRIBUTING.md). The paper is in "
+            f"[`paper/`]({url}/tree/main/paper).\n\n"
+            f"<!-- sorry: {key} -->\n")
+
+
 def chapter_label(path):
     m = re.match(r"RiemannMasullo/(Ch\d+|App[A-E])", path)
     return m.group(1)[0].lower() + m.group(1)[1:] if m else None
@@ -154,11 +190,12 @@ def main():
     if state() != before:
         sys.exit("the checkout changed while this ran (another commit was checked out, or files "
                  "were edited). Nothing was changed; run again from a checkout nobody else is using.")
-    open_issues = {}
+    open_issues, issue_of = {}, {}
     for issue in sorted(list_issues("open", "proof"), key=lambda i: -i["number"]):
         m = MARK.search(issue["body"] or "")
         if m:
             open_issues[m.group(1)] = issue["number"]      # the oldest issue wins
+            issue_of[m.group(1)] = issue
 
     new = [k for k in current if k not in open_issues]
     stale = [k for k in open_issues if k not in current]
@@ -201,19 +238,16 @@ def main():
     for key in new:
         s = current[key]
         title = f"Prove `{s['name']}`" + (f" ({s['paper']})" if s["paper"] else "")
-        body = (f"[`{s['path']}`, line {s['line']}]({url}/blob/{full_sha}/{s['path']}#L{s['line']})\n\n"
-                f"```lean\n{s['block']}\n```\n\n"
-                "Replace the `sorry` with a proof, or split it into smaller lemmas, without changing "
-                "the statement. If the statement looks wrong, say so here instead.\n\n"
-                "**To take this issue**, comment `Claiming`, then follow "
-                f"[CONTRIBUTING.md]({url}/blob/main/CONTRIBUTING.md). The paper is in "
-                f"[`paper/`]({url}/tree/main/paper).\n\n"
-                f"<!-- sorry: {key} -->\n")
+        body = issue_body(s, url, full_sha, key)
         print(f"  open   {title}")
         if apply:
             cmd = ["gh", "issue", "create", "--title", title, "--body", body, "--label", "proof"]
             if chapter_label(s["path"]):
                 cmd += ["--label", chapter_label(s["path"])]
+            if is_gap(s["block"]):
+                cmd += ["--label", "gap"]
+            if s["path"].endswith("_Printed.lean"):
+                cmd += ["--label", "refutation"]
             r = run(cmd)
             print("        ", (r.stdout or r.stderr).strip())
             time.sleep(1.5)   # stay under GitHub's limit on creating content
@@ -222,6 +256,31 @@ def main():
         if apply:
             run(["gh", "issue", "close", str(open_issues[key]), "--comment",
                  f"`{key.split('::')[1]}` is no longer a `sorry` on main at {sha}."])
+    # An issue shows the statement as it was when the issue was opened. When the declaration has
+    # changed since (a repaired statement, a corrected docstring), bring the issue up to date, and
+    # say so if the statement itself changed: someone may be working from the old text.
+    for key, s in current.items():
+        issue = issue_of.get(key)
+        if issue is None or key in skipped:
+            continue
+        number, labels = issue["number"], issue["labels"]
+        shown = re.search(r"```lean\n(.*?)\n```", issue["body"] or "", re.S)
+        if shown and shown.group(1) != s["block"]:
+            changed = statement_of(shown.group(1)) != statement_of(s["block"])
+            print(f"  refresh #{number}  {key}" + ("  (statement changed)" if changed else ""))
+            if apply:
+                run(["gh", "issue", "edit", str(number), "--body", issue_body(s, url, full_sha, key)])
+                if changed:
+                    run(["gh", "issue", "comment", str(number), "--body",
+                         f"The statement of this declaration has changed on `main` (at {sha}); the text "
+                         "above is now the current one. If you are working on it, update your branch "
+                         "before you go on."])
+                time.sleep(1.0)
+        if is_gap(s["block"]) != ("gap" in labels):
+            print(f"  {'mark' if is_gap(s['block']) else 'unmark'} #{number} as a gap  {key}")
+            if apply:
+                run(["gh", "issue", "edit", str(number),
+                     "--add-label" if is_gap(s["block"]) else "--remove-label", "gap"])
     ready = unblock(apply)
     if not apply and (new or stale or ready):
         print("dry run; pass --apply to make these changes")
