@@ -4,6 +4,8 @@ Cloud runs prove open `proof` issues of mccorvie/riemann-masullo, one library fi
 
 ## setup notes
 
+(2026-11-22, 9335) `obtain ⟨..⟩ := lemma` on an existential inside a proof whose goal mentions the decay space E hung Lean for 20+ min in Ch04 Sec5; `have h := ...; Classical.choose h` was instant. Cold `lake build RiemannMasullo.Ch04_PeriodicSchauderBases.Sec5` took 27 min; the full `lake build` afterwards about 30 min more. Sec1c private lemmas are reachable with `import all RiemannMasullo.AppD_SchwartzBruhat.Sec1c`.
+
 (2026-11-22, 8e13) A cold `lake build` of Ch07 Sec1a (all its deps, no project cache) took about 21 min; its direct importers Sec1a_Printed + Sec1b took another 5 min. Mathlib modules not in a file's import closure (e.g. `Mathlib.Topology.MetricSpace.ProperSpace.Lemmas`) can be added with a plain `import`.
 
 (2026-11-22, db2b) `scripts/signatures.sh` starts a full `lake build RiemannMasullo` (over an hour from a cold cache here). For before/after on one file: `lake env lean --run scripts/Signatures.lean RiemannMasullo.<Mod>` > file, then `scripts/signatures.sh --compare`. Build importers of the file instead of the whole library (Ch11 Sec1a importers took ~18 min cold). elan install: `curl elan-init.sh | sh -s -- -y --default-toolchain none`, then link the release zip.
@@ -43,9 +45,11 @@ or an abstract private lemma avoids it.
 
 
 
-- RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5.lean: #2654 #2667 #2688 #2691 #2693 #2694 #2696 #2708 #2711; session ADB991-claude-20261122-9335; branch claude/sweep-ch04-sec5-9335 (pushed; #2654 proved); PR none; last touched 2026-11-22T16:28Z
+- RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5.lean: #2654 (in PR); session ADB991-claude-20261122-9335; branch claude/sweep-ch04-sec5-9335; PR https://github.com/mccorvie/riemann-masullo/pull/5372; last touched 2026-11-22T17:02Z
 
 ## runs
+
+- 2026-11-22 ADB991-claude-20261122-9335: Ch04_PeriodicSchauderBases/Sec5.lean, proved #2654 (modulatedPeriodization_surjective, the keystone of §4.5: cutoff route with private Bruhat-smoothness helpers: product rule, pullback along closed quotient, profiles of log|.|), PR https://github.com/mccorvie/riemann-masullo/pull/5372. Released #2667 #2688 #2691 #2693 #2694 #2696 #2708 #2711 with notes (missing: Schwartz estimates for one-sided orbit sums; topological identifications of supported stages).
 
 - 2026-11-22 ADB991-claude-20261122-f988: Ch06_LocalGlobal/Sec1.lean. Proved #4266, #4278 (PR #5357, branch claude/sweep-ch06-sec1-f988). Released #4274 #4276 #4281 #4282 #4283 #4284 #4288 with notes; full Lean draft of the averaging/Laurent proofs in drafts/Ch06-Sec1-sweep-f988-draft.lean (elaboration problems, see setup notes).
 
