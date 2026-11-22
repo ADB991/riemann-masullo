@@ -6,6 +6,7 @@ public import RiemannMasullo.Ch03_IdelicZeta.Sec3b
 
 import all RiemannMasullo.Ch02_AdelicTheta.Sec2a
 import RiemannMasullo.ForMathlib.Analysis.SpecialFunctions.Gaussian.Schwartz
+import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 
 /-!
 # §7.1.1–7.1.2 Almost periodic functions and S-local theta asymptotics
@@ -243,11 +244,158 @@ at `c`, by taking the residue after shifting the desired power to exponent minus
 def sLocalZLaurentCoeff (f : ℬₛ) (c : QuasiCharacter Jₛ) (m : ℤ) : ℂ :=
   complexResidue (fun z ↦ sLocalIdelicZFunction f (twistₛ c z) / z ^ (m + 1)) 0
 
+/-- Circle integrals of `g z / z ^ (k + 1)` over small circles, for `g = z ^ (-N) * h`. -/
+private theorem sLocalZLaurentCoeff_hasLaurentSeries_circleIntegral {g h : ℂ → ℂ} {N : ℕ}
+    {R : ℝ≥0} (hR : 0 < R)
+    (hh : DifferentiableOn ℂ h (Metric.closedBall 0 R))
+    (hg : ∀ z, z ≠ 0 → g z = z ^ (-(N : ℤ)) * h z) (k : ℤ) {r : ℝ} (hr : r ∈ Ioo 0 (R : ℝ)) :
+    circleIntegral (fun z ↦ g z / z ^ (k + 1)) 0 r / (2 * (Real.pi : ℂ) * Complex.I) =
+      if (-(N : ℤ)) ≤ k then cauchyPowerSeries h 0 R (k + N).toNat (fun _ ↦ 1) else 0 := by
+  have hr0 : (0 : ℝ) < r := hr.1
+  have hpi : (2 * (Real.pi : ℂ) * Complex.I) ≠ 0 := by
+    simp [Real.pi_ne_zero, Complex.I_ne_zero]
+  have hsub : Metric.closedBall (0 : ℂ) r ⊆ Metric.closedBall 0 R :=
+    Metric.closedBall_subset_closedBall hr.2.le
+  have hne : ∀ z ∈ Metric.sphere (0 : ℂ) r, z ≠ 0 := fun z hz h0 ↦ by
+    rw [h0, mem_sphere_zero_iff_norm, norm_zero] at hz; exact hr0.ne hz
+  split_ifs with hk
+  · obtain ⟨j, hj⟩ : ∃ j : ℕ, k + N = j := ⟨(k + N).toNat, (Int.toNat_of_nonneg (by omega)).symm⟩
+    rw [hj, Int.toNat_natCast]
+    let r' : ℝ≥0 := ⟨r, hr0.le⟩
+    have hp1 : HasFPowerSeriesOnBall h (cauchyPowerSeries h 0 r') 0 r' :=
+      (hh.mono hsub).hasFPowerSeriesOnBall (by exact_mod_cast hr0)
+    have hp2 : HasFPowerSeriesOnBall h (cauchyPowerSeries h 0 R) 0 R := hh.hasFPowerSeriesOnBall hR
+    rw [← hp1.hasFPowerSeriesAt.eq_formalMultilinearSeries hp2.hasFPowerSeriesAt,
+      cauchyPowerSeries_apply, smul_eq_mul, inv_mul_eq_div]
+    congr 1
+    refine circleIntegral.integral_congr hr0.le fun z hz ↦ ?_
+    have hz := hne z hz
+    simp only [sub_zero, smul_eq_mul, hg z hz]
+    have hk' : k + 1 = (j : ℤ) + 1 - N := by omega
+    rw [hk', zpow_sub₀ hz, zpow_neg, zpow_add_one₀ hz, zpow_natCast, zpow_natCast]
+    field_simp
+    rw [one_div, inv_pow, mul_assoc, mul_inv_cancel₀ (pow_ne_zero _ hz), mul_one]
+  · rw [div_eq_zero_iff]
+    left
+    obtain ⟨m, hm⟩ : ∃ m : ℕ, -(N : ℤ) - (k + 1) = m := ⟨(-(N : ℤ) - (k + 1)).toNat,
+      (Int.toNat_of_nonneg (by omega)).symm⟩
+    have hd : DifferentiableOn ℂ (fun z ↦ z ^ m * h z) (Metric.closedBall 0 r) :=
+      ((differentiable_pow m).differentiableOn).mul (hh.mono hsub)
+    rw [circleIntegral.integral_congr hr0.le (g := fun z ↦ z ^ m * h z) fun z hz ↦ ?_]
+    · exact Complex.circleIntegral_eq_zero_of_differentiable_on_off_countable hr0.le countable_empty
+        hd.continuousOn fun z hz ↦ hd.differentiableAt
+          (mem_of_superset (Metric.isOpen_ball.mem_nhds hz.1) Metric.ball_subset_closedBall)
+    · have hz := hne z hz
+      simp only [hg z hz]
+      rw [← zpow_natCast, ← hm, zpow_sub₀ hz]
+      field_simp
+
+/-- A germ meromorphic at zero has the Laurent series given by its residue coefficients. -/
+private theorem sLocalZLaurentCoeff_hasLaurentSeries_of_meromorphicAt {g : ℂ → ℂ}
+    (hg : MeromorphicAt g 0) :
+    HasVectorLaurentSeriesAt g 0 (fun k ↦ complexResidue (fun z ↦ g z / z ^ (k + 1)) 0) := by
+  obtain ⟨N, hN⟩ := hg
+  let h : ℂ → ℂ := fun z ↦ (z - 0) ^ N • g z
+  obtain ⟨R₀, hR₀, hR₀h⟩ := hN.exists_ball_analyticOnNhd
+  let R : ℝ≥0 := ⟨R₀ / 2, by positivity⟩
+  have hR : (0 : ℝ≥0) < R := by
+    change (0 : ℝ) < R₀ / 2; positivity
+  have hRR : (R : ℝ) < R₀ := by change R₀ / 2 < R₀; linarith
+  have hh : DifferentiableOn ℂ h (Metric.closedBall 0 R) := fun z hz ↦
+    (hR₀h z (Metric.closedBall_subset_ball hRR hz)).differentiableAt.differentiableWithinAt
+  have hgh : ∀ z, z ≠ 0 → g z = z ^ (-(N : ℤ)) * h z := fun z hz ↦ by
+    simp only [h, sub_zero, smul_eq_mul, zpow_neg, zpow_natCast]
+    field_simp
+  let p := cauchyPowerSeries h 0 R
+  have hp : HasFPowerSeriesOnBall h p 0 R := hh.hasFPowerSeriesOnBall hR
+  have hcoef (k : ℤ) : complexResidue (fun z ↦ g z / z ^ (k + 1)) 0 =
+      if (-(N : ℤ)) ≤ k then p (k + N).toNat (fun _ ↦ 1) else 0 := by
+    refine (tendsto_const_nhds.congr' ?_).limUnder_eq
+    filter_upwards [Ioo_mem_nhdsGT (show (0 : ℝ) < R from hR)] with r hr
+    exact (sLocalZLaurentCoeff_hasLaurentSeries_circleIntegral hR hh hgh k hr).symm
+  refine ⟨-(N : ℤ), R, hR, fun k hk ↦ ?_, ?_⟩
+  · beta_reduce
+    rw [hcoef, ite_eq_right_iff.mpr fun h ↦ absurd h (not_le.mpr hk)]
+  intro K hK hKc
+  have hK0 : ∀ w ∈ K, w ≠ 0 := fun w hw ↦ (hK hw).2
+  obtain ⟨r', hr', hKr'⟩ := exists_pos_lt_subset_ball (show (0 : ℝ) < R from hR) hKc.isClosed
+    (fun w hw ↦ (hK hw).1)
+  let r'' : ℝ≥0 := ⟨r', hr'.1.le⟩
+  have hU := hp.tendstoUniformlyOn (r' := r'') (by exact_mod_cast hr'.2)
+  obtain ⟨C, hC⟩ : ∃ C, ∀ w ∈ K, ‖w ^ (-(N : ℤ))‖ ≤ C :=
+    hKc.exists_bound_of_continuousOn (fun w hw ↦
+      (continuousAt_zpow₀ _ _ (Or.inl (hK0 w hw))).continuousWithinAt)
+  have hsum (n : ℕ) (w : ℂ) (hw : w ≠ 0) :
+      ∑ j ∈ Finset.range n, (w - 0) ^ (-(N : ℤ) + (j : ℤ)) •
+        complexResidue (fun z ↦ g z / z ^ (-(N : ℤ) + (j : ℤ) + 1)) 0 =
+        w ^ (-(N : ℤ)) * p.partialSum n w := by
+    rw [FormalMultilinearSeries.partialSum, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [FormalMultilinearSeries.apply_eq_pow_smul_coeff (z := w), hcoef,
+      ite_eq_left_iff.mpr fun h ↦ absurd (show -(N : ℤ) ≤ -(N : ℤ) + j by omega) h,
+      show (-(N : ℤ) + j + N).toNat = j by omega, sub_zero, zpow_add₀ hw, zpow_natCast,
+      smul_eq_mul, smul_eq_mul, FormalMultilinearSeries.coeff, mul_assoc]
+    rfl
+  rw [IsUniformAddGroup.rightUniformSpace_eq, Metric.tendstoUniformlyOn_iff]
+  intro ε hε
+  have hC' : 0 < max C 1 := lt_of_lt_of_le one_pos (le_max_right _ _)
+  filter_upwards [Metric.tendstoUniformlyOn_iff.mp hU (ε / max C 1) (div_pos hε hC')] with n hn
+  intro w hw
+  have hwb : w ∈ Metric.ball (0 : ℂ) r'' := hKr' hw
+  have h1 := hn w hwb
+  rw [zero_add] at h1
+  rw [hsum n w (hK0 w hw), hgh w (hK0 w hw), dist_eq_norm, ← mul_sub, norm_mul, ← dist_eq_norm]
+  calc ‖w ^ (-(N : ℤ))‖ * dist (h w) (p.partialSum n w)
+      ≤ max C 1 * dist (h w) (p.partialSum n w) :=
+        mul_le_mul_of_nonneg_right ((hC w hw).trans (le_max_left _ _)) dist_nonneg
+    _ < max C 1 * (ε / max C 1) := mul_lt_mul_of_pos_left h1 hC'
+    _ = ε := by field_simp
+
+/-- Every S-local quasi-character is a norm twist of a unitary character, so its norm-twist
+line is a translate of a unitary chart. -/
+private theorem sLocalZLaurentCoeff_hasLaurentSeries_chart (c : QuasiCharacter Jₛ) :
+    ∃ (χ : PontryaginDual Jₛ) (s : ℂ), ∀ z : ℂ, twistₛ c z =
+      twistₛ ((⟨Circle.coeHom, continuous_subtype_val⟩ : Circle →ₜ* ℂ).comp χ) (s + z) := by
+  let : LocallyCompactSpace (SAdeleRing F S)ˣ := (sIdeleGroup_description F S).2.2.1
+  have := isClosed_sProjectedDiagonal (F := F) (S := S)
+  have hp := isProperMap_sIdeleQuotientNorm F S
+  have hne : ∃ g, mₛ g ≠ 1 := by
+    obtain ⟨τ, hτ⟩ := sIdeleQuotientNorm_exists_section F S
+    obtain ⟨t, ht⟩ := exists_ne (1 : ℝ≥0ˣ)
+    exact ⟨τ t, (hτ t).trans_ne ht⟩
+  let a := quasiCharacterAbscissa mₛ hp hne c
+  let d := twistₛ c (-(a : ℂ))
+  have hrad (g : Jₛ) : (((mₛ g : ℝ≥0) : ℝ) : ℂ) ^ (a : ℂ) = (‖c g‖ : ℂ) := by
+    rw [← Complex.ofReal_cpow (NNReal.coe_nonneg _) a,
+      norm_quasiCharacter_eq_rpow_abscissa mₛ hp hne]
+  have hd (g : Jₛ) : d g = c g / (‖c g‖ : ℂ) := by
+    change c g * _ ^ (-(a : ℂ)) = _
+    rw [Complex.cpow_neg, hrad, div_eq_mul_inv]
+  have hn (g : Jₛ) : ‖c g‖ ≠ 0 := norm_ne_zero_iff.mpr ((Group.isUnit g).map c).ne_zero
+  let χ : PontryaginDual Jₛ :=
+    { toFun := fun g ↦ ⟨d g, mem_sphere_zero_iff_norm.mpr (by
+        rw [hd, norm_div, Complex.norm_of_nonneg (norm_nonneg _), div_self (hn g)])⟩
+      map_one' := Subtype.ext d.map_one
+      map_mul' x y := Subtype.ext (d.map_mul x y)
+      continuous_toFun := d.continuous.subtype_mk _ }
+  refine ⟨χ, (a : ℂ), fun z ↦ ContinuousMonoidHom.ext fun g ↦ ?_⟩
+  have hN : (((mₛ g : ℝ≥0) : ℝ) : ℂ) ≠ 0 :=
+    Complex.ofReal_ne_zero.mpr (NNReal.coe_ne_zero.mpr (mₛ g).ne_zero)
+  change c g * (((mₛ g : ℝ≥0) : ℝ) : ℂ) ^ z =
+    d g * (((mₛ g : ℝ≥0) : ℝ) : ℂ) ^ ((a : ℂ) + z)
+  rw [hd, Complex.cpow_add _ _ hN, hrad, ← mul_assoc, div_mul_cancel₀ _
+    (Complex.ofReal_ne_zero.mpr (hn g))]
+
 /-- Paper: Definition 7.1.2.1, p. 316.
 The coefficient sequence gives a Laurent expansion of the centered zeta germ, with partial
 sums converging uniformly on compact subsets of a punctured disc. -/
 theorem sLocalZLaurentCoeff_hasLaurentSeries (f : ℬₛ) (c : QuasiCharacter Jₛ) :
-    HasVectorLaurentSeriesAt (zetaGerm(f, c)) 0 (sLocalZLaurentCoeff f c) := by sorry
+    HasVectorLaurentSeriesAt (zetaGerm(f, c)) 0 (sLocalZLaurentCoeff f c) := by
+  obtain ⟨χ, s, hχ⟩ := sLocalZLaurentCoeff_hasLaurentSeries_chart (F := F) (S := S) c
+  refine sLocalZLaurentCoeff_hasLaurentSeries_of_meromorphicAt ?_
+  simp only [hχ]
+  exact (((sLocalIdelicZFunction_meromorphic f χ).meromorphicOn (s + 0) trivial)).comp_analyticAt
+    (g := fun t ↦ s + t) (by fun_prop)
 
 -- TODO(paper-gap): In Lemma 7.1.2.2(1), the complex-place shift has the wrong sign.
 -- The uniqueness of the contributing place stated on p. 317 fails when poles coincide.
