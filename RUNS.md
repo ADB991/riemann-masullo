@@ -19,7 +19,7 @@ GitHub GraphQL is refused from the sandbox: use `gh api` REST (search/issues nee
 - RiemannMasullo/Ch06_LocalGlobal/Sec1.lean: #4266 #4274 #4276 #4278 #4281 #4282 #4283 #4284 #4288; session ADB991-claude-20261122-f988; branch claude/sweep-ch06-sec1-f988 (not pushed yet); PR none; last touched 2026-11-22T13:09Z
 
 
-- RiemannMasullo/Ch06_LocalGlobal/Sec2.lean: #4311 #4306 #4308 #4316; session ADB991-claude-20261122-7c3e; branch claude/sweep-ch06-sec2-7c3e (not pushed yet); PR none; last touched 2026-11-22T13:50Z
+- RiemannMasullo/Ch06_LocalGlobal/Sec2.lean: #4311 (proved, final checks running); #4306 #4308 #4316 released; session ADB991-claude-20261122-7c3e; branch claude/sweep-ch06-sec2-7c3e (pushed); PR none yet; last touched 20261122T153006Z
 
 - RiemannMasullo/Ch02_AdelicTheta/Sec2b.lean: #3523 #3524; session ADB991-claude-20261122-d618; branch claude/sweep-ch02-sec2b-d618 (pushed, both proved; module builds, lint ok, signatures unchanged; full lake build running); PR none yet; last touched 2026-11-22T15:22Z
 
