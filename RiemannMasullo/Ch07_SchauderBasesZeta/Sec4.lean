@@ -4,6 +4,9 @@ public import RiemannMasullo.Ch07_SchauderBasesZeta.Sec3b
 public import RiemannMasullo.Ch06_LocalGlobal.Sec3
 public import RiemannMasullo.AppC_LCTVS.Sec3a
 
+import all RiemannMasullo.AppD_SchwartzBruhat.Sec2b
+import all RiemannMasullo.AppD_SchwartzBruhat.Sec3b
+
 import all RiemannMasullo.AppA_AlgebraicNT.Sec3
 
 /-! # §7.4 Nuclearity
@@ -67,7 +70,19 @@ The test integral converges absolutely throughout the norm chart.
 At the trivial quasi-character it gives the integral of the test. -/
 theorem nuclearityTestMellin_integrable (χ : U) (φ : 𝒟) :
     (∀ s : ℂ, Integrable (testIntegrand(χ, φ, s)) μ𝔽) ∧
-      nuclearityTestMellin 1 φ 0 = ∫ g, φ.val g ∂μ𝔽 := by sorry
+      nuclearityTestMellin 1 φ 0 = ∫ g, φ.val g ∂μ𝔽 := by
+  let : BorelSpace C𝔽 := ⟨rfl⟩
+  let : (ideleClassTamagawaMeasure F).IsHaarMeasure := (ideleClassTamagawaMeasure_isWeil F).1
+  have hc : Continuous φ.val :=
+    continuous_schwartzBruhat (⟨φ.val, bruhatCompactSupport_mem_schwartz φ.property⟩ : SchwartzBruhat C𝔽)
+  constructor
+  · intro s
+    exact (hc.mul (ideleClassNormTwist χ s).continuous).integrable_of_hasCompactSupport
+      (show HasCompactSupport φ.val from φ.property.2).mul_right
+  · apply integral_congr_ae
+    filter_upwards with g
+    change φ.val g * (1 * _ ^ (0 : ℂ)) = φ.val g
+    simp
 
 /-- Paper: Theorem 7.4.1.1(2), pp. 366–367.
 An operator of order zero admits a nuclear presentation with rapidly decreasing
@@ -81,7 +96,13 @@ def IsStronglyNuclearOperator {E : Type*} [AddCommGroup E] [Module ℂ E] [Unifo
 Every continuous rank-one operator is of order zero. -/
 theorem isStronglyNuclearOperator_rankOne {E : Type*} [AddCommGroup E] [Module ℂ E]
     [UniformSpace E] [IsUniformAddGroup E] [PolynormableSpace ℂ E] [T2Space E]
-    (ℓ : StrongDual ℂ E) (x : E) : IsStronglyNuclearOperator (ℓ.smulRight x) := by sorry
+    (ℓ : StrongDual ℂ E) (x : E) : IsStronglyNuclearOperator (ℓ.smulRight x) := by
+  obtain ⟨r, hr, _, _, htail⟩ := nuclearPresentation_smulRight ℓ x 1 one_ne_zero
+  refine ⟨r, fun k ↦ ⟨1, ?_⟩⟩
+  intro n
+  cases n with
+  | zero => simp [hr]
+  | succ n => simp [htail n]
 
 section Spectral
 
@@ -95,7 +116,8 @@ local notation "Λ(" χ ", " τ ", " hτ ")" => regularizedCompletedHeckeL χ τ
 In Mellin coordinates the norm-power twist shifts the regularized completed generator
 by translation of the argument by a. The shifted generator is entire. -/
 theorem spectralNuclearityGenerator_differentiable (a : ℝ) :
-    Differentiable ℂ (fun s ↦ (Λ(χ, τ, hτ)).val (s + (a : ℂ))) := by sorry
+    Differentiable ℂ (fun s ↦ (Λ(χ, τ, hτ)).val (s + (a : ℂ))) := by
+  exact (Λ(χ, τ, hτ)).property.comp (differentiable_id.add_const (a : ℂ))
 
 /-- Paper: Equation (7.4.0.1), p. 366.
 The denominator is the shifted theta image in the Schwartz–Bergman model of the
@@ -214,7 +236,12 @@ local notation "Aθ(" φ ")" => (exists_polarThetaNuclearityAction χ τ hτ φ)
 /-- Paper: Equation (7.4.0.2), p. 366.
 The finite places of a number field lying above one rational prime form a finite set. -/
 theorem finite_nuclearityPlacesAbove (p : HeightOneSpectrum (𝓞 ℚ)) :
-    {v : V | v.under (𝓞 ℚ) = p}.Finite := by sorry
+    {v : V | v.under (𝓞 ℚ) = p}.Finite := by
+  apply Set.Finite.of_finite_image (f := HeightOneSpectrum.asIdeal)
+    (hi := HeightOneSpectrum.asIdeal_injective.injOn)
+  apply (IsDedekindDomain.primesOver_finite p.asIdeal (𝓞 F)).subset
+  rintro _ ⟨w, hw, rfl⟩
+  exact ⟨w.isPrime, ⟨congrArg HeightOneSpectrum.asIdeal (show w.under (𝓞 ℚ) = p from hw).symm⟩⟩
 
 local notation "Sₚ(" p ")" => (finite_nuclearityPlacesAbove (F := F) p).toFinset
 
