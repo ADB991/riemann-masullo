@@ -24,6 +24,8 @@ GitHub GraphQL is refused from the sandbox: use `gh api` REST (search/issues nee
 - RiemannMasullo/Ch02_AdelicTheta/Sec2b.lean: #3523 #3524; session ADB991-claude-20261122-d618; branch claude/sweep-ch02-sec2b-d618 (not pushed yet); PR none; last touched 2026-11-22T14:22Z
 
 
+- RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5.lean: #2654 #2667 #2688 #2691 #2693 #2694 #2696 #2708 #2711; session ADB991-claude-20261122-9335; branch claude/sweep-ch04-sec5-9335 (not pushed yet); PR none; last touched 2026-11-22T15:25Z
+
 ## runs
 
 - 2026-11-22 ADB991-claude-20261122-db2b: Ch11_ShellStructure/Sec1a.lean, proved #4699 #4702 (file now sorry-free), PR https://github.com/mccorvie/riemann-masullo/pull/5234 (branch claude/sweep-ch11-sec1a-db2b). Ch06 Sec1 claim of f988 left alone (live).
