@@ -333,7 +333,10 @@ theorem globalHomogeneousThetaSpace_strongDual_complete :
 /-- Paper: Theorem 5.2.3.1(2), p. 233.
 The strong dual of the S-local homogeneous quotient is complete. -/
 theorem sLocalHomogeneousThetaSpace_strongDual_complete (χ : PontryaginDual (J₁(S))) :
-    CompleteSpace (StrongDual ℂ (Θₛω(S, χ))) := by sorry
+    CompleteSpace (StrongDual ℂ (Θₛω(S, χ))) := by
+  let : CompleteSpace (StrongDual ℂ (SchwartzBruhat (Multiplicative (SAdeleRing F S)))) :=
+    sAdeleSchwartz_strongDual_complete F S
+  exact completeSpace_strongDual_quotient _
 
 /-- Paper: Theorem 5.2.3.1(2), p. 233.
 The strong dual of the global homogeneous quotient is nuclear. -/
