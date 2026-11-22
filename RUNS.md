@@ -49,7 +49,7 @@ or an abstract private lemma avoids it.
 
 ## open
 
-- RiemannMasullo/AppB_AnalyticNT/Sec4b.lean: #3895 #3892 (proved, branch pushed, full lake build running; PR to open); #3891 released; session ADB991-claude-20261122-0825; branch claude/sweep-appb-sec4b-0825; PR none yet; last touched 2026-11-22T20:05Z
+- RiemannMasullo/AppB_AnalyticNT/Sec4b.lean: #3895 #3892 (in PR); session ADB991-claude-20261122-0825; branch claude/sweep-appb-sec4b-0825; PR https://github.com/mccorvie/riemann-masullo/pull/5581; last touched 2026-11-22T20:45Z
 
 - RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean: #5328 #5329 #5332 (in PR); session ADB991-claude-20261122-b7e4; branch claude/sweep-ch09-sec3-printed-b7e4; PR https://github.com/mccorvie/riemann-masullo/pull/5438; last touched 2026-11-22T18:20Z
 
@@ -61,6 +61,8 @@ or an abstract private lemma avoids it.
 - RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5.lean: #2654 (in PR); session ADB991-claude-20261122-9335; branch claude/sweep-ch04-sec5-9335; PR https://github.com/mccorvie/riemann-masullo/pull/5372; last touched 2026-11-22T17:02Z
 
 ## runs
+
+- 2026-11-22 ADB991-claude-20261122-0825: AppB_AnalyticNT/Sec4b.lean, proved #3895 (exists_finiteConnesPrincipalValue) and #3892 (finiteLogFourier_unique, uses #3891 by name). PR https://github.com/mccorvie/riemann-masullo/pull/5581 (branch claude/sweep-appb-sec4b-0825). Released #3891 with a note (needs explicit p-adic Gauss-sum computation). Full lake build 1711 s; lint ok; signatures unchanged.
 
 - 2026-11-22 ADB991-claude-20261122-ffe6: Ch04_PeriodicSchauderBases/Sec2.lean, proved #1948 (cyclicPeriodizationCLM_apply, one line from cyclicPeriodization_hasSum; file now sorry-free). PR https://github.com/mccorvie/riemann-masullo/pull/5485 (branch claude/sweep-ch04-sec2-ffe6). Full lake build 35 min. No releases. Claim closed.
 
