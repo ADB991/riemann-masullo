@@ -83,7 +83,7 @@ Some thirty people have had pull requests merged, about 1,580 pull requests in a
 - **Wave 2** (Chapters 5–7 and Appendix B) is fully stated, each statement reviewed against the
   paper before it was merged. Its proofs are open.
 - **Wave 3** (Chapters 10–12, the trace formula, then the two pages of Chapter 13) is being
-  stated section by section in the same way. §10.1–10.2, §11.1, the opening of §11.2, the
+  stated section by section in the same way. Chapter 10, §11.1, the opening of §11.2, the
   general part of §12.1 and §12.2 are on `main` with their proofs open; the rest follows in
   dependency order. Chapter 8 is not needed for these statements.
 
@@ -93,14 +93,14 @@ the roadmap below the order of work.
 
 ### What the formalization has found
 
-[`ERRATA.md`](ERRATA.md) has about 515 entries: some 170 statements that are false as printed,
-310 that are imprecise, inconsistent or wrongly justified, 25 placeholders or missing pieces,
+[`ERRATA.md`](ERRATA.md) has about 585 entries: some 200 statements that are false as printed,
+345 that are imprecise, inconsistent or wrongly justified, 28 placeholders or missing pieces,
 and 9 reports from readers about parts not yet formalized. Those in the appendices' and early
 chapters' accounts of standard material are repaired where they occur: the Lean states the
 corrected form and says so.
 
 The second wave has reached the paper's own constructions in Chapters 5–7, and the findings
-there weigh more. Most still come with a repair. Eighteen steps have none so far, and later
+there weigh more. Most still come with a repair. Twenty-two steps have none so far, and later
 results use them; `ERRATA.md` lists them first. The main one in Chapter 5 is the structure
 theorem for the spaces of adelic θ-functions (Theorem 5.2.1.1): its printed proof does not
 work. One of its two central claims, that each finite stage embeds in the global space, has
@@ -108,9 +108,9 @@ since been proved in Lean by a different route. The other, strictness, is neithe
 refuted, and the rest of §5.2 is proved from it. The explicit formulas of §B.4, which
 Chapter 12 quotes, need their local terms and normalizations recomputed.
 
-The third wave has reached the trace formula. Twelve of the eighteen steps are in Chapters
+The third wave has reached the trace formula. Sixteen of the twenty-two steps are in Chapters
 10–12 or in the later sections of Chapter 7: the bases and nuclear presentations from which the
-spectral and orbital traces are computed (§7.3–7.4, §10.2, §11.2) are not established by the
+spectral and orbital traces are computed (§7.3–7.4, §10.2–10.4, §11.1–11.2) are not established by the
 printed arguments, and the section that should compare the global trace with the S-local one
 (§12.3) consists of its heading and a note to include it. These are the assessments of the
 agents that checked the entries against the pages, not a specialist's.
