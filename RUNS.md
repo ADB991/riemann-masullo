@@ -45,9 +45,11 @@ or an abstract private lemma avoids it.
 
 (2026-11-22, a7c2) Cold `lake build` of Ch10 Sec1 (all deps) took 31 min; the module itself ~75 s; full `lake build` after that 16 min. Scratch files that copy a module's `local instance`s collide with the instance names exported by the imported module: rename them. In Ch10 Sec1, unification through ℬ-subtypes / weighted-Lp subspaces is very slow (`obtain` on `mem_adelePolarSubspace`, `rw [map_smul]` on a LinearIsometryEquiv of Lp subspaces): abstract private lemmas over generic groups/spaces fix it. Test those on a tiny scratch that imports only the lower module (e.g. Ch02 Sec2b), ~8 s.
 
+(2026-11-22, 0825) `maxHeartbeats` (200000) is per declaration, not per tactic: a long proof made of individually cheap steps fails with `(deterministic) timeout at whnf` reported at the `by` or the declaration start. Split into several private lemmas, each its own budget. Also: `set` and `obtain ⟨..⟩ :=` under a goal mentioning linear maps out of `SchwartzBruhat` hang; use `.choose`/`.choose_spec` and state helper facts for a generic `h : SchwartzBruhat G`. A scratch `.agent/X.lean` with `import all RiemannMasullo.<Mod>` plus the file's notations (rename copied `local instance`s, they clash by name) checks in ~10 s, but only while the imported module itself is unmodified and built: `lake lean` rebuilds a modified import first. Cold deps of AppB Sec4b (cache had Mathlib only): ~50 min.
+
 ## open
 
-- RiemannMasullo/AppB_AnalyticNT/Sec4b.lean: #3895 #3891 #3892; session ADB991-claude-20261122-0825; branch claude/sweep-appb-sec4b-0825 (not pushed yet); PR none; last touched 2026-11-22T17:55Z
+- RiemannMasullo/AppB_AnalyticNT/Sec4b.lean: #3895 #3892 (proved, branch pushed, full lake build running; PR to open); #3891 released; session ADB991-claude-20261122-0825; branch claude/sweep-appb-sec4b-0825; PR none yet; last touched 2026-11-22T20:05Z
 
 - RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean: #5328 #5329 #5332 (in PR); session ADB991-claude-20261122-b7e4; branch claude/sweep-ch09-sec3-printed-b7e4; PR https://github.com/mccorvie/riemann-masullo/pull/5438; last touched 2026-11-22T18:20Z
 
