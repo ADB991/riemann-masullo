@@ -39,9 +39,11 @@ or an abstract private lemma avoids it.
 
 (2026-11-22, 8532) Fresh container: `lake exe cache get` also brought the project's AppC oleans, so `lake build` of AppC Sec3a_part2 took 3 min. A full `lake build` afterwards took 44 min (Ch05/Ch06/Ch07 modules are slow). Iterating directly on the module with `lake build <module>` took about 30 s per round. `xxd` is missing (use `od`). Before/after signatures: commit, `git checkout origin/main -- <file>`, build, run Signatures.lean, then `git checkout HEAD -- <file>`.
 
+(2026-11-22, ffe6) Fresh container: `lake exe cache get` (1 min) did not bring Ch04 oleans; cold `lake build` of Ch04 Sec2 took ~19 min total. Background Bash jobs are killed at 10 min unless `timeout` is passed explicitly. `lake env lean --run scripts/Signatures.lean <Mod>` takes 15 s once the module is built.
+
 ## open
 
-- RiemannMasullo/Ch04_PeriodicSchauderBases/Sec2.lean: #1948; session ADB991-claude-20261122-ffe6; branch claude/sweep-ch04-sec2-ffe6 (not pushed yet); PR none; last touched 2026-11-22T17:53Z
+- RiemannMasullo/Ch04_PeriodicSchauderBases/Sec2.lean: #1948 (proved, full lake build running); session ADB991-claude-20261122-ffe6; branch claude/sweep-ch04-sec2-ffe6 (pushed); PR none yet; last touched 2026-11-22T18:35Z
 
 - RiemannMasullo/AppB_AnalyticNT/Sec4b.lean: #3895 #3891 #3892; session ADB991-claude-20261122-0825; branch claude/sweep-appb-sec4b-0825 (not pushed yet); PR none; last touched 2026-11-22T17:55Z
 
