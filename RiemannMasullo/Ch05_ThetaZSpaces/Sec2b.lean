@@ -7,6 +7,8 @@ import RiemannMasullo.ForMathlib.Topology.ContinuousMap.Sigma
 
 import all RiemannMasullo.AppC_LCTVS.Sec1
 
+import all RiemannMasullo.AppC_LCTVS.Sec1
+
 /-! # Homogeneous theta spaces and Fourier descent
 
 Masullo, §5.2.2–5.2.4, pp. 232–239. Every S-local space includes all archimedean places.
@@ -643,7 +645,15 @@ theorem sLocalHomogeneousThetaSpace_nuclear (χ : PontryaginDual (J₁(S))) :
 /-- Paper: Theorem 5.2.3.1(2), p. 233.
 The global homogeneous quotient is Montel. -/
 theorem globalHomogeneousThetaSpace_montel :
-    BarrelledSpace ℂ Θ𝔽ω(ω) ∧ MontelSpace ℂ Θ𝔽ω(ω) := by sorry
+    BarrelledSpace ℂ Θ𝔽ω(ω) ∧ MontelSpace ℂ Θ𝔽ω(ω) := by
+  have hN : IsNuclearTVS.{0} Θ𝔽ω(ω) := globalHomogeneousThetaSpace_nuclear (F := F) (ω := ω)
+  let : T2Space Θ𝔽ω(ω) := hN.1
+  let : PolynormableSpace ℂ Θ𝔽ω(ω) := hN.2.1
+  let : UniformSpace Θ𝔽ω(ω) := IsTopologicalAddGroup.rightUniformSpace _
+  let : IsUniformAddGroup Θ𝔽ω(ω) := isUniformAddGroup_of_addCommGroup
+  let : CompleteSpace Θ𝔽ω(ω) := globalHomogeneousThetaSpace_complete (F := F) (ω := ω)
+  refine ⟨IsLFSpace.barrelled (E := Θ𝔽ω(ω)) (globalHomogeneousThetaSpace_lf (F := F) (ω := ω)), ⟨fun B hc hb ↦ ?_⟩⟩
+  simpa only [hc.closure_eq] using isCompact_closure_of_isNuclearTVS Θ𝔽ω(ω) hN hb
 
 /-- Paper: Theorem 5.2.3.1(2), p. 233.
 The S-local homogeneous quotient is Montel. -/
