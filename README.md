@@ -121,8 +121,10 @@ Separately from this project, concerns have been raised about gaps in the proof 
 main theorem, the trace formula of Theorem 12.5.1.1. They come from readings of the paper
 discussed in the Lean Zulip thread
 [Formalising Masullo's proof of GRH](https://leanprover.zulipchat.com/#narrow/channel/113488-general/topic/Formalising.20Masullo.27s.20proof.20of.20GRH/with/642314625),
-where the details have not been posted. They did not come from this formalization, which has not
-reached that part of the paper. The draft is also unfinished by its author's own account:
+where the details were not posted at first. They did not come from this formalization, which
+had not then reached that part of the paper; what it has found there since is described above,
+and written accounts of several of those readings are listed under
+[Acknowledgments](#acknowledgments). The draft is also unfinished by its author's own account:
 Chapter 13, which should deduce GRH from the trace formula, does not yet state its main theorem.
 
 This is what the three aims above are for: when the formalization reaches a part that does not
@@ -233,6 +235,47 @@ no `sorry`.
 
 The paper's own main theorem (Theorem 13.3.1.2) is a placeholder in the current draft, so the last
 two statements were reconstructed from the introduction and have not been reviewed.
+
+## Acknowledgments
+
+The pull requests and issues show who stated, proved and reported what. The project also rests
+on work that does not appear there.
+
+- **Alessandro Maria Masullo** wrote the manuscript and asked readers to check and formalize it.
+- **Aadrian** ([@aadrianvv](https://github.com/aadrianvv)) made the Markdown transcription in
+  [`transcription/`](transcription/README.md). Every agent and contributor reads the paper
+  through it.
+- **Neal Patel** is formalizing parts of the same paper on his own, in
+  [`thatnealpatel/grh`](https://github.com/thatnealpatel/grh) (MIT). Three proofs of the
+  explicit-formula appendix here are adapted from his code, as
+  [`ATTRIBUTION.md`](RiemannMasullo/External/ATTRIBUTION.md) records, and a survey of his
+  repository pointed the way to further proofs and to witnesses over ℚ for refutations of
+  printed claims.
+- Three independent readings of the paper located gaps, some of them before the formalization
+  reached those pages. [`ERRATA.md`](ERRATA.md) names them where an entry agrees with one or
+  started from one, and agents that work on those pages are given them as leads to test.
+  - **Isaac Yonemoto**'s dependency audit,
+    [`ityonemo/music-of-primes`](https://github.com/ityonemo/music-of-primes). It includes
+    **Jenny Lorraine Nielsen**'s note *A Failure of Uniform Boundedness in Masullo's Proposed
+    Proof of the Generalized Riemann Hypothesis*.
+  - The [*Report on The Music of the Primes*](https://github.com/Refine-Technologies-Inc/music-of-primes-report-by-refine)
+    by **Ben Golub** and Refine Technologies.
+  - The companion [*Further repairs, attempted closures, and the remaining estimate*](https://anayebi.github.io/human_grh_unresolved.pdf),
+    published by **Aran Nayebi**.
+- **dga471** proved four of this project's statements on [Prove2Me](https://prove2.me), and
+  the proofs were brought in from there.
+- Proofs were adapted from [`CBirkbeck/AINTLIB`](https://github.com/CBirkbeck/AINTLIB) and
+  [`Rogerhu12/hecke-seven-eighths`](https://github.com/Rogerhu12/hecke-seven-eighths). The
+  scouts' surveys of what already exists in Lean
+  ([`SURVEY.md`](RiemannMasullo/External/SURVEY.md)) drew on those and on
+  `algebraic-number-theory-lean` and `quadratic-forms-lean` (jonhanke), `FLT`
+  (ImperialCollegeLondon), `ideles-journal` (mariainesdff), `DedekindZetaZeroFree` (AxiomMath),
+  `PrimeNumberTheoremAnd` (AlexKontorovich), `gaussian-field` (mrdouglasny) and `carleson`
+  (fpvandoorn).
+- Everything here is built on [Mathlib](https://github.com/leanprover-community/mathlib4), and
+  much of the discussion happens in the Lean Zulip thread linked above.
+
+If your work is used here and is missing from this list, please open an issue.
 
 ## License
 
