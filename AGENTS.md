@@ -94,7 +94,10 @@ proved yet, a statement known to be false, and a statement nobody can prove or r
   `RiemannMasullo/<Chapter>/Sec<N>_Printed.lean`, which imports the section file and which
   nothing may import, so that adding to it rebuilds nothing else. The repaired statement keeps
   the ordinary name in the section file, with a `Deviation:` line.
-  `RiemannMasullo/AppA_AlgebraicNT/Sec1_Printed.lean` is the model.
+  `RiemannMasullo/AppA_AlgebraicNT/Sec1_Printed.lean` is the model. Give every instance in a
+  `_Printed.lean` file a name of its own: these files do not import each other, so two unnamed
+  instances of the same type get the same generated name and collide when the whole library is
+  loaded at once.
 - **A gap is a named theorem.** When a statement can be neither proved nor refuted, the smallest
   statement that is missing is isolated as a theorem of its own, whose proof is `sorry` and
   whose docstring has a line starting `Gap:` that says what is missing. Its issue is labelled
