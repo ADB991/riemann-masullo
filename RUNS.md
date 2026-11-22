@@ -4,6 +4,8 @@ Cloud runs prove open `proof` issues of mccorvie/riemann-masullo, one library fi
 
 ## setup notes
 
+(2026-11-22, b7e4) Cold build of a _Printed leaf that imports Ch12 Sec1a (171 modules) took 37 min after `lake exe cache get`; full `lake build` afterwards 31 min. Once deps are built, `lake build` of the leaf file is ~10 s, so iterate there. On ℝ≥0ˣ: `positiveRealHaar` (= map exp volume) gives `{t | log t ∈ K}` measure `volume K` by `Measure.map_apply`; `borelSpace_units_of_continuousInv₀` lives in `RiemannMasullo.ForMathlib.MeasureTheory.Group.Arithmetic` (add the import); `Measure.map_dirac'` (with measurability) not `map_dirac`. Inside a theorem, `rcases h with rfl` on `c = Λ` can eliminate the outer variable Λ: use `rw`.
+
 (2026-11-22, 18ea) This container: `lake exe cache get` also brought project oleans; building AppD Sec1a took 2.5 min, full `lake build` 70 min. Single-module signature compare: write `origin/main` version of the file, rebuild module, run Signatures.lean, `git checkout` the file back (work committed first).
 
 (2026-11-22, 9335) `obtain ⟨..⟩ := lemma` on an existential inside a proof whose goal mentions the decay space E hung Lean for 20+ min in Ch04 Sec5; `have h := ...; Classical.choose h` was instant. Cold `lake build RiemannMasullo.Ch04_PeriodicSchauderBases.Sec5` took 27 min; the full `lake build` afterwards about 30 min more. Sec1c private lemmas are reachable with `import all RiemannMasullo.AppD_SchwartzBruhat.Sec1c`.
@@ -47,7 +49,7 @@ or an abstract private lemma avoids it.
 
 - RiemannMasullo/AppB_AnalyticNT/Sec4b.lean: #3895 #3891 #3892; session ADB991-claude-20261122-0825; branch claude/sweep-appb-sec4b-0825 (not pushed yet); PR none; last touched 2026-11-22T17:55Z
 
-- RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean: #5328 #5329 #5332 (all three proved, waiting for full lake build before PR); session ADB991-claude-20261122-b7e4; branch claude/sweep-ch09-sec3-printed-b7e4 (pushed); PR none yet; last touched 2026-11-22T18:08Z
+- RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean: #5328 #5329 #5332 (in PR); session ADB991-claude-20261122-b7e4; branch claude/sweep-ch09-sec3-printed-b7e4; PR https://github.com/mccorvie/riemann-masullo/pull/5438; last touched 2026-11-22T18:20Z
 
 
 - RiemannMasullo/Ch10_TraceSpectral/Sec1.lean: #4871 #4872 #4873 #4876 #4877 #4879 #4880 #4881 #4883 #4884 #4885 #4887 #4889 #4890 #4891 #4892 #4893 #4894 #4895 #4896 #4897 #4898 #4900 #4901 #4902 #4903 #4904; session ADB991-claude-20261122-a7c2; branch claude/sweep-ch10-sec1-a7c2 (not pushed yet); PR none; last touched 2026-11-22T16:40Z
@@ -57,6 +59,8 @@ or an abstract private lemma avoids it.
 - RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5.lean: #2654 (in PR); session ADB991-claude-20261122-9335; branch claude/sweep-ch04-sec5-9335; PR https://github.com/mccorvie/riemann-masullo/pull/5372; last touched 2026-11-22T17:02Z
 
 ## runs
+
+- 2026-11-22 ADB991-claude-20261122-b7e4: Ch09_HardySobolev/Sec3_Printed.lean, proved refutations #5328 #5329 #5332 (concrete counterexamples on ℝ>0 with dt/t), PR https://github.com/mccorvie/riemann-masullo/pull/5438. #5330 #5331 not claimed (heavier: isotype bands, Mellin jets of Gaussians). No releases.
 
 - 2026-11-22 ADB991-claude-20261122-18ea: AppD_SchwartzBruhat/Sec1a.lean, proved #3443 (elementarySchwartz_barrelled, one line from the private elementarySchwartz_frechet_montel); PR https://github.com/mccorvie/riemann-masullo/pull/5425 (branch claude/sweep-appd-sec1a-18ea). #3436 (tensor embedding, needs nuclearity/π=ε) not taken. Claim closed.
 
