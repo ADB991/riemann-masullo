@@ -37,6 +37,8 @@ or an abstract private lemma avoids it.
 
 ## open
 
+- RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean: #5328 #5329 #5332; session ADB991-claude-20261122-b7e4; branch claude/sweep-ch09-sec3-printed-b7e4 (not pushed yet); PR none; last touched 2026-11-22T17:15Z
+
 - RiemannMasullo/AppC_LCTVS/Sec3a_part2.lean: #783; session ADB991-claude-20261122-8532; branch claude/sweep-appc-sec3a-part2-8532 (not pushed yet); PR none; last touched 2026-11-22T16:39Z
 
 - RiemannMasullo/AppD_SchwartzBruhat/Sec1a.lean: #3443; session ADB991-claude-20261122-18ea; branch claude/sweep-appd-sec1a-18ea (not pushed yet); PR none; last touched 2026-11-22T16:40Z
