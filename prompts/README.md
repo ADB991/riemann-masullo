@@ -46,7 +46,7 @@ Start the progress tracker by hand in the main checkout, in a Claude session wit
 tool. Give it the instruction “You are the progress tracker. Read `prompts/progress-tracker.md`
 and start.”
 
-A reviewer is launched with `scripts/review.sh <pull request> --model gpt-6.2-astra --effort xhigh`.
+A reviewer is launched with `scripts/review.sh <pull request> --model claude-fable-5-2 --effort xhigh`.
 It gets the pull request's files, the paper pages and the digester's report in a scratch
 directory, can read the built `main` but change nothing, and its review is posted on the pull
 request.

@@ -4,7 +4,7 @@
 # request that closes the ones it proved. Single provers leave a file's hard tail behind; a
 # sweeper has the whole file, more time and a stronger model.
 #
-#   scripts/sweep.sh RiemannMasullo/<Chapter>/<File>.lean [--model M] [--effort E] [--note-file F] [--dry-run]
+#   scripts/sweep.sh RiemannMasullo/<Chapter>/<File>.lean [--cli claude|codex] [--model M] [--effort E] [--note-file F] [--dry-run]
 #
 # What it does:
 #   1. lists the file's open proof issues (by the `<!-- sorry: path::name -->` marker);
@@ -23,9 +23,10 @@ resume=""
 if [ "${1:-}" = --resume ]; then resume=${2:?the sweep issue number}; shift 2; set -- "resume" "$@"; fi
 file=${1:?usage: sweep.sh RiemannMasullo/<Chapter>/<File>.lean [--model M] [--effort E] [--dry-run]}
 shift
-model=gpt-6.2-astra; effort=xhigh; dry=0; note=""
+model=""; effort=xhigh; dry=0; note=""; cli=""
 while [ $# -gt 0 ]; do
   case $1 in
+    --cli) cli=$2; shift 2 ;;
     --model) model=$2; shift 2 ;;
     --effort) effort=$2; shift 2 ;;
     --dry-run) dry=1; shift ;;
@@ -35,6 +36,8 @@ while [ $# -gt 0 ]; do
 done
 main=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 cd "$main"
+. "$main/scripts/lib_model.sh"; resolve_model "$main"
+[ -n "$model" ] || { [ "$cli" = claude ] && model=claude-fable-5-2 || model=gpt-6.2-astra; }
 work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
 
 release() {   # release what the sweeper's pull request does not close; $1 = sweep issue
@@ -56,10 +59,17 @@ if [ -n "$resume" ]; then
   gh api "repos/{owner}/{repo}/issues/$n" --jq .body | grep -oE '^\| #[0-9]+' | grep -oE '[0-9]+' >"$work/mine.txt"
   [ -s "$work/mine.txt" ] || { echo "#$n does not look like a sweep issue" >&2; exit 1; }
   echo "resuming the sweeper of #$n in $wt"
-  codex exec --sandbox workspace-write -C "$wt" -o "$wt/.agent/last-message.md" -m "$model" \
-    -c "model_reasoning_effort=\"$effort\"" "You are the sweeper described in .agent/PROMPT.md in this directory, and you were interrupted part-way (the machine ran out of memory; nothing you did caused it). Your work so far is in the working tree and your notes are in .agent/NOTES.md. Read .agent/PROMPT.md again, look at what is already proved and whether the file still builds, repair anything left half-edited, and then carry on from where you stopped. You have about two more hours. Finish as the prompt says, with .agent/PR.md and, if anything is left, .agent/REPORT.md." \
-    >>"$wt/.agent/log.txt" 2>&1 </dev/null || true
-  scripts/agent.sh sweeper "$n" --handin --cli codex --model "$model" --effort "$effort" </dev/null || true
+  again="You are the sweeper described in .agent/PROMPT.md in this directory, and you were interrupted part-way (the machine ran out of memory; nothing you did caused it). Your work so far is in the working tree and your notes are in .agent/NOTES.md. Read .agent/PROMPT.md again, look at what is already proved and whether the file still builds, repair anything left half-edited, and then carry on from where you stopped. You have about two more hours. Finish as the prompt says, with .agent/PR.md and, if anything is left, .agent/REPORT.md."
+  if [ "$cli" = claude ]; then
+    mkdir -p "$wt/.agent/no-gh"
+    (cd "$wt" && GH_CONFIG_DIR="$wt/.agent/no-gh" GIT_TERMINAL_PROMPT=0 claude -p "$again" --model "$model" --effort "$effort" \
+      --permission-mode auto --permission-prompts none --allowedTools Bash Read Edit Write Grep Glob \
+      >>"$wt/.agent/last-message.md" 2>>"$wt/.agent/log.txt" </dev/null) || true
+  else
+    codex exec --sandbox workspace-write -C "$wt" -o "$wt/.agent/last-message.md" -m "$model" \
+      -c "model_reasoning_effort=\"$effort\"" "$again" >>"$wt/.agent/log.txt" 2>&1 </dev/null || true
+  fi
+  scripts/agent.sh sweeper "$n" --handin --cli "$cli" --model "$model" --effort "$effort" </dev/null || true
   release "$n"
   exit 0
 fi
@@ -134,6 +144,6 @@ while read -r i; do
   gh issue comment "$i" --body "Claimed by a sweeper agent that is closing out the whole file in one pull request (#$n)." >/dev/null
 done <"$work/mine.txt"
 
-scripts/agent.sh sweeper "$n" --model "$model" --effort "$effort" </dev/null || true
+scripts/agent.sh sweeper "$n" --cli "$cli" --model "$model" --effort "$effort" </dev/null || true
 
 release "$n"

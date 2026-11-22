@@ -38,7 +38,7 @@ means what the paper means. Spend your attention accordingly.
 
 **Statement pull requests (digester).** This is where review matters most.
 - Have every statement pull request from the paper's own chapters reviewed before you merge it:
-  `scripts/review.sh <pull request> --model gpt-6.2-astra --effort xhigh` gives a reviewer agent
+  `scripts/review.sh <pull request> --model claude-fable-5-2 --effort xhigh` gives a reviewer agent
   the files, the page images and the digester's report, and posts its review on the pull
   request. Act on its must-fix findings yourself, or ask the digester for changes. These
   reviews have found a wrong sign that made two main theorems false, a definition only zero

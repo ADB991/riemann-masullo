@@ -124,7 +124,7 @@ Merge a split you believe. If you doubt a piece, say exactly what you doubt on t
 and do not merge. For one of the project's own launcher pull requests (branch `prover/<n>` in
 this repository) you can then have the prover answer your comment, since the launcher resumes the
 branch and shows the agent the review:
-`scripts/agent.sh prover <n> --model gpt-6.2-sol --effort high`. That is the one use of the
+`scripts/agent.sh prover <n> --model claude-opus-5-5 --effort high`. That is the one use of the
 launcher that is yours.
 
 **A conflict with `main`.** For a pull request from a fork, the automatic `fail` comment asks the

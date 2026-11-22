@@ -13,9 +13,11 @@
 #              .agent/REPORT.md as a comment on the issue.
 #
 # Other options:
-#   --cli codex|claude   which agent to run (default: codex; claude for scouts)
-#   --model NAME         model to pass to the CLI
-#   --effort LEVEL       reasoning effort for Codex (low, medium, high, xhigh)
+#   --cli claude|codex   which agent to run (default: the one the model belongs to; with no
+#                        model, claude if it is installed, else codex; see scripts/lib_model.sh)
+#   --model NAME         model to pass to the CLI (for example claude-opus-5-5 for a digester,
+#                        claude-fable-5-2 for a sweeper)
+#   --effort LEVEL       reasoning effort (low, medium, high, xhigh)
 #   --dry-run            print the prompt and change nothing
 #   --force              take an issue that is labelled `claimed` or `blocked`, or discard an
 #                        existing worktree
@@ -71,11 +73,11 @@ case $role in
   scout) label="" ;;
   *) echo "unknown role $role" >&2; exit 2 ;;
 esac
-if [ $mode = all ] && [ -z "$cli" ]; then [ "$role" = scout ] && cli=claude || cli=codex; fi
-who="${cli:-interactive session}${model:+, $model}${effort:+, $effort effort}"
-
 main=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 cd "$main"
+. "$main/scripts/lib_model.sh"
+if [ $mode = all ]; then resolve_model "$main"; fi
+who="${cli:-interactive session}${model:+, $model}${effort:+, $effort effort}"
 up=origin; git remote get-url upstream >/dev/null 2>&1 && up=upstream
 slug() { git remote get-url "$1" | sed -E 's#^(git@github\.com:|https://github\.com/|ssh://git@github\.com/)##; s#\.git$##'; }
 export GH_REPO=$(slug "$up")           # every gh command below addresses the upstream repository
@@ -307,9 +309,17 @@ if [ $mode = all ]; then
       [ "$role" = scout ] && args+=(-c sandbox_workspace_write.network_access=true)
       codex "${args[@]}" "$prompt" </dev/null >"$wt/.agent/log.txt" 2>&1 ;;
     claude)
-      args=(-p "$prompt" --permission-mode auto)
+      # Claude Code needs the network to reach its model, so it cannot run in a sandbox without
+      # one as Codex does. Instead the GitHub credentials are hidden from it (an agent must not
+      # push or comment: the launcher does that), only a scout gets the web tools, and whatever
+      # would need a person's approval is refused.
+      args=(-p "$prompt" --permission-mode auto --permission-prompts none)
       [ -n "$model" ] && args+=(--model "$model")
-      claude "${args[@]}" --allowedTools Bash Read Edit Write Grep Glob WebSearch WebFetch </dev/null >"$wt/.agent/log.txt" 2>&1 ;;
+      [ -n "$effort" ] && args+=(--effort "$effort")
+      tools=(Bash Read Edit Write Grep Glob); [ "$role" = scout ] && tools+=(WebSearch WebFetch)
+      mkdir -p "$wt/.agent/no-gh"
+      GH_CONFIG_DIR="$wt/.agent/no-gh" GIT_TERMINAL_PROMPT=0 \
+        claude "${args[@]}" --allowedTools "${tools[@]}" </dev/null >"$wt/.agent/last-message.md" 2>"$wt/.agent/log.txt" ;;
     *) echo "unknown cli $cli" >&2; exit 2 ;;
   esac
   echo "agent exited with status $?"
