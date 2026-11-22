@@ -3115,6 +3115,73 @@ theorem homogeneousAdelicTheta_decay_both (ω₁ : χ[F]) (f : ℬ[F])
 -- TODO(paper-gap): Theorem 2.2.5.4(5) cites (2.2.5.11) among the estimates
 -- with a constant and a threshold, although it is an identity valid everywhere.
 
+/-- The uniform estimates of Theorem 2.2.5.4(5) with logarithmic threshold one: averaging the
+uniform theta bounds of Theorem 2.2.3.4(5) over the norm-one classes. -/
+private theorem homogeneousAdelicTheta_decay_bounded_uniform (ω₁ : χ[F]) (B : Set ℬ[F])
+    (hB : IsVonNBounded ℂ B) (N : ℕ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ f ∈ B, ∀ g : C[F],
+      (1 < Real.log (normℝ g) → ‖homogeneousAdelicTheta ω₁ f g‖ ≤ C * ((normℝ g) ^ N)⁻¹) ∧
+      (1 < -Real.log (normℝ g) →
+        ‖homogeneousAdelicTheta ω₁ f g - homogeneousAdelicTheta_polarTerm ω₁ f g‖ ≤
+          C * (normℝ g) ^ N) ∧
+      ((f ∈ adelePolarSubspace F ∨ ω₁ ≠ 1) → 1 < |Real.log (normℝ g)| →
+        ‖homogeneousAdelicTheta ω₁ f g‖ ≤ C * Real.exp (-(N : ℝ) * |Real.log (normℝ g)|)) := by
+  -- The application is elaborated in steps, each by `have`: applied in one step, or inside
+  -- `obtain`, the unifier unfolds the Schwartz–Bruhat instances and times out.
+  have hB₀ := adelicTheta_decay_bounded_threshold_one (F := F) B
+  have hB₁ := hB₀ hB N
+  obtain ⟨C, hC, hb⟩ := hB₁
+  have hV : 0 ≤ (μ̄₁ univ).toReal := ENNReal.toReal_nonneg
+  refine ⟨((μ̄₁ univ).toReal + 1) * C, by positivity, fun f hf g ↦ ?_⟩
+  have hn := normℝ_pos g
+  have P1 : 1 < Real.log (normℝ g) →
+      ‖homogeneousAdelicTheta ω₁ f g‖ ≤ ((μ̄₁ univ).toReal + 1) * C * ((normℝ g) ^ N)⁻¹ := by
+    intro hl
+    have hg : 1 < normℝ g := by
+      by_contra hc
+      have := Real.log_nonpos hn.le (not_lt.mp hc)
+      linarith
+    have hx : 0 ≤ ((normℝ g) ^ N)⁻¹ := by positivity
+    have hB' (h : C₁[F]) : ‖adelicTheta f (h.val * g)‖ ≤ C * ((normℝ g) ^ N)⁻¹ := by
+      simpa only [normℝ_normOne_mul] using
+        (hb f hf (h.val * g)).1 (by simpa only [normℝ_normOne_mul] using hg)
+    refine (norm_homogeneousAdelicTheta_le ω₁ f g hB').trans ?_
+    nlinarith [mul_nonneg hC.le hx]
+  have P2 : 1 < -Real.log (normℝ g) →
+      ‖homogeneousAdelicTheta ω₁ f g - homogeneousAdelicTheta_polarTerm ω₁ f g‖ ≤
+        ((μ̄₁ univ).toReal + 1) * C * (normℝ g) ^ N := by
+    intro hl
+    have hg : normℝ g < 1 := by
+      by_contra hc
+      have := Real.log_nonneg (not_lt.mp hc)
+      linarith
+    have hx : 0 ≤ (normℝ g) ^ N := by positivity
+    have hB' (h : C₁[F]) : ‖adelicTheta f (h.val * g) -
+        (normℝ g)⁻¹ • adeleSchwartzFourier f zeroAdele + f zeroAdele‖ ≤ C * (normℝ g) ^ N := by
+      simpa only [normℝ_normOne_mul] using
+        (hb f hf (h.val * g)).2.1 (by simpa only [normℝ_normOne_mul] using hg)
+    refine (norm_homogeneousAdelicTheta_sub_polarTerm_le ω₁ f g hB').trans ?_
+    nlinarith [mul_nonneg hC.le hx]
+  refine ⟨P1, P2, fun hpol habs ↦ ?_⟩
+  have hx : 0 ≤ Real.exp (-(N : ℝ) * |Real.log (normℝ g)|) := (Real.exp_pos _).le
+  rcases hpol with hf' | hω
+  · obtain ⟨hf0, hF0⟩ := (mem_adelePolarSubspace f).mp hf'
+    have he : Real.exp (-|Real.log (normℝ g)|) < 1 := Real.exp_lt_one_iff.mpr (by linarith)
+    have hB' (h : C₁[F]) : ‖adelicTheta f (h.val * g)‖ ≤
+        C * Real.exp (-(N : ℝ) * |Real.log (normℝ g)|) := by
+      simpa only [normℝ_normOne_mul] using
+        (hb f hf (h.val * g)).2.2 hf0 hF0 (by simpa only [normℝ_normOne_mul] using he)
+    refine (norm_homogeneousAdelicTheta_le ω₁ f g hB').trans ?_
+    nlinarith [mul_nonneg hC.le hx]
+  · rcases le_or_gt 0 (Real.log (normℝ g)) with hl | hl
+    · rw [abs_of_nonneg hl] at habs
+      have := P1 habs
+      rwa [inv_pow_eq_exp_neg_abs_log hn hl] at this
+    · rw [abs_of_neg hl] at habs
+      have := P2 habs
+      simp only [homogeneousAdelicTheta_polarTerm, hω, ite_false, sub_zero] at this
+      rwa [pow_eq_exp_neg_abs_log hn hl.le] at this
+
 /-- Paper: Theorem 2.2.5.4(5), p. 98. The large-norm, small-norm and two-sided
 estimates have a common constant and logarithmic threshold uniform over a
 bounded set of test functions. The two-sided bound retains the condition in (4). -/
@@ -3126,8 +3193,11 @@ theorem homogeneousAdelicTheta_decay_bounded (ω₁ : χ[F]) (B : Set ℬ[F])
         ‖homogeneousAdelicTheta ω₁ f g - homogeneousAdelicTheta_polarTerm ω₁ f g‖ ≤
           C * (normℝ g) ^ N) ∧
       ((f ∈ adelePolarSubspace F ∨ ω₁ ≠ 1) → T < |Real.log (normℝ g)| →
-        ‖homogeneousAdelicTheta ω₁ f g‖ ≤ C * Real.exp (-(N : ℝ) * |Real.log (normℝ g)|)) :=
-  by sorry
+        ‖homogeneousAdelicTheta ω₁ f g‖ ≤ C * Real.exp (-(N : ℝ) * |Real.log (normℝ g)|)) := by
+  have h₀ := homogeneousAdelicTheta_decay_bounded_uniform ω₁ B
+  have h₁ := h₀ hB N
+  obtain ⟨C, hC, hb⟩ := h₁
+  exact ⟨C, 1, hC, zero_lt_one, hb⟩
 
 /-- Paper: Theorem 2.2.5.4(6), p. 98. The three uniform estimates hold with
 logarithmic threshold one and a common constant. -/
@@ -3139,8 +3209,9 @@ theorem homogeneousAdelicTheta_decay_bounded_threshold_one (ω₁ : χ[F]) (B : 
         ‖homogeneousAdelicTheta ω₁ f g - homogeneousAdelicTheta_polarTerm ω₁ f g‖ ≤
           C * (normℝ g) ^ N) ∧
       ((f ∈ adelePolarSubspace F ∨ ω₁ ≠ 1) → 1 < |Real.log (normℝ g)| →
-        ‖homogeneousAdelicTheta ω₁ f g‖ ≤ C * Real.exp (-(N : ℝ) * |Real.log (normℝ g)|)) :=
-  by sorry
+        ‖homogeneousAdelicTheta ω₁ f g‖ ≤ C * Real.exp (-(N : ℝ) * |Real.log (normℝ g)|)) := by
+  have h₀ := homogeneousAdelicTheta_decay_bounded_uniform ω₁ B
+  exact h₀ hB N
 
 end HomogeneousTheta
 
