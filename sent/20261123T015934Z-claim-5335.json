@@ -1,0 +1,14 @@
+{
+ "request_file": "20261123T015934Z-claim-5335.json",
+ "processed_at": "2026-11-23T01:59:50Z",
+ "request": {
+  "type": "comment",
+  "issue": 5335,
+  "body": "Claiming\nSession: ADB991-claude-20261123-5e1d\n\nPlan: G = ℝ≥0ˣ with identity module, trivial character, γ = e, B = exp([0,1]). A supported test vanishes on the orbit of 1 (its open support lies in the interior of B), while a lifted log-profile bump has periodization 1 at the identity class, so the inclusion-induced map cannot be onto."
+ },
+ "status": 201,
+ "ok": true,
+ "html_url": "https://github.com/mccorvie/riemann-masullo/issues/5335#issuecomment-7089576141",
+ "id": 7089576141,
+ "created_at": "2026-11-23T01:59:51Z"
+}
