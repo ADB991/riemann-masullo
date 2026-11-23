@@ -412,7 +412,27 @@ theorem exists_sLocalZetaPair_action (χ : PontryaginDual Jₛ) :
 /-- Paper: Theorem 5.4.1.1(2), p. 266.
 The quotient topology on every homogeneous S-local theta space is Fréchet. -/
 theorem sLocalHomogeneousThetaSpace_frechet (ω : PontryaginDual J₁) :
-    IsFrechetTVS (Θω(ω)) := by sorry
+    IsFrechetTVS (Θω(ω)) := by
+  obtain ⟨τ, hτ⟩ := sIdeleQuotientNorm_exists_section F S
+  obtain ⟨χ, hχ, _⟩ := existsUnique_sLocalNormSectionCharacter τ hτ ω
+  rw [← hχ.1]
+  obtain ⟨_, _, hMp, hCp⟩ := schwartzBergman_frechet rightInterval isOpen_Ioi
+    ordConnected_Ioi ⟨1, by norm_num⟩
+  obtain ⟨_, _, hMm, hCm⟩ := schwartzBergman_frechet leftInterval isOpen_Iio
+    ordConnected_Iio ⟨0, by norm_num⟩
+  let : MetrizableSpace B⁺ := hMp
+  let : MetrizableSpace B⁻ := hMm
+  let : CompleteSpace B⁺ := hCp
+  let : CompleteSpace B⁻ := hCm
+  let T := sLocalZetaPair (F := F) (S := S) χ
+  have hT : IsClosedEmbedding T := sLocalZetaPair_isClosedEmbedding χ
+  let : UniformSpace Θω(restrict₁(χ)) :=
+    IsTopologicalAddGroup.rightUniformSpace Θω(restrict₁(χ))
+  have : IsUniformAddGroup Θω(restrict₁(χ)) := isUniformAddGroup_of_addCommGroup
+  have hU : IsUniformInducing T :=
+    AddMonoidHom.isUniformInducing_of_isInducing (f := T.toAddMonoidHom) hT.isInducing
+  exact ⟨inferInstance, hT.isInducing.polynormableSpace (f := T),
+    hT.isEmbedding.metrizableSpace, hU.completeSpace hT.isClosed_range.isComplete⟩
 
 /-- A nuclear space is separable for each of its continuous seminorms (as in the private
 `seminorm_separable_of_nuclear` of Appendix D §1b): a totally bounded zero-neighbourhood
@@ -1008,7 +1028,32 @@ theorem existsUnique_sLocalCechDifference (χ : PontryaginDual Jₛ)
 /-- Paper: Remark 5.4.2.3 and (5.4.2.7), p. 277.
 The pair of homogeneous theta functions of a test and its Fourier transform
 embeds the homogeneous quotient as a closed subspace of the two weighted isotypes. -/
-theorem sLocalCechThetaPair_isClosedEmbedding (χ : PontryaginDual Jₛ) : IsClosedEmbedding cechThetaPair(χ) := by sorry
+theorem sLocalCechThetaPair_isClosedEmbedding (χ : PontryaginDual Jₛ) : IsClosedEmbedding cechThetaPair(χ) := by
+  let τ := (sIdeleQuotientNorm_exists_section F S).choose
+  have hτ := (sIdeleQuotientNorm_exists_section F S).choose_spec
+  let x := (existsUnique_sLocalCechFrequency χ τ).exists.choose
+  have hx := (existsUnique_sLocalCechFrequency χ τ).exists.choose_spec
+  have hM₁ := existsUnique_sLocalDecayMellin τ hτ rightInterval
+    isOpen_Ioi ordConnected_Ioi ⟨1, by norm_num⟩ restrict₁(χ) x
+  have hM₂ := existsUnique_sLocalDecayMellin τ hτ rightInterval
+    isOpen_Ioi ordConnected_Ioi ⟨1, by norm_num⟩ restrict₁(χ⁻¹) (-x)
+  let M₁ : Eω(rightInterval, restrict₁(χ)) ≃L[ℂ] B⁺ := hM₁.exists.choose
+  let M₂ : Eω(rightInterval, restrict₁(χ⁻¹)) ≃L[ℂ] B⁺ := hM₂.exists.choose
+  have h₁ := hM₁.exists.choose_spec
+  have h₂ := hM₂.exists.choose_spec
+  let e : upperMiddle(χ) ≃L[ℂ] B⁺ × B⁺ := M₁.prodCongr M₂
+  let U : Θω(restrict₁(χ)) →L[ℂ] B⁺ × B⁺ := e.toContinuousLinearMap.comp cechThetaPair(χ)
+  have hU : IsClosedEmbedding U := sLocalCechBergman_isClosedEmbedding χ U (by
+    intro f
+    exact sLocalCech_left_commutes χ τ hτ x hx M₁ M₂
+      (fun g s hs ↦ (h₁ g s hs).2)
+      (fun g s hs ↦ by simpa only [M₂, neg_mul, Complex.ofReal_neg, sub_eq_add_neg] using
+        (h₂ g s hs).2) f)
+  have heq : e.symm ∘ U = ⇑cechThetaPair(χ) := by
+    funext z
+    exact e.symm_apply_apply _
+  have h := e.symm.toHomeomorph.isClosedEmbedding.comp hU
+  exact heq ▸ h
 
 end Cech
 
