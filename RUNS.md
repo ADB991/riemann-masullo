@@ -4,6 +4,8 @@ Cloud runs prove open `proof` issues of mccorvie/riemann-masullo, one library fi
 
 ## setup notes
 
+(2026-11-23, f923) Fresh container: `lake exe cache get` (1 min) brought project oleans; first `lake build` of AppD Sec1c_Printed 6 min, then 4 s per round; full `lake build` 23 min. Compact-open on `A →ₜ* B`: `(ContinuousMonoidHom.isInducing_toContinuousMap _ _).tendsto_nhds_iff` then `ContinuousMap.tendsto_nhds_compactOpen`; `PontryaginDual (Multiplicative ℝ) ≃ₜ* Multiplicative ℝ` is `exists_realPontryaginDualEquiv` (ForMathlib/Topology/Algebra/PontryaginDual/Real). In a theorem whose statement has auto-bound universe `u_1`, don't write `ULift.{u}` in the proof: write `ULift (…)` and let unification pick the level; a universe-polymorphic private helper is fine. `continuous_mulSingle` needs `(A := fun _ ↦ Circle)` explicitly.
+
 (2026-11-23, 76e0) Fresh container: `lake exe cache get` brought project oleans; first `lake build` of AppC Sec5a_Printed 4 min, full `lake build` 27 min. Don't add `.{u}` to a statement to fix universes (changes the hash): let unification pick the level (e.g. `ULift ℂ`). `ContDiff.pow` needs `import Mathlib.Analysis.Calculus.ContDiff.Operations` in low AppC files; `EuclideanSpace.single_*` lemmas are gone, use `WithLp.toLp 2 (fun _ ↦ t)` and `EuclideanSpace.norm_eq`.
 
 (2026-11-22, b7e4) Cold build of a _Printed leaf that imports Ch12 Sec1a (171 modules) took 37 min after `lake exe cache get`; full `lake build` afterwards 31 min. Once deps are built, `lake build` of the leaf file is ~10 s, so iterate there. On ℝ≥0ˣ: `positiveRealHaar` (= map exp volume) gives `{t | log t ∈ K}` measure `volume K` by `Measure.map_apply`; `borelSpace_units_of_continuousInv₀` lives in `RiemannMasullo.ForMathlib.MeasureTheory.Group.Arithmetic` (add the import); `Measure.map_dirac'` (with measurability) not `map_dirac`. Inside a theorem, `rcases h with rfl` on `c = Λ` can eliminate the outer variable Λ: use `rw`.
@@ -58,11 +60,13 @@ or an abstract private lemma avoids it.
 ## open
 
 - RiemannMasullo/Ch06_LocalGlobal/Sec3_Printed.lean: #4861 (claimed); session ADB991-claude-20261123-a3f1; branch claude/sweep-ch06-sec3-printed-a3f1; PR none yet; last touched 2026-11-23T02:16Z
-- RiemannMasullo/AppD_SchwartzBruhat/Sec1c_Printed.lean: #5756 (claimed); session ADB991-claude-20261123-f923; branch claude/sweep-appd-sec1c-printed-f923; PR none yet; last touched 2026-11-23T02:20Z
+- RiemannMasullo/AppD_SchwartzBruhat/Sec1c_Printed.lean: #5756 (proved, in PR); session ADB991-claude-20261123-f923; branch claude/sweep-appd-sec1c-printed-f923; PR https://github.com/mccorvie/riemann-masullo/pull/5942; last touched 2026-11-23T02:37Z
 - RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5_Printed.lean: #5335 (claimed); session ADB991-claude-20261123-5e1d; branch claude/sweep-ch04-sec5-printed-5e1d; PR none yet; last touched 2026-11-23T01:59Z
 - RiemannMasullo/AppC_LCTVS/Sec5a_Printed.lean: #5749 (proved, in PR); session ADB991-claude-20261123-76e0; branch claude/sweep-appc-sec5a-printed-76e0; PR https://github.com/mccorvie/riemann-masullo/pull/5908; last touched 2026-11-23T01:50Z
 
 ## runs
+
+- 2026-11-23 ADB991-claude-20261123-f923: AppD_SchwartzBruhat/Sec1c_Printed.lean, proved refutation #5756 (Lemma D.1.6.4 local compactness: G = ULift (ℕ → Circle); via lcaTopologicalLie_dual a compact nbhd of 1 in one-parameter subgroups would contain all subgroups on a far coordinate, making the dual of ℝ compact). File now sorry-free; axioms clean. PR https://github.com/mccorvie/riemann-masullo/pull/5942. Full lake build 23 min; lint ok; signatures unchanged. No releases. Left Ch04 Sec5_Printed (live claim 5e1d) alone.
 
 - 2026-11-23 ADB991-claude-20261123-e67a: AppC_LCTVS/Sec2a_part2_F225_F227_Printed.lean, proved refutations #5745 (Remark C.2.3.2: non-complete span of ℓ² basis) and #5746 (Prop. C.2.3.13(2): tail projections on finitely supported ℓ², limit zero but completed-stage limit nonzero). PR https://github.com/mccorvie/riemann-masullo/pull/5926 (branch claude/sweep-appc-sec2a-part2-printed-e67a). #5748 (bornological, stationary sets in ω₁) not claimed. Full lake build 26 min; lint ok; signatures unchanged. Claim closed.
 
