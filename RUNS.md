@@ -53,12 +53,15 @@ or an abstract private lemma avoids it.
 
 (2026-11-23, 2e73) Fresh container: cold `lake build` of Ch09 Sec2_Printed (9007 jobs, cache had Mathlib only) took 18.6 min; full `lake build` afterwards 14.6 min. `SchwartzBergman I` is a `def` synonym (WithGeneratingSeminorms) of a submodule subtype: build elements as `(⟨f, hf⟩ : SchwartzBergman I)` (works) but a `fun m ↦ (⟨..⟩ : AS)` still gets the subtype as codomain, so state such lemmas as `Tendsto (β := AS) ...` and use `refine ….mpr` instead of `rw` (rw/simp fail with "not type-correct under implicit transparency" on terms containing `↑v`, v : AS); close such steps with term proofs (`congrArg`, `.trans`). A `Tendsto f l (𝓝 x)` applied to a set gives membership in `map f l`: use `Filter.mem_map.mp` before `nonempty_of_mem`. With a non-instance topology, call `@Continuous.tendsto X Y topX _ _ hcont x`.
 
+(2026-11-23, c34d) Fresh container: `lake exe cache get` (1 min) brought project oleans; building the AppA Sec3 leaf took 4.6 min and a full `lake build` 24 min. In a `_Printed` file whose local `MeasurableSpace ℚ_[p] := borel _` has no BorelSpace, add `have : BorelSpace ℚ_[3] := ⟨rfl⟩` inside the proof for `measurableSet_closedBall`/`measure_preimage_add`. Instantiating a printed ∀ yields casts `((3:ℕ):ℚ_[3])`: state intermediate `have`s with that exact cast so `rw` matches.
+
 ## open
 
 - RiemannMasullo/AppC_LCTVS/Sec5a_Printed.lean: #5749 (proved, in PR); session ADB991-claude-20261123-76e0; branch claude/sweep-appc-sec5a-printed-76e0; PR https://github.com/mccorvie/riemann-masullo/pull/5908; last touched 2026-11-23T01:50Z
 
 ## runs
 
+- 2026-11-23 ADB991-claude-20261123-c34d: AppA_AlgebraicNT/Sec3_TranslatedFourier_Printed.lean, proved refutation #5770 (p=3, n=0, a=1/3, x=0: mass of translated ball 1 vs conjugate of padicTamagawaFourier_scaledIntegers at -1/3 = 0; file now sorry-free). PR https://github.com/mccorvie/riemann-masullo/pull/5914 (branch claude/sweep-appa-sec3-translatedfourier-printed-c34d). Full lake build 24 min; lint ok; signatures unchanged. No releases. Claim closed.
 - 2026-11-23 ADB991-claude-20261123-2e73: Ch09_HardySobolev/Sec2_Printed.lean, proved refutations #5815 #5816 (tilted Gaussians exp(m(z−1)+z²): line norms exp(m(σ−1))·const, value at 1 constant). PR https://github.com/mccorvie/riemann-masullo/pull/5913 (branch claude/sweep-ch09-sec2-printed-2e73). File now sorry-free. No releases. Full lake build 14.6 min; lint ok; signatures unchanged.
 
 - 2026-11-23 ADB991-claude-20261123-76e0: AppC_LCTVS/Sec5a_Printed.lean, proved refutation #5749 (Printed.weaklyContDiffOn_lipschitz_false: f(x)=x², increments 2t+1 unbounded; uses ULift ℂ since E has a free universe). PR https://github.com/mccorvie/riemann-masullo/pull/5908. Full lake build 27 min; lint ok; signatures unchanged. No releases. Also cleared the finished 2026-11-22 claims (all PRs merged).
