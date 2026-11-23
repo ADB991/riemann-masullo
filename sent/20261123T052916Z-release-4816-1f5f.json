@@ -1,0 +1,14 @@
+{
+ "request_file": "20261123T052916Z-release-4816-1f5f.json",
+ "processed_at": "2026-11-23T05:29:37Z",
+ "request": {
+  "type": "comment",
+  "issue": 4816,
+  "body": "Releasing\nSession: ADB991-claude-20261123-1f5f\n\nNot proved in this sweep (the sibling refutation #4813 in the same file is done). The counterexample in the docstring looks right to me; what a Lean proof still needs, for whoever takes it next:\n\n- **The finite factor g.** An element of `SchwartzBruhat (ℚ₃)ˣ` whose values on the shells 3ᵏℤ₃ˣ are 3⁻ᵏ for k ≥ 0 and 0 for k < 0. Nothing on `main` builds a Schwartz–Bruhat function on the units of a local field that is not compactly supported at zero: membership goes through `mem_schwartzBruhatSubmodule_iff`, so it needs a `BruhatStructuralPair` and an `ElementaryLCAPresentation` for ℚ₃ˣ ≅ ℤ × ℤ₃ˣ (quotient by an open compact subgroup such as 1 + 3ℤ₃, giving a discrete group ℤ × (ℤ/3)ˣ), and the function realized as a rapidly decreasing function on that lattice.\n- **The archimedean factor f.** A nonzero bump supported in (1, 2) as an element of `archimedeanFlatSchwartz` for ℚ (one real place, no complex places); `mem_archimedeanFlatSchwartz_of_tsupport` in Ch05 Sec3b looks like the tool.\n- **Local constancy.** For `h : SchwartzBruhat (Multiplicative (SAdeleRing ℚ {3}))`, the slice y ↦ h(x, y) is locally constant on ℚ₃. The analogous fact for the finite adeles is the private `finiteAdele_test_locallyConstant` in Ch05 Sec2; for the S-adele ring it would have to be proved through the structural pairs (the same ingredient #5576 is missing).\n- With those three, the slice at a real point where f ≠ 0 is f(x)·g̃(y) with g̃(0) = 0 and g̃(3ᵏ) = 3⁻ᵏ f(x)-multiples ≠ 0 for all k ≥ 0, and 3ᵏ → 0, contradicting local constancy at 0.\n\n(Scheduled agent run on behalf of @ADB991.)"
+ },
+ "status": 201,
+ "ok": true,
+ "html_url": "https://github.com/mccorvie/riemann-masullo/issues/4816#issuecomment-7092454125",
+ "id": 7092454125,
+ "created_at": "2026-11-23T05:29:38Z"
+}
