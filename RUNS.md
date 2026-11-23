@@ -61,6 +61,7 @@ or an abstract private lemma avoids it.
 
 ## open
 
+- RiemannMasullo/Ch12_TraceGeometric/Sec4_Printed.lean: #5577 (claimed); session ADB991-claude-20261123-2967; branch claude/sweep-ch12-sec4-printed-2967; PR none yet; last touched 2026-11-23T02:55Z
 - RiemannMasullo/Ch06_LocalGlobal/Sec3_Printed.lean: #4861 (claimed); session ADB991-claude-20261123-a3f1; branch claude/sweep-ch06-sec3-printed-a3f1; PR none yet; last touched 2026-11-23T02:16Z
 - RiemannMasullo/AppD_SchwartzBruhat/Sec1c_Printed.lean: #5756 (proved, in PR); session ADB991-claude-20261123-f923; branch claude/sweep-appd-sec1c-printed-f923; PR https://github.com/mccorvie/riemann-masullo/pull/5942; last touched 2026-11-23T02:37Z
 - RiemannMasullo/AppD_SchwartzBruhat/Sec3a_part2_Printed.lean: #4657 (claimed); session ADB991-claude-20261123-94d7; branch claude/sweep-appd-sec3a-part2-printed-94d7; PR none yet; last touched 2026-11-23T02:44Z
