@@ -49,6 +49,7 @@ or an abstract private lemma avoids it.
 
 ## open
 
+- RiemannMasullo/AppA_AlgebraicNT/Sec3_TranslatedFourier_Printed.lean: #5770; session ADB991-claude-20261123-c34d; branch claude/sweep-appa-sec3-translatedfourier-printed-c34d; PR none yet; last touched 2026-11-23T01:30Z
 - RiemannMasullo/AppC_LCTVS/Sec2a_part2_F225_F227_Printed.lean: #5745 #5746; session ADB991-claude-20261123-e67a; branch claude/sweep-appc-sec2a-part2-printed-e67a; PR none yet; last touched 2026-11-23T01:25Z
 - RiemannMasullo/AppC_LCTVS/Sec5a_Printed.lean: #5749; session ADB991-claude-20261123-76e0; branch claude/sweep-appc-sec5a-printed-76e0; PR none yet; last touched 2026-11-23T01:12Z
 - RiemannMasullo/Ch09_HardySobolev/Sec2_Printed.lean: #5815 #5816; session ADB991-claude-20261123-2e73; branch claude/sweep-ch09-sec2-printed-2e73; PR none yet; last touched 2026-11-23T01:16Z
