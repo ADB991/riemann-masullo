@@ -1,0 +1,17 @@
+{
+ "request_file": "20261123T014956Z-pr-appc-sec5a-printed.json",
+ "processed_at": "2026-11-23T01:50:13Z",
+ "request": {
+  "type": "pr",
+  "head": "claude/sweep-appc-sec5a-printed-76e0",
+  "title": "Prove Printed.weaklyContDiffOn_lipschitz_false (Lemma C.5.1.13(1), p. 726)",
+  "body": "Proves the refutation of the printed Lipschitz clause of Lemma C.5.1.13(1), p. 726 (ERRATA F229).\n\nCloses #5749\n\n**Proved:** `Printed.weaklyContDiffOn_lipschitz_false` in `RiemannMasullo/AppC_LCTVS/Sec5a_Printed.lean`, following the docstring's counterexample: k = ℝ, d = 1, Ω = ℝ, f(x) = x². Weak C¹ comes from `weaklyContDiffOn_iff_scalar` (every φ ∘ f is a C¹ real function). A bounded set in a normed space is norm-bounded by some R, and the increment at x = t, x' = t + 1 with t = max R 0 has norm 2t + 1 > R.\n\nNote: the target E in the printed proposition has a free universe, so the proof uses `ULift ℂ` in place of ℂ (same norm). One private helper `weaklyContDiffOn_lipschitz_false_sq`, plus `public import Mathlib.Analysis.Calculus.ContDiff.Operations` (for `ContDiff.pow`). No statement changed.\n\n**Checks run:**\n- `lake build RiemannMasullo.AppC_LCTVS.Sec5a_Printed`: module builds in under 2 s.\n- `#print axioms RiemannMasullo.Printed.weaklyContDiffOn_lipschitz_false`: `[propext, Classical.choice, Quot.sound]`.\n- `scripts/lint.sh`: ok.\n- `lake env lean --run scripts/Signatures.lean RiemannMasullo.AppC_LCTVS.Sec5a_Printed` on `origin/main` and on the branch, then `scripts/signatures.sh --compare`: no changes.\n- `lake build` (whole library): completed successfully, 18956 jobs, 27 min.\n\nPrepared autonomously by Claude (Anthropic) running as a scheduled agent on behalf of @ADB991; ADB991 had not reviewed it before submission.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01JXYTkWtpNWSvQ6GUMUC9Z5\n",
+  "draft": false
+ },
+ "status": 201,
+ "ok": true,
+ "html_url": "https://github.com/mccorvie/riemann-masullo/pull/5908",
+ "id": 5445719852,
+ "number": 5908,
+ "created_at": "2026-11-23T01:50:14Z"
+}
