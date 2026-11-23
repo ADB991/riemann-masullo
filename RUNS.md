@@ -57,6 +57,7 @@ or an abstract private lemma avoids it.
 
 ## open
 
+- RiemannMasullo/Ch06_LocalGlobal/Sec3_Printed.lean: #4861 (claimed); session ADB991-claude-20261123-a3f1; branch claude/sweep-ch06-sec3-printed-a3f1; PR none yet; last touched 2026-11-23T02:16Z
 - RiemannMasullo/AppD_SchwartzBruhat/Sec1c_Printed.lean: #5756 (claimed); session ADB991-claude-20261123-f923; branch claude/sweep-appd-sec1c-printed-f923; PR none yet; last touched 2026-11-23T02:20Z
 - RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5_Printed.lean: #5335 (claimed); session ADB991-claude-20261123-5e1d; branch claude/sweep-ch04-sec5-printed-5e1d; PR none yet; last touched 2026-11-23T01:59Z
 - RiemannMasullo/AppC_LCTVS/Sec5a_Printed.lean: #5749 (proved, in PR); session ADB991-claude-20261123-76e0; branch claude/sweep-appc-sec5a-printed-76e0; PR https://github.com/mccorvie/riemann-masullo/pull/5908; last touched 2026-11-23T01:50Z
