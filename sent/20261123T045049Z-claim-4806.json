@@ -1,0 +1,14 @@
+{
+ "request_file": "20261123T045049Z-claim-4806.json",
+ "processed_at": "2026-11-23T04:51:10Z",
+ "request": {
+  "type": "comment",
+  "issue": 4806,
+  "body": "Claiming\nSession: ADB991-claude-20261123-39b9\n\nSweep of RiemannMasullo/Ch05_ThetaZSpaces/Sec5_Printed.lean (prover, working by hand). Plan: F = ℚ, S = {5}, W = trivial-character chart image of [2,3]; test = (archimedean bump at 1) ⊗ 1_{1+5ℤ₅}, x = class of h − (1,−1)·h. Every weight in W is 1 on the norm-one idele (1,−1), so each eigendistribution kills x, while theta(x) at 1 equals 1."
+ },
+ "status": 201,
+ "ok": true,
+ "html_url": "https://github.com/mccorvie/riemann-masullo/issues/4806#issuecomment-7091918596",
+ "id": 7091918596,
+ "created_at": "2026-11-23T04:51:10Z"
+}
