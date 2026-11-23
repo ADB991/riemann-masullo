@@ -1,1 +1,0 @@
-{"type": "comment", "issue": 4657, "body": "Claiming\nSession: ADB991-claude-20261123-94d7\n\nPlan: G = ℝ≥0ˣ with identity modulation and section, I = [0,1], J = {1/(k+2)} ∪ {1-1/(k+2)}, B = log profiles exp(-n)ψ(x-n) as in the docstring, transported through identityModulationExponentialDecay_equiv."}
