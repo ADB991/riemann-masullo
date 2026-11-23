@@ -1,0 +1,17 @@
+{
+ "request_file": "20261123T040311Z-pr-ch05-sec4-printed.json",
+ "processed_at": "2026-11-23T04:03:30Z",
+ "request": {
+  "type": "pr",
+  "head": "claude/sweep-ch05-sec4-printed-a0d1",
+  "title": "Refute Printed.sLocalCechBergman_reflection and Printed.sLocalCech_right_commutes (Theorem 5.4.2.2(3)–(5), p. 276)",
+  "body": "Proves two refutations in `RiemannMasullo/Ch05_ThetaZSpaces/Sec4_Printed.lean`. Only proofs and `private` helpers change. There is one new library import, `RiemannMasullo.Ch07_SchauderBasesZeta.Sec1a`, for `sLocalRhoFactor_poles_iff`. Nothing imports this file.\n\nCloses #4810\nCloses #4811\n\n**`Printed.sLocalCechBergman_reflection_false`** (Theorem 5.4.2.2(3), p. 276). Take F = ℚ, S = ∅, χ = 1. The real place gives poles of ρ at `-p₁ - (2n + p₂)` for every n (`sLocalRhoFactor_poles_iff`). Choosing n large gives a pole s₀ with Re s₀ < 1. Take p = the Gaussian `exp(z²)` in B⁺ (`gaussian_mem_schwartzBergmanSubmodule`). Near s₀, ρ(s) = (J p)(s) / exp((1-s)²), which is analytic, so its meromorphic order is ≥ 0. That contradicts the pole. The pole is reached by taking n large rather than at s = 0 as in the docstring, so the parameters of the trivial character are never computed.\n\n**`Printed.sLocalCech_right_commutes_false`** (Theorem 5.4.2.2(4)–(5), (5.4.2.6), p. 276). Take F = ℚ, S = ∅, χ = 1 and x = 0, with τ from `sIdeleQuotientNorm_exists_section`. M₁ and M₂ come from `existsUnique_sLocalDecayMellin`. Take g = M₂⁻¹(Gaussian). ρ has a pole, so its order is finite everywhere on ℂ, and its zeros are isolated. That gives a real r ∈ (0, 1/2) with ρ(r) ≠ 0. The printed identity at s = r then forces exp(r²) = exp((1-r)²), so r = 1/2, which is impossible. This uses `Q(s) = exp(s²)` and some r near 1/4 instead of the docstring's `exp((s−2)²)` at exactly 1/4, so the value ρ(1/4) is never needed.\n\n`#print axioms` on both theorems gives `[propext, sorryAx, Classical.choice, Quot.sound]`. The `sorryAx` comes from upstream declarations that are still `sorry`: `sLocalRhoFactor_poles_iff`, `sLocalRhoFactor_meromorphic` and `existsUnique_sLocalDecayMellin`.\n\nChecks run: `lake build RiemannMasullo.Ch05_ThetaZSpaces.Sec4_Printed` (the module itself takes a few seconds), full `lake build`, `scripts/lint.sh` (ok). Signatures were compared for this module before and after: `lake env lean --run scripts/Signatures.lean` on each version, then `scripts/signatures.sh --compare`. No statement changed.\n\nNot claimed: #4807, #4808, #4809. They need explicit zeta integrals or isotype elements over ℚ.\n\nPrepared autonomously by Claude (Anthropic) running as a scheduled agent on behalf of @ADB991; ADB991 had not reviewed it before submission.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01JXYTkYMzXt5GwP8rMvhmyE\n",
+  "draft": false
+ },
+ "status": 201,
+ "ok": true,
+ "html_url": "https://github.com/mccorvie/riemann-masullo/pull/6032",
+ "id": 5446872408,
+ "number": 6032,
+ "created_at": "2026-11-23T04:03:30Z"
+}
