@@ -51,11 +51,15 @@ or an abstract private lemma avoids it.
 
 (2026-11-23, e67a) Fresh container: `lake exe cache get` (1 min) brought the project oleans too; `lake build` of the AppC Sec2a_part2 _Printed leaf took 74 s, then ~10 s per round. In a `module` file, `lp` needs an explicit `import Mathlib.Analysis.Normed.Lp.lpSpace`. Passing an explicit non-instance topology (e.g. `completionCompactDualTopology E`) through `Continuous.comp`/`@Continuous` fails with "synthesized instance not defeq"; use `let : TopologicalSpace T := ...` first, as the library does. `IsEmbedding.injective` on a type whose topology is only a `letI` fails to synthesize: use `obtain ⟨-, hinj⟩ := hemb`. A long proof hit maxHeartbeats at the declaration: moving generic steps (DirectedSystem of completed stages, completion functoriality) into private lemmas over abstract spaces fixed it. `DirectedSystem.map_self` has no `h` argument and `map_map ⦃k j i⦄` takes `hij hjk` in that order.
 
+(2026-11-23, 2e73) Fresh container: cold `lake build` of Ch09 Sec2_Printed (9007 jobs, cache had Mathlib only) took 18.6 min; full `lake build` afterwards 14.6 min. `SchwartzBergman I` is a `def` synonym (WithGeneratingSeminorms) of a submodule subtype: build elements as `(⟨f, hf⟩ : SchwartzBergman I)` (works) but a `fun m ↦ (⟨..⟩ : AS)` still gets the subtype as codomain, so state such lemmas as `Tendsto (β := AS) ...` and use `refine ….mpr` instead of `rw` (rw/simp fail with "not type-correct under implicit transparency" on terms containing `↑v`, v : AS); close such steps with term proofs (`congrArg`, `.trans`). A `Tendsto f l (𝓝 x)` applied to a set gives membership in `map f l`: use `Filter.mem_map.mp` before `nonempty_of_mem`. With a non-instance topology, call `@Continuous.tendsto X Y topX _ _ hcont x`.
+
 ## open
 
 - RiemannMasullo/AppC_LCTVS/Sec5a_Printed.lean: #5749 (proved, in PR); session ADB991-claude-20261123-76e0; branch claude/sweep-appc-sec5a-printed-76e0; PR https://github.com/mccorvie/riemann-masullo/pull/5908; last touched 2026-11-23T01:50Z
 
 ## runs
+
+- 2026-11-23 ADB991-claude-20261123-2e73: Ch09_HardySobolev/Sec2_Printed.lean, proved refutations #5815 #5816 (tilted Gaussians exp(m(z−1)+z²): line norms exp(m(σ−1))·const, value at 1 constant). PR https://github.com/mccorvie/riemann-masullo/pull/5913 (branch claude/sweep-ch09-sec2-printed-2e73). File now sorry-free. No releases. Full lake build 14.6 min; lint ok; signatures unchanged.
 
 - 2026-11-23 ADB991-claude-20261123-76e0: AppC_LCTVS/Sec5a_Printed.lean, proved refutation #5749 (Printed.weaklyContDiffOn_lipschitz_false: f(x)=x², increments 2t+1 unbounded; uses ULift ℂ since E has a free universe). PR https://github.com/mccorvie/riemann-masullo/pull/5908. Full lake build 27 min; lint ok; signatures unchanged. No releases. Also cleared the finished 2026-11-22 claims (all PRs merged).
 
