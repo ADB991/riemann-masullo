@@ -49,16 +49,7 @@ or an abstract private lemma avoids it.
 
 ## open
 
-- RiemannMasullo/AppB_AnalyticNT/Sec4b.lean: #3895 #3892 (in PR); session ADB991-claude-20261122-0825; branch claude/sweep-appb-sec4b-0825; PR https://github.com/mccorvie/riemann-masullo/pull/5581; last touched 2026-11-22T20:45Z
-
-- RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean: #5328 #5329 #5332 (in PR); session ADB991-claude-20261122-b7e4; branch claude/sweep-ch09-sec3-printed-b7e4; PR https://github.com/mccorvie/riemann-masullo/pull/5438; last touched 2026-11-22T18:20Z
-
-
-- RiemannMasullo/Ch10_TraceSpectral/Sec1.lean: #4877 #4879 #4883 #4884 #4885 #4897 #4898 #4902 (proved, in PR); session ADB991-claude-20261122-a7c2; branch claude/sweep-ch10-sec1-a7c2 (pushed); PR https://github.com/mccorvie/riemann-masullo/pull/5451 (open, awaiting checks); other 19 released; last touched 2026-11-22T18:39Z
-
-
-
-- RiemannMasullo/Ch04_PeriodicSchauderBases/Sec5.lean: #2654 (in PR); session ADB991-claude-20261122-9335; branch claude/sweep-ch04-sec5-9335; PR https://github.com/mccorvie/riemann-masullo/pull/5372; last touched 2026-11-22T17:02Z
+- RiemannMasullo/AppC_LCTVS/Sec5a_Printed.lean: #5749; session ADB991-claude-20261123-76e0; branch claude/sweep-appc-sec5a-printed-76e0; PR none yet; last touched 2026-11-23T01:12Z
 
 ## runs
 
