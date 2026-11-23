@@ -4,6 +4,8 @@ Cloud runs prove open `proof` issues of mccorvie/riemann-masullo, one library fi
 
 ## setup notes
 
+(2026-11-23, 76e0) Fresh container: `lake exe cache get` brought project oleans; first `lake build` of AppC Sec5a_Printed 4 min, full `lake build` 27 min. Don't add `.{u}` to a statement to fix universes (changes the hash): let unification pick the level (e.g. `ULift ℂ`). `ContDiff.pow` needs `import Mathlib.Analysis.Calculus.ContDiff.Operations` in low AppC files; `EuclideanSpace.single_*` lemmas are gone, use `WithLp.toLp 2 (fun _ ↦ t)` and `EuclideanSpace.norm_eq`.
+
 (2026-11-22, b7e4) Cold build of a _Printed leaf that imports Ch12 Sec1a (171 modules) took 37 min after `lake exe cache get`; full `lake build` afterwards 31 min. Once deps are built, `lake build` of the leaf file is ~10 s, so iterate there. On ℝ≥0ˣ: `positiveRealHaar` (= map exp volume) gives `{t | log t ∈ K}` measure `volume K` by `Measure.map_apply`; `borelSpace_units_of_continuousInv₀` lives in `RiemannMasullo.ForMathlib.MeasureTheory.Group.Arithmetic` (add the import); `Measure.map_dirac'` (with measurability) not `map_dirac`. Inside a theorem, `rcases h with rfl` on `c = Λ` can eliminate the outer variable Λ: use `rw`.
 
 (2026-11-22, 18ea) This container: `lake exe cache get` also brought project oleans; building AppD Sec1a took 2.5 min, full `lake build` 70 min. Single-module signature compare: write `origin/main` version of the file, rebuild module, run Signatures.lean, `git checkout` the file back (work committed first).
@@ -51,12 +53,11 @@ or an abstract private lemma avoids it.
 
 ## open
 
-- RiemannMasullo/AppA_AlgebraicNT/Sec3_TranslatedFourier_Printed.lean: #5770; session ADB991-claude-20261123-c34d; branch claude/sweep-appa-sec3-translatedfourier-printed-c34d; PR none yet; last touched 2026-11-23T01:30Z
-- RiemannMasullo/AppC_LCTVS/Sec2a_part2_F225_F227_Printed.lean: #5745 #5746; session ADB991-claude-20261123-e67a; branch claude/sweep-appc-sec2a-part2-printed-e67a (pushed, both proved, full build running); PR none yet; last touched 2026-11-23T01:41Z
-- RiemannMasullo/AppC_LCTVS/Sec5a_Printed.lean: #5749; session ADB991-claude-20261123-76e0; branch claude/sweep-appc-sec5a-printed-76e0; PR none yet; last touched 2026-11-23T01:12Z
-- RiemannMasullo/Ch09_HardySobolev/Sec2_Printed.lean: #5815 #5816; session ADB991-claude-20261123-2e73; branch claude/sweep-ch09-sec2-printed-2e73; PR none yet; last touched 2026-11-23T01:16Z
+- RiemannMasullo/AppC_LCTVS/Sec5a_Printed.lean: #5749 (proved, in PR); session ADB991-claude-20261123-76e0; branch claude/sweep-appc-sec5a-printed-76e0; PR https://github.com/mccorvie/riemann-masullo/pull/5908; last touched 2026-11-23T01:50Z
 
 ## runs
+
+- 2026-11-23 ADB991-claude-20261123-76e0: AppC_LCTVS/Sec5a_Printed.lean, proved refutation #5749 (Printed.weaklyContDiffOn_lipschitz_false: f(x)=x², increments 2t+1 unbounded; uses ULift ℂ since E has a free universe). PR https://github.com/mccorvie/riemann-masullo/pull/5908. Full lake build 27 min; lint ok; signatures unchanged. No releases. Also cleared the finished 2026-11-22 claims (all PRs merged).
 
 - 2026-11-22 ADB991-claude-20261122-0825: AppB_AnalyticNT/Sec4b.lean, proved #3895 (exists_finiteConnesPrincipalValue) and #3892 (finiteLogFourier_unique, uses #3891 by name). PR https://github.com/mccorvie/riemann-masullo/pull/5581 (branch claude/sweep-appb-sec4b-0825). Released #3891 with a note (needs explicit p-adic Gauss-sum computation). Full lake build 1711 s; lint ok; signatures unchanged.
 
