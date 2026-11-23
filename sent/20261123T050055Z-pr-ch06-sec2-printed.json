@@ -1,0 +1,17 @@
+{
+ "request_file": "20261123T050055Z-pr-ch06-sec2-printed.json",
+ "processed_at": "2026-11-23T05:01:23Z",
+ "request": {
+  "type": "pr",
+  "head": "claude/sweep-ch06-sec2-printed-d67d",
+  "title": "Refute Printed.sLocalStandardThetaTensor_factorization (Ch06 Sec2_Printed, Theorem 6.2.2.1(1), pp. 299–301)",
+  "body": "Closes #4867\n\nRefutes `Printed.sLocalStandardThetaTensor_factorization` (Theorem 6.2.2.1(1), (6.2.2.7)–(6.2.2.10), pp. 299–301) in `RiemannMasullo/Ch06_LocalGlobal/Sec2_Printed.lean`. Only the proof of `Printed.sLocalStandardThetaTensor_factorization_false` and private helpers above it were added, plus four imports (`ForMathlib.RingTheory.PicardGroup`, `ForMathlib.NumberTheory.NumberField.Completion.FinitePlace`, `ForMathlib.Analysis.Distribution.SchwartzSpace.Gaussian`, Mathlib's `NumberField.ClassNumber` and `Padics.HeightOneSpectrum`).\n\n**Counterexample.** F = ℚ, S = {v} with v the prime 2 (q = N(v) = 2), ω = 1, χ = 1, r = the constant family 1, x = 1.\n- Archimedean test f(t) = (q² − t²)·exp(−t²) (a Schwartz function, even, nonzero at ±1, zero at ±q).\n- Finite test at v: the indicator of {z : ‖z‖ = q⁻¹} (locally constant, compact support, zero at 0).\n- Left side: for every norm-one S-idele g, y = g⁻¹ satisfies ‖y_∞‖·‖y_v‖ = 1, so wherever the finite factor is nonzero, ‖y_∞‖ = q and f vanishes. The integrand is identically 0.\n- Right side: the archimedean average is ∑_k ∫_{N∞} f(a⁻¹) = (q² − 1)e⁻¹ · ν(N∞), and N∞ = {±1} is finite, so its Haar mass is finite and positive. The finite factor is μ{g : ‖g‖ = q}, which is the mass of the integer units (translate by a uniformizer), i.e. the different mass, finite and positive. So the right side is nonzero.\n\nThe hypotheses used: Pic of the S-integers of ℚ is trivial (a localization of the PID 𝓞 ℚ, via `picMapAlgebra_surjective_of_isLocalization`); ω = 1 is unramified outside S and its descent is 1 (by uniqueness in `normOneCharacterUnramifiedOutside_iff`); `classNumber ℚ = 1` gives the class representatives.\n\nThe witnesses differ slightly from the docstring (which uses a compactly supported bump and the indicator of pℤₚˣ): here the archimedean test is (q² − t²)e^{−t²} and the finite test is the indicator of the sphere of radius q⁻¹, which is the same set.\n\n**Checks** (commands run in this session):\n- `lake build RiemannMasullo.Ch06_LocalGlobal.Sec2_Printed`: ok, ~15 s.\n- `#print axioms RiemannMasullo.Printed.sLocalStandardThetaTensor_factorization_false`: `[propext, sorryAx, Classical.choice, Quot.sound]`. The `sorryAx` comes from upstream declarations whose proofs are still `sorry` (e.g. `exists_infiniteStandardThetaAverage`, through `infiniteStandardThetaAverage_apply`, and `normOneCharacterUnramifiedOutside_iff`).\n- `scripts/signatures.sh --compare` on the module before and after: no changed statements.\n- full `lake build`: completed successfully, no errors (15.8 min).\n- `scripts/lint.sh`: ok.\n\nPrepared autonomously by Claude (Anthropic) running as a scheduled agent on behalf of @ADB991; ADB991 had not reviewed it before submission.\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "draft": false
+ },
+ "status": 201,
+ "ok": true,
+ "html_url": "https://github.com/mccorvie/riemann-masullo/pull/6087",
+ "id": 5447398925,
+ "number": 6087,
+ "created_at": "2026-11-23T05:01:23Z"
+}
