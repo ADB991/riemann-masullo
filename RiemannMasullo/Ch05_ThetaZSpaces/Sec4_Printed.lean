@@ -1,6 +1,7 @@
 module
 
 public import RiemannMasullo.Ch05_ThetaZSpaces.Sec4
+import RiemannMasullo.Ch07_SchauderBasesZeta.Sec1a
 
 /-!
 # Chapter 5.4: statements that are false as printed
@@ -143,8 +144,54 @@ the right half-plane. The factor `π^((1−2s)/2) Γ(s/2) / Γ((1−s)/2)` has a
 at zero, where `p(1) = e`. The product is unbounded as `s` approaches zero through
 positive real arguments, so no holomorphic output exists on the reflected half-plane.
 -/
+private theorem Printed.sLocalCechBergman_reflection_false_pole :
+    ∃ s₀ : ℂ, s₀.re < 1 ∧ meromorphicOrderAt
+      (fun z ↦ ρₛ(ℚ, (∅ : Finset (HeightOneSpectrum (𝓞 ℚ))),
+        (1 : PontryaginDual (SIdeleQuotient ℚ ∅)), z)) s₀ < 0 := by
+  have hcard : 0 < Fintype.card {w : InfinitePlace ℚ // w.IsReal} := by
+    have h := InfinitePlace.nrRealPlaces_eq_one_of_finrank_eq_one (Module.finrank_self ℚ)
+    unfold InfinitePlace.nrRealPlaces at h
+    omega
+  obtain ⟨⟨w, hw⟩⟩ := Fintype.card_pos_iff.mp hcard
+  let χ₀ := (⟨Circle.coeHom, continuous_subtype_val⟩ : Circle →ₜ* ℂ).comp
+    (1 : PontryaginDual (SIdeleQuotient ℚ ∅))
+  let c := quasiCharacterNormTwist (sIdeleQuotientNorm ℚ ∅)
+    (isProperMap_sIdeleQuotientNorm ℚ ∅).continuous χ₀ 0
+  let p := (realLocalEulerParameters w hw (sLocalInfiniteRestriction w c)).exists.choose
+  obtain ⟨n, hn⟩ := exists_nat_gt (-p.1.re)
+  refine ⟨-p.1 - ((2 * n + p.2.val : ℕ) : ℂ), ?_, ?_⟩
+  · have h2 : (0 : ℝ) ≤ (p.2.val : ℝ) := Nat.cast_nonneg _
+    simp only [Complex.sub_re, Complex.neg_re, Complex.natCast_re, Nat.cast_add, Nat.cast_mul,
+      Nat.cast_ofNat]
+    linarith
+  · exact (sLocalRhoFactor_poles_iff (F := ℚ) (S := ∅) 1 _).2 (Or.inl ⟨w, hw, n, rfl⟩)
+
+open scoped Topology in
 theorem Printed.sLocalCechBergman_reflection_false : ¬ Printed.sLocalCechBergman_reflection := by
-  sorry
+  intro h
+  obtain ⟨s₀, hs₀, hpole⟩ := Printed.sLocalCechBergman_reflection_false_pole
+  obtain ⟨J, hJ⟩ := h ℚ ∅ 1
+  let p : B⁺ := ⟨(Complex.re ⁻¹' rightInterval).indicator (fun z : ℂ ↦ Complex.exp (z ^ 2)),
+    gaussian_mem_schwartzBergmanSubmodule _ isOpen_Ioi⟩
+  have hopen : IsOpen leftHalf := isOpen_Iio.preimage Complex.continuous_re
+  have hmem : s₀ ∈ leftHalf := hs₀
+  have hd : DifferentiableOn ℂ (J p).val leftHalf := (J p).2.2.1
+  have han : AnalyticAt ℂ (fun z ↦ (J p).val z / Complex.exp ((1 - z) ^ 2)) s₀ :=
+    ((hd.analyticAt (hopen.mem_nhds hmem)).div (by fun_prop) (Complex.exp_ne_zero _))
+  have heq : (fun z ↦ ρₛ(ℚ, (∅ : Finset (HeightOneSpectrum (𝓞 ℚ))),
+      (1 : PontryaginDual (SIdeleQuotient ℚ ∅)), z)) =ᶠ[𝓝[≠] s₀]
+      (fun z ↦ (J p).val z / Complex.exp ((1 - z) ^ 2)) := by
+    refine Filter.Eventually.filter_mono nhdsWithin_le_nhds ?_
+    filter_upwards [hopen.mem_nhds hmem] with z hz
+    have hz' : (1 - z) ∈ Complex.re ⁻¹' rightInterval := by
+      change 0 < (1 - z).re
+      have : z.re < 1 := hz
+      simp only [Complex.sub_re, Complex.one_re]
+      linarith
+    have hv : p.val (1 - z) = Complex.exp ((1 - z) ^ 2) := indicator_of_mem hz' _
+    rw [hJ p hz, hv, mul_div_cancel_right₀ _ (Complex.exp_ne_zero _)]
+  rw [meromorphicOrderAt_congr heq] at hpole
+  exact absurd han.meromorphicOrderAt_nonneg (not_le.mpr hpole)
 
 local notation "mellinAt(" τ ", " f ", " z ")" =>
   (∫ t : ℝ≥0ˣ, (f) ((τ) t) * normℂ(t) ^ (z) ∂positiveRealHaar)
@@ -178,7 +225,63 @@ to the inverse Mellin image of `Q(s) = exp((s−2)²)` on the right half-plane.
 At `s = 1/4`, `Q(1/4)` and `Q(3/4)` differ and `ρ(1/4) ≠ 0`. Both arguments are in
 the overlap and the two paths give different values there.
 -/
+open scoped Topology in
+private theorem Printed.sLocalCech_right_commutes_false_ne_zero :
+    ∃ r : ℝ, 0 < r ∧ r < 1 / 2 ∧
+      ρₛ(ℚ, (∅ : Finset (HeightOneSpectrum (𝓞 ℚ))),
+        (1 : PontryaginDual (SIdeleQuotient ℚ ∅)), (r : ℂ)) ≠ 0 := by
+  obtain ⟨s₀, -, hpole⟩ := Printed.sLocalCechBergman_reflection_false_pole
+  have hmero : Meromorphic (fun z ↦ ρₛ(ℚ, (∅ : Finset (HeightOneSpectrum (𝓞 ℚ))),
+      (1 : PontryaginDual (SIdeleQuotient ℚ ∅)), z)) :=
+    sLocalRhoFactor_meromorphic (F := ℚ) (S := ∅) 1
+  have hon : MeromorphicOn (fun z ↦ ρₛ(ℚ, (∅ : Finset (HeightOneSpectrum (𝓞 ℚ))),
+      (1 : PontryaginDual (SIdeleQuotient ℚ ∅)), z)) univ := fun z _ ↦ hmero z
+  have htop := hon.meromorphicOrderAt_ne_top_of_isPreconnected isPreconnected_univ
+    (mem_univ s₀) (mem_univ (((1 / 4 : ℝ)) : ℂ)) (ne_top_of_lt hpole)
+  have hev := (meromorphicOrderAt_ne_top_iff_eventually_ne_zero (hmero _)).1 htop
+  have ht : Filter.Tendsto (fun r : ℝ ↦ (r : ℂ)) (𝓝[≠] (1 / 4 : ℝ))
+      (𝓝[≠] (((1 / 4 : ℝ)) : ℂ)) := by
+    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
+    · exact Complex.continuous_ofReal.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
+    · filter_upwards [self_mem_nhdsWithin] with r hr
+      exact fun h ↦ hr (Complex.ofReal_injective h)
+  have hI : ∀ᶠ r in 𝓝[≠] (1 / 4 : ℝ), r ∈ Ioo (0 : ℝ) (1 / 2) :=
+    nhdsWithin_le_nhds (Ioo_mem_nhds (by norm_num) (by norm_num))
+  obtain ⟨r, hr1, hr2⟩ := ((ht.eventually hev).and hI).exists
+  exact ⟨r, hr2.1, hr2.2, hr1⟩
+
 theorem Printed.sLocalCech_right_commutes_false : ¬ Printed.sLocalCech_right_commutes := by
-  sorry
+  intro h
+  obtain ⟨r, hr0, hr1, hρ⟩ := Printed.sLocalCech_right_commutes_false_ne_zero
+  obtain ⟨τ, hτ⟩ := sIdeleQuotientNorm_exists_section (F := ℚ) (S := ∅)
+  obtain ⟨M₁, hM₁, -⟩ := existsUnique_sLocalDecayMellin (F := ℚ) (S := ∅) τ hτ rightInterval
+    isOpen_Ioi ordConnected_Ioi nonempty_Ioi
+    (restrict₁(ℚ, ∅, (1 : PontryaginDual (SIdeleQuotient ℚ ∅)))) 0
+  obtain ⟨M₂, hM₂, -⟩ := existsUnique_sLocalDecayMellin (F := ℚ) (S := ∅) τ hτ rightInterval
+    isOpen_Ioi ordConnected_Ioi nonempty_Ioi
+    (restrict₁(ℚ, ∅, (1 : PontryaginDual (SIdeleQuotient ℚ ∅))⁻¹)) 0
+  let q : B⁺ := ⟨(Complex.re ⁻¹' rightInterval).indicator (fun z : ℂ ↦ Complex.exp (z ^ 2)),
+    gaussian_mem_schwartzBergmanSubmodule _ isOpen_Ioi⟩
+  have hmem : (r : ℂ) ∈ overlap := by
+    change (r : ℂ).re ∈ Ioo (0 : ℝ) 1
+    rw [Complex.ofReal_re]
+    exact ⟨hr0, by linarith⟩
+  have key := h ℚ ∅ 1 τ hτ 0 (fun t ↦ by simp) M₁ M₂ (fun f s hs ↦ (hM₁ f s hs).2)
+    (fun f s hs ↦ (hM₂ f s hs).2) 0 (M₂.symm q) hmem
+  have hq : M₂ (M₂.symm q) = q := M₂.apply_symm_apply q
+  simp only [hq] at key
+  have key' := mul_left_cancel₀ hρ (sub_right_injective key)
+  have h1 : q.val (r : ℂ) = Complex.exp ((r : ℂ) ^ 2) :=
+    indicator_of_mem (show (r : ℂ) ∈ Complex.re ⁻¹' rightInterval from hmem.1) _
+  have h2 : q.val (1 - (r : ℂ)) = Complex.exp ((1 - (r : ℂ)) ^ 2) := by
+    refine indicator_of_mem ?_ _
+    change 0 < (1 - (r : ℂ)).re
+    rw [Complex.sub_re, Complex.one_re, Complex.ofReal_re]
+    linarith
+  rw [h1, h2] at key'
+  have key'' : Real.exp (r ^ 2) = Real.exp ((1 - r) ^ 2) := by
+    exact_mod_cast key'
+  have := Real.exp_injective key''
+  nlinarith
 
 end RiemannMasullo
