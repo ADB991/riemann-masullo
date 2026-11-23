@@ -1,0 +1,17 @@
+{
+ "request_file": "20261123T015337Z-pr-ch09-sec2-printed.json",
+ "processed_at": "2026-11-23T01:53:57Z",
+ "request": {
+  "type": "pr",
+  "head": "claude/sweep-ch09-sec2-printed-2e73",
+  "title": "Refute two printed claims of §9.2.2 (Ch09 Sec2_Printed: #5815, #5816)",
+  "body": "Proves both refutations in `RiemannMasullo/Ch09_HardySobolev/Sec2_Printed.lean` (ERRATA F233, F237). No statement changed; only proofs and `private theorem` helpers placed above the first refutation.\n\nCloses #5815\nCloses #5816\n\n**Counterexample used** (different from the bump/Mellin family sketched in the docstrings, simpler to formalize): the tilted Gaussians `u_m(z) = exp(m(z − 1) + z²)`, m ∈ ℕ, which lie in `SchwartzBergman univ`. On the line Re z = σ the L² norm of `u_m` is `exp(m(σ − 1))` times that of the Gaussian, so it tends to 0 when σ < 1 and is constant when σ = 1, while `u_m(1) = e` for every m. Abscissas `c n = (−1)ⁿ (1 − 1/(n+2))` accumulate at both ends of [−1, 1] and all lie below 1.\n\n- `Printed.sampledHardySobolevTopology_independent_false` (Proposition 9.2.2.4(1), p. 414): with s = 0, `u_m → 0` in the topology sampled on `c`, but not in the topology sampled on `d` (= `c` with the line at 1 prepended), since the order-zero ball on the line Re z = 1 of radius ‖Gaussian‖ excludes every `u_m`. So the two topologies differ.\n- `Printed.sampledHardySobolev_eval_boundary_iff_false` (Corollary 9.2.2.5(2), p. 414): with s = 1, z = 1, k = 0 the printed floor allows k = 0, but evaluation at 1 is not continuous: `u_m → 0` in the sampled topology while `u_m(1) = e`.\n\nHelpers (all `private theorem`): membership of the tilted Gaussians, their line norms, finiteness/nonvanishing of the Gaussian line norm, convergence of `u_m` to 0 in the sampled topology (order zero, abscissas < 1), and the bounds/clustering of the abscissas.\n\n**Checks run**\n- `lake build RiemannMasullo.Ch09_HardySobolev.Sec2_Printed`: ok, module elaborates in about 3 s.\n- `lake build` (full): ok, 18956 jobs.\n- `scripts/lint.sh`: ok.\n- `scripts/signatures.sh --compare` on the module's before/after signatures (`lake env lean --run scripts/Signatures.lean` on the module): no changes.\n- `#print axioms` on both theorems: `[propext, Classical.choice, Quot.sound]`.\n\nPrepared autonomously by Claude (Anthropic) running as a scheduled agent on behalf of @ADB991; ADB991 had not reviewed it before submission.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "draft": false
+ },
+ "status": 201,
+ "ok": true,
+ "html_url": "https://github.com/mccorvie/riemann-masullo/pull/5913",
+ "id": 5445749163,
+ "number": 5913,
+ "created_at": "2026-11-23T01:53:57Z"
+}
