@@ -1,0 +1,17 @@
+{
+ "request_file": "20261123T045116Z-pr-ch09-sec3-printed.json",
+ "processed_at": "2026-11-23T04:51:34Z",
+ "request": {
+  "type": "pr",
+  "head": "claude/sweep-ch09-sec3-printed-b8a8",
+  "title": "Refute Printed.hardySobolevJetKernelProjection_tendsto (Theorem 9.3.2.6, p. 426)",
+  "body": "Closes #5331\n\nProves `Printed.hardySobolevJetKernelProjection_tendsto_false` (Theorem 9.3.2.6, (9.3.2.10), p. 426) in `RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean`. Only the proof and private helpers placed directly above it, plus `import RiemannMasullo.ForMathlib.Analysis.Distribution.SchwartzSpace.Gaussian` (for `SchwartzMap.gaussian`).\n\n**Counterexample.** `G = ℝ≥0ˣ` with identity module, trivial character, `I = [-1, 1]`, `s = 0`.\n- Tests are built from log-profiles through `identityModulationExponentialDecay_equiv`: `p_c(x) = exp(-(x-c)²)`. Each exponential twist of `p_c` is a scaled translate of `SchwartzMap.gaussian 1`, so `p_c` lies in `logExponentialDecaySubmodule univ`.\n- `φ` has profile `p_0 − p_1`. With the canonical Haar measure equal to `k • dt/t` (`k > 0`, uniqueness of Haar measure), `integral_cexp_quadratic` gives `M φ (z) = k √π e^{z²/4} (1 − e^z)`. This is entire, and its zeros `2πiℤ` all have real part `0 ∈ (−1, 1)`. So `(0, 0)` is an index of `J`.\n- `W` is the library's `ModulatedIntervalSobolev m hm (-1) 1 0`, with `ι` from `modulatedIntervalSobolev_dense`. Its norm equals `intervalSobolevENorm` over `[-1, 1]`: the supremum of the endpoint densities is attained at `(-1, 1)`.\n- Every `P T` maps into the kernel of `δ (0,0)`, which is continuous. So the strong limit `u` would satisfy `δ (0,0) u = 0` for all `u`. But for the Gaussian `g0`, `δ (0,0) (ι g0) = M g0 (0) = k√π ≠ 0`.\n\nThe star-projection part of the hypothesis is not needed.\n\n**Checks run**\n- `lake build` (full): `Build completed successfully (18994 jobs)`. Module rebuild takes about 9 s.\n- `scripts/lint.sh`: `lint: ok`.\n- Before and after dumps of `scripts/Signatures.lean` for this module are identical, and `scripts/signatures.sh --compare` lists nothing.\n- `#print axioms RiemannMasullo.Printed.hardySobolevJetKernelProjection_tendsto_false`: `[propext, sorryAx, Classical.choice, Quot.sound]`. The `sorryAx` comes only from the upstream `identityModulationExponentialDecay_equiv` and `modulatedIntervalSobolev_dense`, which both show `sorryAx` themselves.\n\n#5330 from this file was released with notes.\n\nPrepared autonomously by Claude (Anthropic) running as a scheduled agent on behalf of @ADB991; ADB991 had not reviewed it before submission.\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "draft": false
+ },
+ "status": 201,
+ "ok": true,
+ "html_url": "https://github.com/mccorvie/riemann-masullo/pull/6079",
+ "id": 5447314961,
+ "number": 6079,
+ "created_at": "2026-11-23T04:51:34Z"
+}
