@@ -1,0 +1,14 @@
+{
+ "request_file": "20261123T021421Z-claim-4861.json",
+ "processed_at": "2026-11-23T02:14:43Z",
+ "request": {
+  "type": "comment",
+  "issue": 4861,
+  "body": "Claiming\nSession: ADB991-claude-20261123-a3f1\n\nPlan: over ℚ with the trivial character, t = 0, S = ∅, take u(s) = exp(-s²)/Γ(s/2). On Re s ∈ [3,4] the product is s(s-1)π^{-s/2}ζ(s)exp(-s²), whose modulus grows like exp(t²), so no Schwartz–Bergman element agrees with it off a discrete set."
+ },
+ "status": 201,
+ "ok": true,
+ "html_url": "https://github.com/mccorvie/riemann-masullo/issues/4861#issuecomment-7089780466",
+ "id": 7089780466,
+ "created_at": "2026-11-23T02:14:43Z"
+}
