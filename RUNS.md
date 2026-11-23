@@ -69,6 +69,7 @@ or an abstract private lemma avoids it.
 
 ## open
 
+- RiemannMasullo/Ch07_SchauderBasesZeta/Sec3a_Printed.lean: #5342 (claimed); session ADB991-claude-20261123-972a; branch claude/sweep-ch07-sec3a-printed-972a; PR none yet; last touched 2026-11-23T04:00Z
 - RiemannMasullo/Ch05_ThetaZSpaces/Sec3b_Printed.lean: #4812 #4815 #4817 #4818 #4819 (claimed); session ADB991-claude-20261123-bbd8; branch claude/sweep-ch05-sec3b-printed-bbd8; PR none yet; last touched 2026-11-23T03:45Z
 - RiemannMasullo/Ch05_ThetaZSpaces/Sec4_Printed.lean: #4810 #4811 (claimed); session ADB991-claude-20261123-a0d1; branch claude/sweep-ch05-sec4-printed-a0d1; PR none yet; last touched 2026-11-23T03:30Z
 - RiemannMasullo/Ch12_TraceGeometric/Sec4_Printed.lean: #5577 (proved, in PR); session ADB991-claude-20261123-2967; branch claude/sweep-ch12-sec4-printed-2967; PR https://github.com/mccorvie/riemann-masullo/pull/5986; last touched 2026-11-23T03:27Z
