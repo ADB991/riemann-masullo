@@ -4,6 +4,8 @@ Cloud runs prove open `proof` issues of mccorvie/riemann-masullo, one library fi
 
 ## setup notes
 
+(2026-11-23, a3f1) Fresh container: elan via elan-init.sh + linked release zip; `lake exe cache get` 1 min; cold `lake build` of Ch06 Sec3_Printed ~20 min (9547 jobs), then full `lake build` 12 min. `sh -c 'time …'` fails (no `time` in sh): use bash. Over ℚ, ζ̂ = Γℝ·ζ on Re>1 from `continuedCompletedHeckeL_spec` + `completedHeckeL_one_eq_dedekindZeta` + the card-1 ideal count copied from Ch13 Targets `dedekindZeta_rat_eq_riemannZeta`; `nrRealPlaces_eq_one_of_finrank_eq_one (Module.finrank_self ℚ)`. Needs imports Mathlib.NumberTheory.LSeries.{Dirichlet,RiemannZeta}, ZetaValues, Analysis.Real.Pi.Bounds.
+
 (2026-11-23, f923) Fresh container: `lake exe cache get` (1 min) brought project oleans; first `lake build` of AppD Sec1c_Printed 6 min, then 4 s per round; full `lake build` 23 min. Compact-open on `A →ₜ* B`: `(ContinuousMonoidHom.isInducing_toContinuousMap _ _).tendsto_nhds_iff` then `ContinuousMap.tendsto_nhds_compactOpen`; `PontryaginDual (Multiplicative ℝ) ≃ₜ* Multiplicative ℝ` is `exists_realPontryaginDualEquiv` (ForMathlib/Topology/Algebra/PontryaginDual/Real). In a theorem whose statement has auto-bound universe `u_1`, don't write `ULift.{u}` in the proof: write `ULift (…)` and let unification pick the level; a universe-polymorphic private helper is fine. `continuous_mulSingle` needs `(A := fun _ ↦ Circle)` explicitly.
 
 (2026-11-23, 76e0) Fresh container: `lake exe cache get` brought project oleans; first `lake build` of AppC Sec5a_Printed 4 min, full `lake build` 27 min. Don't add `.{u}` to a statement to fix universes (changes the hash): let unification pick the level (e.g. `ULift ℂ`). `ContDiff.pow` needs `import Mathlib.Analysis.Calculus.ContDiff.Operations` in low AppC files; `EuclideanSpace.single_*` lemmas are gone, use `WithLp.toLp 2 (fun _ ↦ t)` and `EuclideanSpace.norm_eq`.
@@ -62,12 +64,12 @@ or an abstract private lemma avoids it.
 ## open
 
 - RiemannMasullo/Ch12_TraceGeometric/Sec4_Printed.lean: #5577 (claimed); session ADB991-claude-20261123-2967; branch claude/sweep-ch12-sec4-printed-2967; PR none yet; last touched 2026-11-23T02:55Z
-- RiemannMasullo/Ch06_LocalGlobal/Sec3_Printed.lean: #4861 (claimed); session ADB991-claude-20261123-a3f1; branch claude/sweep-ch06-sec3-printed-a3f1; PR none yet; last touched 2026-11-23T02:16Z
 - RiemannMasullo/AppD_SchwartzBruhat/Sec1c_Printed.lean: #5756 (proved, in PR); session ADB991-claude-20261123-f923; branch claude/sweep-appd-sec1c-printed-f923; PR https://github.com/mccorvie/riemann-masullo/pull/5942; last touched 2026-11-23T02:37Z
 - RiemannMasullo/AppD_SchwartzBruhat/Sec3a_part2_Printed.lean: #4657 (claimed); session ADB991-claude-20261123-94d7; branch claude/sweep-appd-sec3a-part2-printed-94d7; PR none yet; last touched 2026-11-23T02:44Z
 
 ## runs
 
+- 2026-11-23 ADB991-claude-20261123-a3f1: Ch06_LocalGlobal/Sec3_Printed.lean, proved refutation #4861 (Thm 6.3.2.2(1) p. 310: ℚ, χ=1, u=exp(-s²)/Γ(s/2); product s(s-1)π^(-s/2)ζ(s)exp(-s²) unbounded on 3≤Re s≤4). PR https://github.com/mccorvie/riemann-masullo/pull/5962 (branch claude/sweep-ch06-sec3-printed-a3f1). Others in file (#4859 #4862 #4863) not claimed: need Mellin transforms of explicit adelic tests / residues of principal values; #4858 #4860 held by StefanDawydiak. Full lake build 12 min; lint ok; signatures unchanged. No releases. Claim closed.
 - 2026-11-23 ADB991-claude-20261123-5e1d: Ch04_PeriodicSchauderBases/Sec5_Printed.lean, proved refutation #5335 (Printed.modulatedCompactSupport_isotypicQuotient_equiv_false: ℝ≥0ˣ, identity module, γ=e, B=[1,e]; supported tests vanish on the orbit of 1, a lifted log bump has periodization 1 there). PR https://github.com/mccorvie/riemann-masullo/pull/5943 (branch claude/sweep-ch04-sec5-printed-5e1d). #5333 #5334 not claimed (need convergence in completed projective tensors of ℬ types). Full lake build 14.6 min; lint ok; signatures unchanged. No releases. Claim closed.
 - 2026-11-23 ADB991-claude-20261123-f923: AppD_SchwartzBruhat/Sec1c_Printed.lean, proved refutation #5756 (Lemma D.1.6.4 local compactness: G = ULift (ℕ → Circle); via lcaTopologicalLie_dual a compact nbhd of 1 in one-parameter subgroups would contain all subgroups on a far coordinate, making the dual of ℝ compact). File now sorry-free; axioms clean. PR https://github.com/mccorvie/riemann-masullo/pull/5942. Full lake build 23 min; lint ok; signatures unchanged. No releases. Left Ch04 Sec5_Printed (live claim 5e1d) alone.
 
