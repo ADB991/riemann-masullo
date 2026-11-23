@@ -77,6 +77,7 @@ or an abstract private lemma avoids it.
 
 ## open
 
+- RiemannMasullo/Ch05_ThetaZSpaces/Sec5_Printed.lean: #4806 (claimed); session ADB991-claude-20261123-39b9; branch claude/sweep-ch05-sec5-printed-39b9; PR none yet; last touched 2026-11-23T04:52Z
 - RiemannMasullo/Ch06_LocalGlobal/Sec2_Printed.lean: #4867 (claimed); session ADB991-claude-20261123-d67d; branch claude/sweep-ch06-sec2-printed-d67d; PR none yet; last touched 2026-11-23T04:19Z
 - RiemannMasullo/Ch09_HardySobolev/Sec3_Printed.lean: #5331 (proved, in PR); #5330 released; session ADB991-claude-20261123-b8a8; branch claude/sweep-ch09-sec3-printed-b8a8; PR https://github.com/mccorvie/riemann-masullo/pull/6079; last touched 2026-11-23T04:55Z
 - RiemannMasullo/Ch07_SchauderBasesZeta/Sec3a_Printed.lean: #5342 (proved, in PR); session ADB991-claude-20261123-972a; branch claude/sweep-ch07-sec3a-printed-972a; PR https://github.com/mccorvie/riemann-masullo/pull/6069; last touched 2026-11-23T04:40Z
