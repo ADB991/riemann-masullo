@@ -1,5 +1,0 @@
-{
- "type": "comment",
- "issue": 4956,
- "body": "Claiming\nSession: ADB991-claude-20261123-3f6a\n\nSweep of RiemannMasullo/Ch10_TraceSpectral/Sec2.lean (prover, working by hand). Plan: invariance of the closed theta subspace under translation (from exists_globalThetaSobolevAction), the induced action on the quotient (continuity via the open quotient map), and the isometry from the norm-one isotypic average, which is a contraction on the Sobolev space since norm-one translations have operator norm ≤ 1."
-}
