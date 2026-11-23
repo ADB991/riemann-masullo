@@ -1401,6 +1401,148 @@ theorem realDiracDerivatives_polynomialEquiv :
           (fun f : 𝒟ℝ ↦ e p (realSchwartzFlatAtOrigin.mkQ
             (f.hasCompactSupport.toSchwartzMap f.contDiff))) N ↔ p.natDegree ≤ N := by sorry
 
+/-- A Borel series `∑ bₙ φₙ` whose terms past `m` are dominated by a summable sequence converges
+in the Schwartz space. Its Dirac derivatives are those of the coefficients, and its seminorms of
+order at most `m` are bounded by the first `m + 1` terms plus the dominating sum. -/
+private theorem realSchwartzTaylor_equiv_series (m : ℕ) (φ : ℕ → 𝓢(ℝ, ℂ)) (b : ℕ → ℂ)
+    (w : ℕ → ℝ) (hw : Summable w) (hw0 : ∀ n, 0 ≤ w n)
+    (hφ : ∀ n k j, j < n → m < n → ‖b n‖ * SchwartzMap.seminorm ℂ k j (φ n) ≤ w n)
+    (hd : ∀ n j, realDiracDerivative j (φ n) =
+      (-1 : ℂ) ^ j * if j = n then (n.factorial : ℂ) else 0) :
+    ∃ f : 𝓢(ℝ, ℂ), (∀ j, realDiracDerivative j f = b j * (-1 : ℂ) ^ j * (j.factorial : ℂ)) ∧
+      ∀ k j, j ≤ m → SchwartzMap.seminorm ℂ k j f ≤
+        ∑ n ∈ Finset.range (m + 1), ‖b n‖ * SchwartzMap.seminorm ℂ k j (φ n) + ∑' n, w n := by
+  let v (i : ℕ × ℕ) (n : ℕ) : ℝ :=
+    if n ≤ max i.2 m then ‖b n‖ * SchwartzMap.seminorm ℂ i.1 i.2 (φ n) else 0
+  have hv (i : ℕ × ℕ) : Summable (v i) := by
+    refine summable_of_ne_finset_zero (s := Finset.range (max i.2 m + 1)) fun n hn ↦ ?_
+    rw [Finset.mem_range, not_lt] at hn
+    simp only [v, show ¬ n ≤ max i.2 m by omega, ↓reduceIte]
+  let u (i : ℕ × ℕ) (n : ℕ) : ℝ := w n + v i n
+  have hx (i : ℕ × ℕ) (n : ℕ) : schwartzSeminormFamily ℂ ℝ ℂ i (b n • φ n) ≤ u i n := by
+    rw [SchwartzMap.schwartzSeminormFamily_apply, map_smul_eq_mul]
+    by_cases hn : n ≤ max i.2 m
+    · simp only [u, v, hn, ↓reduceIte]
+      linarith [hw0 n]
+    · simp only [u, v, hn, ↓reduceIte, add_zero]
+      exact hφ n i.1 i.2 (by omega) (by omega)
+  have : CompleteSpace 𝓢(ℝ, ℂ) := completeSpace_schwartzMap
+  obtain ⟨hsum, hbound⟩ := realSchwartzFlatQuotient_strongDual_summable
+    (schwartz_withSeminorms ℂ ℝ ℂ) (fun n ↦ b n • φ n) u (fun i ↦ hw.add (hv i)) hx
+  refine ⟨∑' n, b n • φ n, fun j ↦ ?_, fun k j hj ↦ ?_⟩
+  · rw [ContinuousLinearMap.map_tsum _ hsum]
+    simp only [map_smul, smul_eq_mul, hd]
+    rw [tsum_eq_single j fun n hn ↦ by simp [Ne.symm hn]]
+    simp only [↓reduceIte]
+    ring
+  · have h := hbound (k, j)
+    rw [SchwartzMap.schwartzSeminormFamily_apply] at h
+    refine h.trans (le_of_eq ?_)
+    rw [Summable.tsum_add hw (hv (k, j)), add_comm]
+    congr 1
+    rw [tsum_eq_sum (s := Finset.range (m + 1)) fun n hn ↦ ?_]
+    · refine Finset.sum_congr rfl fun n hn ↦ ?_
+      rw [Finset.mem_range] at hn
+      simp only [v, show n ≤ max j m by omega, ↓reduceIte]
+    · rw [Finset.mem_range, not_lt] at hn
+      simp only [v, show ¬ n ≤ max j m by omega, ↓reduceIte]
+
+/-- A small Borel lemma: for finitely many Schwartz seminorms and `r > 0`, every sequence whose
+first `N` terms are below `δ` is the sequence of Taylor coefficients of a Schwartz function whose
+seminorms in the family are below `r`. -/
+private theorem realSchwartzTaylor_equiv_small (s : Finset (ℕ × ℕ)) (r : ℝ) (hr : 0 < r) :
+    ∃ N : ℕ, ∃ δ > 0, ∀ b : ℕ → ℂ, (∀ n ≤ N, ‖b n‖ < δ) → ∃ f : 𝓢(ℝ, ℂ),
+      (∀ n, realDiracDerivative n f = b n * (-1 : ℂ) ^ n * (n.factorial : ℂ)) ∧
+        (s.sup (schwartzSeminormFamily ℂ ℝ ℂ)) f < r := by
+  let χ : ContDiffBump (0 : ℝ) := ⟨1 / 2, 1, by norm_num, by norm_num⟩
+  have hχ : χ.rOut ≤ 1 := le_rfl
+  choose G hG using realSchwartzFlatQuotient_strongDual_exists_bump χ
+  have hGc (n : ℕ) : HasCompactSupport (G n : ℝ → ℂ) :=
+    (isCompact_closedBall (0 : ℝ) 1).of_isClosed_subset (isClosed_tsupport _)
+      (realSchwartzFlatQuotient_strongDual_bump_tsupport χ hχ n (G n) (hG n))
+  let m := s.sup Prod.snd
+  let K : ℝ := ∑ i ∈ s, ∑ n ∈ Finset.range (m + 1), SchwartzMap.seminorm ℂ i.1 i.2 (G n)
+  have hK : 0 ≤ K := Finset.sum_nonneg fun i _ ↦ Finset.sum_nonneg fun n _ ↦ apply_nonneg _ _
+  refine ⟨m, r / (2 * (K + 1)), by positivity, fun b hb ↦ ?_⟩
+  let C (n j : ℕ) : ℝ := SchwartzMap.seminorm ℂ 0 j (G n)
+  have hC (n j : ℕ) : 0 ≤ C n j := apply_nonneg _ _
+  let w (n : ℕ) : ℝ := r / 4 * (1 / 2) ^ n
+  have hw0 (n : ℕ) : 0 ≤ w n := by positivity
+  have hwsum : HasSum w (r / 2) := by
+    have := (hasSum_geometric_of_lt_one (r := (1 / 2 : ℝ)) (by norm_num) (by norm_num)).mul_left
+      (r / 4)
+    convert this using 1
+    norm_num
+    ring
+  have hsC (n : ℕ) : 0 < ∑ j ∈ Finset.range n, C n j + 1 := by
+    have : 0 ≤ ∑ j ∈ Finset.range n, C n j := Finset.sum_nonneg fun j _ ↦ hC n j
+    linarith
+  let ε (n : ℕ) : ℝ := min 1 (w n / (‖b n‖ + 1) / (∑ j ∈ Finset.range n, C n j + 1))
+  have hε (n : ℕ) : 0 < ε n := lt_min one_pos (by have := hsC n; positivity)
+  choose ψ hψ using fun n ↦
+    realSchwartzFlatQuotient_strongDual_exists_scaled (G n) (hGc n) n (ε n) (hε n).ne'
+  let φ (n : ℕ) : 𝓢(ℝ, ℂ) := if n ≤ m then G n else ψ n
+  have hd (n j : ℕ) : realDiracDerivative j (φ n) =
+      (-1 : ℂ) ^ j * if j = n then (n.factorial : ℂ) else 0 := by
+    by_cases hn : n ≤ m
+    · simp only [φ, hn, ↓reduceIte]
+      exact realSchwartzFlatQuotient_strongDual_scaled_dirac χ n (G n) (G n) (hG n) 1 one_pos
+        (fun x ↦ by simp) j
+    · simp only [φ, hn, ↓reduceIte]
+      exact realSchwartzFlatQuotient_strongDual_scaled_dirac χ n (G n) (ψ n) (hG n) (ε n) (hε n)
+        (hψ n) j
+  have hφ (n k j : ℕ) (hjn : j < n) (hmn : m < n) :
+      ‖b n‖ * SchwartzMap.seminorm ℂ k j (φ n) ≤ w n := by
+    simp only [φ, show ¬ n ≤ m by omega, ↓reduceIte]
+    have hS : C n j ≤ ∑ j ∈ Finset.range n, C n j + 1 := by
+      have := Finset.single_le_sum (fun j _ ↦ hC n j) (Finset.mem_range.mpr hjn)
+      linarith
+    have h1 : SchwartzMap.seminorm ℂ k j (ψ n) ≤ w n / (‖b n‖ + 1) :=
+      calc SchwartzMap.seminorm ℂ k j (ψ n) ≤ ε n * C n j :=
+            realSchwartzFlatQuotient_strongDual_scaled_seminorm χ hχ n j k hjn (G n) (ψ n) (hG n)
+              (ε n) (hε n) (min_le_left _ _) (hψ n)
+        _ ≤ w n / (‖b n‖ + 1) / (∑ j ∈ Finset.range n, C n j + 1) *
+              (∑ j ∈ Finset.range n, C n j + 1) := by
+            gcongr
+            · exact min_le_right _ _
+        _ = w n / (‖b n‖ + 1) := div_mul_cancel₀ _ (hsC n).ne'
+    calc ‖b n‖ * SchwartzMap.seminorm ℂ k j (ψ n) ≤ ‖b n‖ * (w n / (‖b n‖ + 1)) := by gcongr
+      _ = w n * (‖b n‖ / (‖b n‖ + 1)) := by ring
+      _ ≤ w n * 1 := by
+          gcongr
+          rw [div_le_one (by positivity)]
+          linarith
+      _ = w n := mul_one _
+  obtain ⟨f, hfd, hfb⟩ :=
+    realSchwartzTaylor_equiv_series m φ b w hwsum.summable hw0 hφ hd
+  refine ⟨f, hfd, Seminorm.finset_sup_apply_lt hr fun i hi ↦ ?_⟩
+  have him : i.2 ≤ m := Finset.le_sup (f := Prod.snd) hi
+  rw [SchwartzMap.schwartzSeminormFamily_apply]
+  have hlow : ∑ n ∈ Finset.range (m + 1), ‖b n‖ * SchwartzMap.seminorm ℂ i.1 i.2 (φ n) ≤
+      r / (2 * (K + 1)) * K := by
+    calc ∑ n ∈ Finset.range (m + 1), ‖b n‖ * SchwartzMap.seminorm ℂ i.1 i.2 (φ n)
+        ≤ ∑ n ∈ Finset.range (m + 1), r / (2 * (K + 1)) * SchwartzMap.seminorm ℂ i.1 i.2 (G n) := by
+          refine Finset.sum_le_sum fun n hn ↦ ?_
+          rw [Finset.mem_range] at hn
+          simp only [φ, show n ≤ m by omega, ↓reduceIte]
+          exact mul_le_mul_of_nonneg_right (hb n (by omega)).le (apply_nonneg _ _)
+      _ = r / (2 * (K + 1)) *
+            ∑ n ∈ Finset.range (m + 1), SchwartzMap.seminorm ℂ i.1 i.2 (G n) :=
+          (Finset.mul_sum _ _ _).symm
+      _ ≤ r / (2 * (K + 1)) * K := by
+          gcongr
+          exact Finset.single_le_sum (f := fun i : ℕ × ℕ ↦
+            ∑ n ∈ Finset.range (m + 1), SchwartzMap.seminorm ℂ i.1 i.2 (G n))
+            (fun i _ ↦ Finset.sum_nonneg fun n _ ↦ apply_nonneg _ _) hi
+  have hrK : r / (2 * (K + 1)) * K < r / 2 := by
+    rw [div_mul_eq_mul_div, div_lt_div_iff₀ (by positivity) (by norm_num)]
+    nlinarith
+  calc SchwartzMap.seminorm ℂ i.1 i.2 f
+      ≤ ∑ n ∈ Finset.range (m + 1), ‖b n‖ * SchwartzMap.seminorm ℂ i.1 i.2 (φ n) + ∑' n, w n :=
+        hfb i.1 i.2 him
+    _ < r / 2 + r / 2 := by rw [hwsum.tsum_eq]; linarith
+    _ = r := add_halves r
+
 /-- Paper: Theorem 5.3.2.1(2), p. 243.
 The real Schwartz quotient by flat functions is identified with formal power series by the
 Taylor map. The topology of coefficientwise convergence is generated by (5.3.2.3).
@@ -1409,7 +1551,101 @@ theorem realSchwartzTaylor_equiv :
     ∃ e : (𝓢(ℝ, ℂ) ⧸ realSchwartzFlatAtOrigin) ≃L[ℂ] PowerSeries ℂ,
       ∀ (f : 𝓢(ℝ, ℂ)) (k : ℕ),
         PowerSeries.coeff k (e (realSchwartzFlatAtOrigin.mkQ f)) =
-          iteratedDeriv k (f : ℝ → ℂ) 0 / (k.factorial : ℂ) := by sorry
+          iteratedDeriv k (f : ℝ → ℂ) 0 / (k.factorial : ℂ) := by
+  let a (k : ℕ) : StrongDual ℂ 𝓢(ℝ, ℂ) :=
+    ((-1 : ℂ) ^ k / (k.factorial : ℂ)) • realDiracDerivative k
+  have hfact (k : ℕ) : (k.factorial : ℂ) ≠ 0 := mod_cast Nat.factorial_ne_zero k
+  have hsq (k : ℕ) : (-1 : ℂ) ^ k * (-1 : ℂ) ^ k = 1 := by rw [← mul_pow]; norm_num
+  have ha (k : ℕ) (f : 𝓢(ℝ, ℂ)) :
+      a k f = iteratedDeriv k (f : ℝ → ℂ) 0 / (k.factorial : ℂ) := by
+    simp only [a, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
+      realSchwartzFlatQuotient_strongDual_dirac]
+    rw [div_mul_eq_mul_div, div_left_inj₀ (hfact k), ← mul_assoc, hsq, one_mul]
+  have hinv (k : ℕ) (z : ℂ) :
+      (-1 : ℂ) ^ k / (k.factorial : ℂ) * (z * (-1 : ℂ) ^ k * (k.factorial : ℂ)) = z := by
+    rw [div_mul_eq_mul_div, div_eq_iff (hfact k)]
+    linear_combination (z * (k.factorial : ℂ)) * hsq k
+  let T : 𝓢(ℝ, ℂ) →ₗ[ℂ] PowerSeries ℂ :=
+    { toFun := fun f ↦ PowerSeries.mk fun k ↦ a k f
+      map_add' := fun f g ↦ by ext k; simp
+      map_smul' := fun c f ↦ by ext k; simp }
+  have hT (f : 𝓢(ℝ, ℂ)) (k : ℕ) : PowerSeries.coeff k (T f) = a k f := by
+    change PowerSeries.coeff k (PowerSeries.mk fun k ↦ a k f) = _
+    exact PowerSeries.coeff_mk _ _
+  have hTc : Continuous T := by
+    refine continuous_iff_continuousAt.mpr fun f ↦ ?_
+    rw [ContinuousAt, PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto]
+    intro d
+    simp only [hT]
+    exact (a d).continuous.tendsto f
+  let TL : 𝓢(ℝ, ℂ) →L[ℂ] PowerSeries ℂ := ⟨T, hTc⟩
+  have hTL (f : 𝓢(ℝ, ℂ)) (k : ℕ) : PowerSeries.coeff k (TL f) = a k f := hT f k
+  have hmem (f : 𝓢(ℝ, ℂ)) : f ∈ realSchwartzFlatAtOrigin ↔ TL f = 0 := by
+    rw [realSchwartzFlatAtOrigin, Submodule.mem_iInf, PowerSeries.ext_iff]
+    refine forall_congr' fun k ↦ ?_
+    rw [LinearMap.mem_ker, hTL, map_zero]
+    simp only [a, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, ContinuousLinearMap.coe_coe]
+    have : (-1 : ℂ) ^ k / (k.factorial : ℂ) ≠ 0 :=
+      div_ne_zero (pow_ne_zero _ (by norm_num)) (hfact k)
+    rw [mul_eq_zero, or_iff_right this]
+  have hle : realSchwartzFlatAtOrigin ≤ TL.ker := fun f hf ↦ (hmem f).mp hf
+  let E := realSchwartzFlatAtOrigin.liftQL TL hle
+  have hE (f : 𝓢(ℝ, ℂ)) : E (realSchwartzFlatAtOrigin.mkQ f) = TL f := rfl
+  have hinj : Function.Injective E := by
+    refine (injective_iff_map_eq_zero E).mpr fun y hy ↦ ?_
+    obtain ⟨f, rfl⟩ := realSchwartzFlatAtOrigin.mkQ_surjective y
+    rw [hE] at hy
+    exact (Submodule.Quotient.mk_eq_zero _).mpr ((hmem f).mpr hy)
+  have hsurj : Function.Surjective E := by
+    intro p
+    let c (n : ℕ) : ℂ := PowerSeries.coeff n p * (-1 : ℂ) ^ n * (n.factorial : ℂ)
+    obtain ⟨S, -, hS⟩ := realSchwartzFlatQuotient_strongDual_borel (fun n ↦ ‖c n‖)
+    obtain ⟨f, -, hf⟩ := hS c fun n ↦ le_rfl
+    refine ⟨realSchwartzFlatAtOrigin.mkQ f, ?_⟩
+    rw [hE]
+    ext k
+    rw [hTL]
+    simp only [a, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, hf, c]
+    exact hinv k _
+  let e : (𝓢(ℝ, ℂ) ⧸ realSchwartzFlatAtOrigin) ≃ₗ[ℂ] PowerSeries ℂ :=
+    LinearEquiv.ofBijective (E : (𝓢(ℝ, ℂ) ⧸ realSchwartzFlatAtOrigin) →ₗ[ℂ] PowerSeries ℂ)
+      ⟨hinj, hsurj⟩
+  have he (y : 𝓢(ℝ, ℂ) ⧸ realSchwartzFlatAtOrigin) : e y = E y := rfl
+  have hsymm : Continuous e.symm := by
+    refine continuous_of_continuousAt_zero e.symm ?_
+    rw [ContinuousAt, map_zero]
+    intro V hV
+    have hq : realSchwartzFlatAtOrigin.mkQ ⁻¹' V ∈ 𝓝 (0 : 𝓢(ℝ, ℂ)) :=
+      realSchwartzFlatAtOrigin.mkQL.continuous.continuousAt.preimage_mem_nhds
+        (by simpa using hV)
+    obtain ⟨⟨s, r⟩, hr, hsub⟩ := (schwartz_withSeminorms ℂ ℝ ℂ).hasBasis_zero_ball.mem_iff.mp hq
+    obtain ⟨N, δ, hδ, hsmall⟩ := realSchwartzTaylor_equiv_small s r hr
+    have hW : ∀ᶠ p in 𝓝 (0 : PowerSeries ℂ),
+        ∀ n ∈ Finset.range (N + 1), ‖PowerSeries.coeff n p‖ < δ := by
+      rw [Filter.eventually_all_finset]
+      intro n _
+      have h := (PowerSeries.WithPiTopology.continuous_coeff ℂ n).tendsto 0
+      rw [map_zero] at h
+      exact (h.eventually (Metric.ball_mem_nhds 0 hδ)).mono fun p hp ↦ by simpa using hp
+    rw [Filter.mem_map]
+    filter_upwards [hW] with p hp
+    obtain ⟨f, hfd, hf⟩ := hsmall (fun n ↦ PowerSeries.coeff n p)
+      fun n hn ↦ hp n (Finset.mem_range.mpr (by omega))
+    have hp' : e.symm p = realSchwartzFlatAtOrigin.mkQ f := by
+      rw [LinearEquiv.symm_apply_eq, he, hE]
+      ext k
+      rw [hTL]
+      simp only [a, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, hfd]
+      exact (hinv k _).symm
+    rw [Set.mem_preimage, hp']
+    exact hsub ((Seminorm.mem_ball_zero _).mpr hf)
+  let eL : (𝓢(ℝ, ℂ) ⧸ realSchwartzFlatAtOrigin) ≃L[ℂ] PowerSeries ℂ :=
+    { e with
+      continuous_toFun := E.continuous
+      continuous_invFun := hsymm }
+  refine ⟨eL, fun f k ↦ ?_⟩
+  change PowerSeries.coeff k (TL f) = _
+  rw [hTL, ha]
 
 /-- Paper: Remark 5.3.2.2, p. 243.
 Pullback from the strong dual of the real flat quotient embeds it in the strong dual of the
