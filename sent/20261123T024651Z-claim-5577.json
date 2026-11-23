@@ -1,0 +1,14 @@
+{
+ "request_file": "20261123T024651Z-claim-5577.json",
+ "processed_at": "2026-11-23T02:47:17Z",
+ "request": {
+  "type": "comment",
+  "issue": 5577,
+  "body": "Claiming\nSession: ADB991-claude-20261123-2967\n\nSweep of `RiemannMasullo/Ch12_TraceGeometric/Sec4_Printed.lean` (this refutation only)."
+ },
+ "status": 201,
+ "ok": true,
+ "html_url": "https://github.com/mccorvie/riemann-masullo/issues/5577#issuecomment-7090212330",
+ "id": 7090212330,
+ "created_at": "2026-11-23T02:47:18Z"
+}
